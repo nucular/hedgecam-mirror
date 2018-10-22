@@ -139,11 +139,15 @@ public class Prefs {
 	public static final String SHUTTER_BUTTON_STYLE = "preference_shutter_button_style";
 	
 	public static final String HDR_TONEMAPPING = "preference_hdr_tonemapping";
+	public static final String HDR_UNSHARP_MASK = "preference_hdr_unsharp_mask";
+	public static final String HDR_UNSHARP_MASK_RADIUS = "preference_hdr_unsharp_mask_radius";
 	public static final String HDR_LOCAL_CONTRAST = "preference_hdr_local_contrast";
 	public static final String HDR_N_TILES = "preference_hdr_n_tiles";
 	public static final String HDR_IGNORE_SMART_FILTER = "preference_hdr_ignore_sf";
 	public static final String HDR_STOPS_UP = "preference_hdr_stops_up";
 	public static final String HDR_STOPS_DOWN = "preference_hdr_stops";
+	public static final String HDR_DEGHOST = "preference_hdr_deghost";
+	public static final String HDR_ADJUST_LEVELS = "preference_hdr_adjust_levels";
 
 	public static final String PREVIEW_LOCATION = "preference_preview_location";
 	public static final String PREVIEW_MAX_EXPO = "preference_preview_max_expo";
@@ -201,13 +205,17 @@ public class Prefs {
 	public static final String POPUP_GRID = "preference_popup_grid";
 	public static final String POPUP_EXPO_BRACKETING_STOPS = "preference_popup_stops";
 	public static final String POPUP_HDR_TONEMAPPING = "preference_popup_hdr_tonemapping";
+	public static final String POPUP_HDR_UNSHARP_MASK = "preference_popup_hdr_unsharp_mask";
+	public static final String POPUP_HDR_UNSHARP_MASK_RADIUS = "preference_popup_hdr_unsharp_mask_radius";
 	public static final String POPUP_HDR_LOCAL_CONTRAST = "preference_popup_hdr_local_contrast";
 	public static final String POPUP_HDR_N_TILES = "preference_popup_hdr_n_tiles";
+	public static final String POPUP_HDR_DEGHOST = "preference_popup_hdr_deghost";
 	public static final String POPUP_PHOTOS_COUNT = "preference_popup_photos_count";
 	public static final String FORCE_FACE_FOCUS = "preference_force_face_focus";
 	public static final String CENTER_FOCUS = "preference_center_focus";
 	public static final String USE_1920X1088 = "preference_use_1920x1088";
 	public static final String MIN_FOCUS_DISTANCE = "preference_min_focus_distance";
+	public static final String FOCUS_DISTANCE_CALIBRATION = "preference_focus_distance_calibration";
 	public static final String ANTIBANDING = "preference_antibanding";
 	public static final String IND_FREQ = "preference_osd_frequency";
 	public static final String IND_SLOW_IF_BUSY = "preference_osd_slow_if_busy";
@@ -216,6 +224,7 @@ public class Prefs {
 	public static final String EDGE = "preference_edge";
 	public static final String SMART_FILTER = "preference_smart_filter";
 	public static final String OPTICAL_STABILIZATION = "preference_optical_stabilization";
+	public static final String ZERO_SHUTTER_DELAY = "preference_zero_shutter_delay";
 	public static final String FOCUS_DISTANCE = "preference_focus_distance";
 	public static final String FOCUS_BRACKETING_DISTANCE = "preference_focus_bracketing_distance";
 	public static final String FOCUS_RANGE = "preference_focus_range";
@@ -233,6 +242,20 @@ public class Prefs {
 	public static final String NR_COUNT = "preference_nr_count";
 	public static final String NR_ADJUST_LEVELS = "preference_nr_adjust_levels";
 	public static final String NR_DISABLE_FILTERS = "preference_nr_disable_filters";
+	public static final String UNCOMPRESSED_PHOTO = "preference_uncompressed_photo";
+	public static final String YUV_CONVERSION = "preference_yuv_conversion";
+	public static final String FULL_SIZE_COPY = "preference_full_size_copy";
+
+	public static final String METADATA_AUTHOR = "preference_metadata_author";
+	public static final String METADATA_COMMENT = "preference_metadata_comment";
+	public static final String METADATA_POSITION_INFO = "preference_metadata_position_info";
+	public static final String METADATA_MODE_INFO = "preference_metadata_mode_info";
+	public static final String METADATA_SENSOR_INFO = "preference_metadata_sensor_info";
+	public static final String METADATA_PROCESSING_INFO = "preference_metadata_processing_info";
+
+	public static final String ADJUST_LEVELS = "preference_adjust_levels";
+
+	public static final String ZOOM_WHEN_FOCUSING = "preference_zoom_when_focusing";
 
 	// note, okay to change the order of enums in future versions, as getPhotoMode() does not rely on the order for the saved photo mode
 	public enum PhotoMode {
@@ -356,25 +379,25 @@ public class Prefs {
 		editor.apply();
 	}
 
-	private static void updatePhotoMode() {
+	public static void updatePhotoMode() {
 		if( MyDebug.LOG ) Log.d(TAG, "updatePhotoMode");
 		String photo_mode_string = sharedPreferences.getString(Prefs.PHOTO_MODE, "std");
-		if( photo_mode_string.equals("dro") && main_activity.supportsDRO() ) {
+		if( photo_mode_string.equals("dro") && main_activity.supportsDRO() && sharedPreferences.getBoolean("preference_photo_mode_dro_" + pref_camera_id, true) ) {
 			photo_mode = PhotoMode.DRO;
 			pref_photo_mode = "dro";
-		} else if( photo_mode_string.equals("hdr") && main_activity.supportsHDR() ) {
+		} else if( photo_mode_string.equals("hdr") && main_activity.supportsHDR() && sharedPreferences.getBoolean("preference_photo_mode_hdr_" + pref_camera_id, true) ) {
 			photo_mode = PhotoMode.HDR;
 			pref_photo_mode = "hdr";
-		} else if( photo_mode_string.equals("ebr") && main_activity.supportsExpoBracketing() ) {
+		} else if( photo_mode_string.equals("ebr") && main_activity.supportsExpoBracketing() && sharedPreferences.getBoolean("preference_photo_mode_expo_bracketing_" + pref_camera_id, true) ) {
 			photo_mode = PhotoMode.ExpoBracketing;
 			pref_photo_mode = "ebr";
-		} else if( photo_mode_string.equals("fbr") && main_activity.supportsFocusBracketing() ) {
+		} else if( photo_mode_string.equals("fbr") && main_activity.supportsFocusBracketing() && sharedPreferences.getBoolean("preference_photo_mode_focus_bracketing_" + pref_camera_id, true) ) {
 			photo_mode = PhotoMode.FocusBracketing;
 			pref_photo_mode = "fbr";
-		} else if( photo_mode_string.equals("bur") && main_activity.supportsFastBurst() ) {
+		} else if( photo_mode_string.equals("bur") && main_activity.supportsFastBurst() && sharedPreferences.getBoolean("preference_photo_mode_fast_burst_" + pref_camera_id, true) ) {
 			photo_mode = PhotoMode.FastBurst;
 			pref_photo_mode = "bur";
-		} else if( photo_mode_string.equals("nr") && main_activity.supportsNoiseReduction() ) {
+		} else if( photo_mode_string.equals("nr") && main_activity.supportsNoiseReduction() && sharedPreferences.getBoolean("preference_photo_mode_nr_" + pref_camera_id, true) ) {
 			photo_mode = PhotoMode.NoiseReduction;
 			pref_photo_mode = "nr";
 		} else {
@@ -383,6 +406,25 @@ public class Prefs {
 		}
 	}
 	
+	public static String getPhotoModeStringValue(PhotoMode option) {
+		switch (option) {
+			case DRO:
+				return "dro";
+			case HDR:
+				return "hdr";
+			case ExpoBracketing:
+				return "ebr";
+			case FocusBracketing:
+				return "fbr";
+			case FastBurst:
+				return "bur";
+			case NoiseReduction:
+				return "nr";
+			default:
+				return "std";
+		}
+	}
+
 	public static void needUpdatePhotoMode() {
 		pref_photo_mode = null;
 	}

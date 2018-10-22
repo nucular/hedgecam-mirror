@@ -5,7 +5,11 @@
 	<string name="translation_author">Halcyonest</string>
 	<string name="intro_text">터치해서 초점을 맞추고 파란색 카메라 버튼을 눌러서 사진을 찍습니다. 더 많은 도움이 필요하시면, 설정에서 온라인 도움말을 선택하세요. 오픈 카메라는 완전 무료입니다. 앱이 마음에 드시면 기부용 앱을 구매해보세요 (온라인 도움말 혹은 설정에서 링크를 선택).\n\n개인정보 정책: 위치 퍼미션은 지오태깅을 위해 필요합니다. 하지만 비활성화가 기본값입니다. 만약 활성화되면, 당신의 위치는 저장된 파일에 기록됩니다 (이것은 오직 지오태깅 용도로만 사용됩니다).</string>
 	<string name="intro_ok">확인 (이 메세지는 더이상 표시되지 않습니다)</string>
+	
+<!-- Translate me
+	<string name="charset">ISO-8859-1</string>
 
+-->
 	<string name="answer_yes">예</string>
 	<string name="answer_no">아니오</string>
 
@@ -45,6 +49,9 @@
 
 -->
 	<string name="angle">각도</string>
+<!-- Translate me
+	<string name="rotation">Rotation</string>
+-->
 	<string name="direction">방향</string>
 	<string name="zoom">줌</string>
 	<string name="free_memory">남은 용량</string>
@@ -433,7 +440,7 @@
 
 -->
 	<string name="preference_immersive_mode">전체화면 모드</string>
-	<string name="preference_immersive_mode_summary">전체화면(몰입) 모드에서의 동작을 설정합니다</string>
+	<string name="preference_immersive_mode_summary">%s\n\n전체화면(몰입) 모드에서의 동작을 설정합니다</string>
 <!-- Translate me
 	<string name="im_fullscreen">Fullscreen mode</string>
 	<string name="im_sticky">Sticky</string>
@@ -467,11 +474,13 @@
 	<string name="left_gap_for_buttons">Left, gap for buttons</string>
 -->
 	<string name="preference_rotate_preview">미리보기 회전</string>
-	<string name="preference_rotate_preview_summary">미리보기 회전 설정 (사진/동영상 촬영 결과에는 영향을 미치지 않습니다)</string>
+	<string name="preference_rotate_preview_summary">%s\n\n미리보기 회전 설정 (사진/동영상 촬영 결과에는 영향을 미치지 않습니다)</string>
 	<string name="dont_rotate">회전하지 않음</string>
 	<string name="rotate_180_degrees">180도 회전</string>
 <!-- Translate me
 	<string name="preference_preview_max_expo">Maximum exposure</string>
+	<string name="preference_zoom_when_focusing">Zoom when focusing</string>
+	<string name="preference_zoom_when_focusing_summary">Increase the center of the preview when adjusting manual focus</string>
 	<string name="preference_preview_max_expo_summary">Maximum preview exposure in manual mode (won\'t affect resultant photos/videos)</string>
 	<string name="preference_preview_surface">Preview surface</string>
 	<string name="preference_preview_surface_summary">%s\n\nSurface for displaying preview. Switch this option only if you know what you do</string>
@@ -526,7 +535,7 @@
 	<string name="preference_grid_alpha">Grid alpha</string>
 -->
 	<string name="preference_crop_guide">크롭 안내선 표시</string>
-	<string name="preference_crop_guide_summary">크롭 안내선은 특정한 종횡비가 어떤 식으로 보이는지를 사각형으로 보여줍니다 - 사진이나 동영상을 나중에 다른 종횡비로 잘라낼 예정이라면 활용할 수 있습니다. 동영상 촬영 모드 혹은 WYSIWYG 사진 모드가 필요합니다</string>
+	<string name="preference_crop_guide_summary">%s\n\n크롭 안내선은 특정한 종횡비가 어떤 식으로 보이는지를 사각형으로 보여줍니다 - 사진이나 동영상을 나중에 다른 종횡비로 잘라낼 예정이라면 활용할 수 있습니다. 동영상 촬영 모드 혹은 WYSIWYG 사진 모드가 필요합니다</string>
 <!-- Translate me
 	<string name="preference_osd_frequency">Update frequency</string>
 	<string name="preference_osd_frequency_summary">OSD update frequency. Increasing this value will will make the indication smoother, but the battery will discharge faster</string>
@@ -585,6 +594,7 @@
 	<string name="preference_multitouch_zoom_summary">You must restart the application to apply this option</string>
 	<string name="preference_focus_range">Focus range</string>
 	<string name="preference_focus_range_summary">Manual focus range limit for for more precise control</string>
+	<string name="fr_landscape_macro">Landscape/Macro</string>
 	<string name="fr_room">Room</string>
 	<string name="fr_group">Group photo</string>
 	<string name="preference_level_angle_calibration">Level angle calibration</string>
@@ -598,6 +608,8 @@
 	<string name="preference_center_focus">Center focus</string>
 	<string name="preference_center_focus_summary">Set focus zone in the center of the frame at startup</string>
 	<string name="preference_min_focus_distance">Minimum focus distance</string>
+	<string name="preference_focus_distance_calibration">Focus distance calibration</string>
+	<string name="preference_focus_distance_calibration_summary">Positive values correspond to short distances, negative values to long distances.</string>
 	<string name="preference_update_focus_for_video">Update focus mode</string>
 	<string name="preference_update_focus_for_video_summary">Workaround for bug on Samsung Galaxy S5 with UHD, where if the user switches to another (non-continuous-video) focus mode, then goes to Settings, then returns and records video, the preview freezes and the video is corrupted</string>
 	<string name="preference_camera2_fake_flash">Use alternative flash method</string>
@@ -621,6 +633,20 @@
 	<string name="jpeg_and_dng">JPEG and DNG (RAW)</string>
 	<string name="preference_flip_front_facing">Flip photo</string>
 	<string name="preference_flip_front_facing_summary">Flip horizontally photos from front camera</string>
+	<string name="preference_uncompressed_photo">Uncompressed output</string>
+	<string name="preference_uncompressed_photo_summary">Use YUV 420 output instead of compressed JPEG. Speeds up saving and improves image quality when using image post-processing. Can work incorrectly on some devices.</string>
+	<string name="preference_category_metadata">Metadata</string>
+	<string name="preference_category_metadata_summary">Metadata that is stored inside the JPEG file</string>
+	<string name="preference_metadata_author">Author</string>
+	<string name="preference_metadata_comment">Comment</string>
+	<string name="preference_metadata_position_info">Device position</string>
+	<string name="preference_metadata_position_info_summary">Add to comment information about device position</string>
+	<string name="preference_metadata_mode_info">Mode info</string>
+	<string name="preference_metadata_mode_info_summary">Add to comment information about camera mode</string>
+	<string name="preference_metadata_sensor_info">Sensor info</string>
+	<string name="preference_metadata_sensor_info_summary">Add to comment information about sensor settings</string>
+	<string name="preference_metadata_processing_info">Processing info</string>
+	<string name="preference_metadata_processing_info_summary">Add to comment information about image processing</string>
 	<string name="preference_category_expo_bracketing_summary">Expobracketing settings. Most of the options in this section also apply to HDR.</string>
 	<string name="preference_expo_bracketing_n_images">Exposure Bracketing</string>
 	<string name="preference_expo_bracketing_n_images_summary">%s\n\nNumber of images for exposure bracketing mode</string>
@@ -637,8 +663,13 @@
 	<string name="preference_category_hdr_summary">HDR and DRO settings</string>
 	<string name="preference_hdr_save_expo">Save all images for HDR mode</string>
 	<string name="preference_hdr_save_expo_summary">If enabled, when using HDR photo mode, the three base exposure images will be saved as well as the final HDR photo. Note this will make saving slower, especially if options like \"Stamp photos\" or Auto-level are also used.</string>
+	<string name="preference_hdr_deghost">Deghosting</string>
 	<string name="preference_hdr_tonemapping">Tone mapping</string>
 	<string name="preference_hdr_tonemapping_summary">%s\n\nAlgorithm to use for HDR tonemapping</string>
+	<string name="preference_hdr_unsharp_mask">Unsharp mask</string>
+	<string name="preference_hdr_unsharp_mask_summary">%s\n\nLevel of the unsharp mask filter during processing HDR and DRO</string>
+	<string name="preference_hdr_unsharp_mask_radius">Radius</string>
+	<string name="preference_hdr_unsharp_mask_radius_summary">%s\n\nUnsharp mask blur radius</string>
 	<string name="preference_hdr_local_contrast">Local contrast</string>
 	<string name="preference_hdr_local_contrast_summary">%s\n\nLevel of the local contrast enhancement during processing HDR and DRO</string>
 	<string name="preference_hdr_n_tiles">Number of tiles</string>
@@ -701,11 +732,11 @@
 	<string name="preference_video_stabilization">비디오 안정화 사용</string>
 	<string name="preference_video_stabilization_summary">비디오 안정화는 미리보기 및 동영상 촬영시 카메라의 움직임으로 인해 발생하는 흔들림을 줄여줍니다</string>
 	<string name="preference_video_bitrate">비디오 비트레이트 (근사치)</string>
-	<string name="preference_video_bitrate_summary">동영상의 비트레이트 근사치를 설정합니다 (높을수록 고화질이지만 용량을 더 차지합니다; 비트레이트가 지원되지 않을 경우 동영상 녹화가 실패할 수 있습니다)</string>
+	<string name="preference_video_bitrate_summary">%s\n\n동영상의 비트레이트 근사치를 설정합니다 (높을수록 고화질이지만 용량을 더 차지합니다; 비트레이트가 지원되지 않을 경우 동영상 녹화가 실패할 수 있습니다)</string>
 	<string name="preference_video_fps">비디오 프레임 비율 (근사치)</string>
 	<string name="preference_video_fps_summary">동영상의 프레임 비율(FPS)을 설정합니다 (근사치이므로 보장되지 않습니다; 프레임 비율이 지원되지 않을 경우 동영상 녹화가 실패할 수 있습니다)</string>
 	<string name="preference_video_max_duration">동영상 최장 녹화 시간</string>
-	<string name="preference_video_max_duration_summary">정해진 시간이 지나면 동영상 촬영을 멈추게 됩니다</string>
+	<string name="preference_video_max_duration_summary">%s\n\n정해진 시간이 지나면 동영상 촬영을 멈추게 됩니다</string>
 	<string name="preference_video_restart">최장 녹화 시간 이후 재시작</string>
 	<string name="dont_restart">반복하지 않음</string>
 	<string name="repeat_1_time">1회 반복</string>
@@ -718,7 +749,7 @@
 	<string name="repeat_8_times">8회 반복</string>
 	<string name="repeat_9_times">9회 반복</string>
 	<string name="repeat_10_times">10회 반복</string>
-	<string name="preference_video_restart_summary">만약 (설정된 경우에) 최장 녹화 시간 이후 동영상 촬영이 중지되면, 이 옵션은 정해진 횟수만큼 동영상 녹화를 재개시킵니다</string>
+	<string name="preference_video_restart_summary">%s\n\n만약 (설정된 경우에) 최장 녹화 시간 이후 동영상 촬영이 중지되면, 이 옵션은 정해진 횟수만큼 동영상 녹화를 재개시킵니다</string>
 <!-- Translate me
 	<string name="preference_video_max_filesize">Maximum file size of video</string>
 	<string name="preference_video_max_filesize_summary">%s\n\nThe video recording will stop and/or restart (see option below) when the (approximate) maximum file size is reached. Note that almost all Android devices have a maximum file size for videos (typically around 2GB or 4GB), but this option allows setting a specific value</string>
@@ -776,8 +807,10 @@
 	<string name="nr_minimal">Minimal</string>
 -->
 	<string name="nr_zero_shutter_lag">제로 셔터 랙</string>
-
 <!-- Translate me
+	<string name="preference_zero_shutter_delay">Zero shutter delay</string>
+	<string name="preference_zero_shutter_delay_summary">%s</string>
+
 	<string name="preference_screen_files">Files</string>
 -->
 	<string name="preference_save_location">저장 위치</string>

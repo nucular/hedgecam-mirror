@@ -5,7 +5,11 @@
 	<string name="translation_author">Serdar Erkoc</string>
 	<string name="intro_text">Odaklamak için dokunun ve fotoğraf çekmek için mavi kamera butonuna basın. Daha fazla yardım için, Online yardım formu ayarlarına tıklayın. Open Camera tamamen ücretsizdir. Bu uygulamayı beğendiyseniz, bağış uygulamamı satın almayı düşünebilirsiniz. :) (Ayarlar ya da Online yardımdaki linke gözatın).\n\nGizlilik Poliçesi: Konum izni yer etiketi için gereklidir fakat öntanımlı ayar olarak pasifleştirilmiştir. Etkinleştirilirse konumunuz kayıtlı dosyalarda kodlanacaktır.(sadece bu amaçla kullanılacaktır.).</string>
 	<string name="intro_ok">TAMAM (Bu mesaj tekrar gösterilmeyecektir.)</string>
+	
+<!-- Translate me
+	<string name="charset">ISO-8859-1</string>
 
+-->
 	<string name="answer_yes">Evet</string>
 	<string name="answer_no">Hayır</string>
 
@@ -43,6 +47,9 @@
 
 -->
 	<string name="angle">Açı</string>
+<!-- Translate me
+	<string name="rotation">Rotation</string>
+-->
 	<string name="direction">Yön</string>
 	<string name="zoom">Büyüt</string>
 	<string name="free_memory">Boş</string>
@@ -435,7 +442,7 @@
 
 -->
 	<string name="preference_immersive_mode">Immersive(Tutulma) mod</string>
-	<string name="preference_immersive_mode_summary">Seçenekleri \"Immersive(Tutulma) mod\" davranışı</string>
+	<string name="preference_immersive_mode_summary">%s\n\nSeçenekleri \"Immersive(Tutulma) mod\" davranışı</string>
 <!-- Translate me
 	<string name="im_fullscreen">Fullscreen mode</string>
 	<string name="im_sticky">Sticky</string>
@@ -467,11 +474,13 @@
 	<string name="left_gap_for_buttons">Left, gap for buttons</string>
 -->
 	<string name="preference_rotate_preview">Önzilemeyi döndür</string>
-	<string name="preference_rotate_preview_summary">Önizlemeyi döndürme seçeneği(etkile\'yecek fotoğraf/vidyo sonucunu etkilemeyecektir)</string>
+	<string name="preference_rotate_preview_summary">%s\n\nÖnizlemeyi döndürme seçeneği(etkile\'yecek fotoğraf/vidyo sonucunu etkilemeyecektir)</string>
 	<string name="dont_rotate">Döndürme yok</string>
 	<string name="rotate_180_degrees">180 derece döndür</string>
 <!-- Translate me
 	<string name="preference_preview_max_expo">Maximum exposure</string>
+	<string name="preference_zoom_when_focusing">Zoom when focusing</string>
+	<string name="preference_zoom_when_focusing_summary">Increase the center of the preview when adjusting manual focus</string>
 	<string name="preference_preview_max_expo_summary">Maximum preview exposure in manual mode (won\'t affect resultant photos/videos)</string>
 	<string name="preference_preview_surface">Preview surface</string>
 	<string name="preference_preview_surface_summary">%s\n\nSurface for displaying preview. Switch this option only if you know what you do</string>
@@ -493,7 +502,7 @@
 	<string name="preference_show_angle_line">Açı hattı çizgisini göster</string>
 	<string name="preference_show_angle_line_summary">Ufuk çizgisini göster</string>
 	<string name="preference_angle_highlight_color">Açı hat rengi</string>
-	<string name="preference_angle_highlight_color_summary">Kamera sıfır seviyesine geldiğinde renklendir</string>
+	<string name="preference_angle_highlight_color_summary">%s\n\nKamera sıfır seviyesine geldiğinde renklendir</string>
 <!-- Translate me
 	<string name="preference_show_pitch_lines">Show pitch lines</string>
 	<string name="preference_show_pitch_lines_summary">Display horizontal pitch lines</string>
@@ -526,7 +535,7 @@
 	<string name="preference_grid_alpha">Grid alpha</string>
 -->
 	<string name="preference_crop_guide">Kırpma yardımcısını göster</string>
-	<string name="preference_crop_guide_summary">Kırpma yardımcısı -eğer daha sonra fotoğraf/vidyoları farklı görüntü oranlarında kırpmayı planlıyorsanız kullanışlıdır- özel görüntü oranlarının nasıl göründüğünü dikdörtgen şeklinde gösterir. WYSIWYG fotoğraf modu ya da vidyo modunda olmak gerekir.</string>
+	<string name="preference_crop_guide_summary">%s\n\nKırpma yardımcısı -eğer daha sonra fotoğraf/vidyoları farklı görüntü oranlarında kırpmayı planlıyorsanız kullanışlıdır- özel görüntü oranlarının nasıl göründüğünü dikdörtgen şeklinde gösterir. WYSIWYG fotoğraf modu ya da vidyo modunda olmak gerekir.</string>
 <!-- Translate me
 	<string name="preference_osd_frequency">Update frequency</string>
 	<string name="preference_osd_frequency_summary">OSD update frequency. Increasing this value will will make the indication smoother, but the battery will discharge faster</string>
@@ -585,6 +594,7 @@
 	<string name="preference_multitouch_zoom_summary">You must restart the application to apply this option</string>
 	<string name="preference_focus_range">Focus range</string>
 	<string name="preference_focus_range_summary">Manual focus range limit for for more precise control</string>
+	<string name="fr_landscape_macro">Landscape/Macro</string>
 	<string name="fr_room">Room</string>
 	<string name="fr_group">Group photo</string>
 	<string name="preference_level_angle_calibration">Level angle calibration</string>
@@ -598,6 +608,8 @@
 	<string name="preference_center_focus">Center focus</string>
 	<string name="preference_center_focus_summary">Set focus zone in the center of the frame at startup</string>
 	<string name="preference_min_focus_distance">Minimum focus distance</string>
+	<string name="preference_focus_distance_calibration">Focus distance calibration</string>
+	<string name="preference_focus_distance_calibration_summary">Positive values correspond to short distances, negative values to long distances.</string>
 	<string name="preference_update_focus_for_video">Update focus mode</string>
 	<string name="preference_update_focus_for_video_summary">Workaround for bug on Samsung Galaxy S5 with UHD, where if the user switches to another (non-continuous-video) focus mode, then goes to Settings, then returns and records video, the preview freezes and the video is corrupted</string>
 	<string name="preference_camera2_fake_flash">Use alternative flash method</string>
@@ -621,6 +633,20 @@
 	<string name="jpeg_and_dng">JPEG and DNG (RAW)</string>
 	<string name="preference_flip_front_facing">Flip photo</string>
 	<string name="preference_flip_front_facing_summary">Flip horizontally photos from front camera</string>
+	<string name="preference_uncompressed_photo">Uncompressed output</string>
+	<string name="preference_uncompressed_photo_summary">Use YUV 420 output instead of compressed JPEG. Speeds up saving and improves image quality when using image post-processing. Can work incorrectly on some devices.</string>
+	<string name="preference_category_metadata">Metadata</string>
+	<string name="preference_category_metadata_summary">Metadata that is stored inside the JPEG file</string>
+	<string name="preference_metadata_author">Author</string>
+	<string name="preference_metadata_comment">Comment</string>
+	<string name="preference_metadata_position_info">Device position</string>
+	<string name="preference_metadata_position_info_summary">Add to comment information about device position</string>
+	<string name="preference_metadata_mode_info">Mode info</string>
+	<string name="preference_metadata_mode_info_summary">Add to comment information about camera mode</string>
+	<string name="preference_metadata_sensor_info">Sensor info</string>
+	<string name="preference_metadata_sensor_info_summary">Add to comment information about sensor settings</string>
+	<string name="preference_metadata_processing_info">Processing info</string>
+	<string name="preference_metadata_processing_info_summary">Add to comment information about image processing</string>
 	<string name="preference_category_expo_bracketing_summary">Expobracketing settings. Most of the options in this section also apply to HDR.</string>
 	<string name="preference_expo_bracketing_n_images">Exposure Bracketing</string>
 	<string name="preference_expo_bracketing_n_images_summary">%s\n\nNumber of images for exposure bracketing mode</string>
@@ -637,8 +663,13 @@
 	<string name="preference_category_hdr_summary">HDR and DRO settings</string>
 	<string name="preference_hdr_save_expo">Save all images for HDR mode</string>
 	<string name="preference_hdr_save_expo_summary">If enabled, when using HDR photo mode, the three base exposure images will be saved as well as the final HDR photo. Note this will make saving slower, especially if options like \"Stamp photos\" or Auto-level are also used.</string>
+	<string name="preference_hdr_deghost">Deghosting</string>
 	<string name="preference_hdr_tonemapping">Tone mapping</string>
 	<string name="preference_hdr_tonemapping_summary">%s\n\nAlgorithm to use for HDR tonemapping</string>
+	<string name="preference_hdr_unsharp_mask">Unsharp mask</string>
+	<string name="preference_hdr_unsharp_mask_summary">%s\n\nLevel of the unsharp mask filter during processing HDR and DRO</string>
+	<string name="preference_hdr_unsharp_mask_radius">Radius</string>
+	<string name="preference_hdr_unsharp_mask_radius_summary">%s\n\nUnsharp mask blur radius</string>
 	<string name="preference_hdr_local_contrast">Local contrast</string>
 	<string name="preference_hdr_local_contrast_summary">%s\n\nLevel of the local contrast enhancement during processing HDR and DRO</string>
 	<string name="preference_hdr_n_tiles">Number of tiles</string>
@@ -701,11 +732,11 @@
 	<string name="preference_video_stabilization">Vidyo stabilizasyonunu etkinleştir</string>
 	<string name="preference_video_stabilization_summary">Vidyo stabilizasyonu, önizleme yaparken ve kaydedilmiş vidyolarda kamera hareketine bağlı olarak sarsıntıyı azaltır</string>
 	<string name="preference_video_bitrate">Vidyo bitrate (ortalama)</string>
-	<string name="preference_video_bitrate_summary">Vidyoların ortalama bitoranlarını ayarla(değerler yükseldikçe kalite yükselir fakat dosyalar daha fazla alan kaplar; eğer bitoranı desteklenmezse vidyo kaydederken hatalar oluşabilir)</string>
+	<string name="preference_video_bitrate_summary">%s\n\nVidyoların ortalama bitoranlarını ayarla(değerler yükseldikçe kalite yükselir fakat dosyalar daha fazla alan kaplar; eğer bitoranı desteklenmezse vidyo kaydederken hatalar oluşabilir)</string>
 	<string name="preference_video_fps">Vidyo kare oranı (ortalama)</string>
 	<string name="preference_video_fps_summary">Vidyoların kare oranını(FPS) ayarla(ortalama olabilir, tamamlanacağının garantisi yoktur ve kare oranı desteklenmezse hatalar oluşabilir)</string>
 	<string name="preference_video_max_duration">Vidyoların maksimum süresi</string>
-	<string name="preference_video_max_duration_summary">Vidyo kaydı belirlenen süreden sonra durdurulacaktır</string>
+	<string name="preference_video_max_duration_summary">%s\n\nVidyo kaydı belirlenen süreden sonra durdurulacaktır</string>
 	<string name="preference_video_restart">Maksimum süreye ulaşıldığında vidyoyu yeniden başlat</string>
 	<string name="dont_restart">Yeniden başlatma</string>
 	<string name="repeat_1_time">1 kez tekrarla</string>
@@ -718,7 +749,7 @@
 	<string name="repeat_8_times">8 kez tekrarla</string>
 	<string name="repeat_9_times">9 kez tekrarla</string>
 	<string name="repeat_10_times">10 kez tekrarla</string>
-	<string name="preference_video_restart_summary">Vidyo maksimum süreye(ayarlandı ise) ulaşdığında, bu seçenek vidyoyu belirli bir sayıya ulaşana dek yeniden başlatacaktır</string>
+	<string name="preference_video_restart_summary">%s\n\nVidyo maksimum süreye(ayarlandı ise) ulaşdığında, bu seçenek vidyoyu belirli bir sayıya ulaşana dek yeniden başlatacaktır</string>
 <!-- Translate me
 	<string name="preference_video_max_filesize">Maximum file size of video</string>
 	<string name="preference_video_max_filesize_summary">%s\n\nThe video recording will stop and/or restart (see option below) when the (approximate) maximum file size is reached. Note that almost all Android devices have a maximum file size for videos (typically around 2GB or 4GB), but this option allows setting a specific value</string>
@@ -733,7 +764,7 @@
 	<string name="as_default_source">Öntanımlı ses kaynağı</string>
 	<string name="as_voice_optimized">Kişi sesine optimize et</string>
 	<string name="preference_record_audio_channels">Ses kanalları</string>
-	<string name="preference_record_audio_channels_summary">Ses kaydetmede kullanılacak kanalları mono ya da stereo özelleştir(stereo sadece bazı cihazlarda desteklenir)</string>
+	<string name="preference_record_audio_channels_summary">%s\n\nSes kaydetmede kullanılacak kanalları mono ya da stereo özelleştir(stereo sadece bazı cihazlarda desteklenir)</string>
 	<string name="am_mono">Mono</string>
 	<string name="am_stereo">Stereo (sadece bazı cihazlarda desteklenir)</string>
 	<string name="preference_lock_video">Vidyo kaydederken ekranı kilitle</string>
@@ -774,8 +805,10 @@
 	<string name="nr_minimal">Minimal</string>
 -->
 	<string name="nr_zero_shutter_lag">Sıfır çekim gecikmesi</string>
-
 <!-- Translate me
+	<string name="preference_zero_shutter_delay">Zero shutter delay</string>
+	<string name="preference_zero_shutter_delay_summary">%s</string>
+
 	<string name="preference_screen_files">Files</string>
 -->
 	<string name="preference_save_location">Kaydetme yeri</string>

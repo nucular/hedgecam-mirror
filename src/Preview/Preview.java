@@ -201,8 +201,7 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 	private int max_num_metering_areas;
 	private boolean continuous_focus_move_is_started;
 	
-	private boolean is_exposure_lock_supported;
-	private boolean is_awb_lock_supported;
+	private boolean is_auto_adjustment_lock_supported;
 	private boolean is_auto_adjustment_locked;
 
 	private List<String> color_effects;
@@ -324,6 +323,11 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 	private int toast_color;
 	
 	private final float scale;
+	
+	private int current_zoom = -1;
+
+	private Handler auto_adjustment_unlock_handler;
+	private Runnable auto_adjustment_unlock_runnable;
 
 	public Preview(ApplicationInterface applicationInterface, ViewGroup parent) {
 		if( MyDebug.LOG ) {
@@ -1400,6 +1404,8 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 			cameraId = 0;
 			Prefs.setCameraIdPref(cameraId);
 		}
+		
+		Prefs.updatePhotoMode();
 
 		boolean use_background_thread = false;
 		//final boolean use_background_thread = true;
@@ -1738,6 +1744,15 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 		if( MyDebug.LOG ) {
 			Log.d(TAG, "setupCamera: time after setting preview size: " + (System.currentTimeMillis() - debug_time));
 		}
+		
+		if (this.using_camera_2) {
+			boolean uncompressed = sharedPreferences.getBoolean(Prefs.UNCOMPRESSED_PHOTO, false);
+			camera_controller.setUncompressedPhoto(uncompressed);
+			if (uncompressed) {
+				camera_controller.setFullSizeCopy(sharedPreferences.getBoolean(Prefs.FULL_SIZE_COPY, false));
+			}
+		}
+		
 		// Must call startCameraPreview after checking if face detection is present - probably best to call it after setting all parameters that we want
 		startCameraPreview();
 		if( MyDebug.LOG ) {
@@ -1837,7 +1852,7 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 
 		boolean want_burst = Prefs.isCameraBurstPref();
 		camera_controller.setWantBurst( want_burst );
-		camera_controller.setWantBurstCount( want_burst ? Prefs.getBurstCount() : 0 );
+		if (want_burst) camera_controller.setWantBurstCount( want_burst ? Prefs.getBurstCount() : 0 );
 	}
 
 	private void setupCameraParameters() {
@@ -1889,7 +1904,7 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 			}
 			this.minimum_focus_distance = camera_features.minimum_focus_distance;
 			if (minimum_focus_distance > 0.0f) {
-				final String pref_value = sharedPreferences.getString(Prefs.MIN_FOCUS_DISTANCE + "_" + camera_controller.getCameraId(), "default");
+				String pref_value = sharedPreferences.getString(Prefs.MIN_FOCUS_DISTANCE + "_" + camera_controller.getCameraId(), "default");
 				if (!pref_value.equals("default")) {
 					int focus;
 					try {focus = Integer.parseInt(pref_value);}
@@ -1899,6 +1914,33 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 						minimum_focus_distance = 100.0f/focus;
 					}
 				}
+				
+				String pref_key = Prefs.FOCUS_DISTANCE_CALIBRATION + "_" + camera_controller.getCameraId();
+				if (sharedPreferences.contains(pref_key)) {
+					boolean remove = false;
+					float value = 0.0f;
+					pref_value = sharedPreferences.getString(pref_key, "0");
+					if (pref_value.equals("") || pref_value.equals("0")) {
+						remove = true;
+					} else {
+						try {
+							value = Float.parseFloat(sharedPreferences.getString(pref_key, "0"));
+						}
+						catch(NumberFormatException exception) {
+							remove = true;
+						}
+					}
+					
+					if (remove) {
+						SharedPreferences.Editor editor = sharedPreferences.edit();
+						editor.remove(pref_key);
+						editor.apply();
+						
+						camera_controller.setFocusDistanceCalibration(0.0f);
+					} else {
+						camera_controller.setFocusDistanceCalibration(value);
+					}
+				}
 			}
 			this.supports_face_detection = camera_features.supports_face_detection;
 			this.sizes = camera_features.picture_sizes;
@@ -1906,8 +1948,7 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 			supported_focus_values = camera_features.supported_focus_values;
 			this.max_num_focus_areas = camera_features.max_num_focus_areas;
 			this.max_num_metering_areas = camera_features.max_num_metering_areas;
-			this.is_exposure_lock_supported = camera_features.is_exposure_lock_supported;
-			this.is_awb_lock_supported = camera_features.is_awb_lock_supported;
+			this.is_auto_adjustment_lock_supported = camera_features.is_auto_adjustment_lock_supported;
 			this.supports_video_stabilization = camera_features.is_video_stabilization_supported;
 			this.supports_photo_video_recording = camera_features.is_photo_video_recording_supported;
 			this.can_disable_shutter_sound = camera_features.can_disable_shutter_sound;
@@ -2373,6 +2414,17 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 						final boolean result = camera_controller.setOpticalStabilizationMode(pref_value);
 						if( MyDebug.LOG )
 							Log.d(TAG, "change optical stabilization mode from \"" + current_value + "\" to \"" + pref_value + "\": " + (result ? "success" : "failed"));
+					}
+				}
+			} else {
+				String zsd_key = Prefs.ZERO_SHUTTER_DELAY + "_" + camera_controller.getCameraId();
+				if (sharedPreferences.contains(zsd_key)) {
+					final String current_value = camera_controller.getZeroShutterDelayMode();
+					final String pref_value = sharedPreferences.getString(zsd_key, "");
+					if (current_value != null && !current_value.equals(pref_value)) {
+						final boolean result = camera_controller.setZeroShutterDelayMode(pref_value);
+						if( MyDebug.LOG )
+							Log.d(TAG, "change zero shutter delay mode from \"" + current_value + "\" to \"" + pref_value + "\": " + (result ? "success" : "failed"));
 					}
 				}
 			}
@@ -3088,7 +3140,7 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 
 	/* Returns the rotation (in degrees) to use for images/videos, taking the preference_lock_orientation into account.
 	 */
-	private int getImageVideoRotation() {
+	public int getImageVideoRotation() {
 		if( MyDebug.LOG )
 			Log.d(TAG, "getImageVideoRotation() from current_rotation " + current_rotation);
 		String lock_orientation = Prefs.getLockOrientationPref();
@@ -3420,6 +3472,7 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 					if( MyDebug.LOG )
 						Log.d(TAG, "CloseCameraCallback.onClosed");
 					Prefs.setCameraIdPref(cameraId_f);
+					Prefs.updatePhotoMode();
 					openCamera();
 				}
 			});
@@ -3698,7 +3751,7 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 				Log.d(TAG, "found no existing focus_value");
 			// here we set the default values for focus mode
 			// note if updating default focus value for photo mode, also update MainActivityTest.setToDefault()
-			updateFocus(is_video ? "focus_mode_continuous_video" : "focus_mode_continuous_picture", true, true, auto_focus);
+			updateFocus(is_video ? "focus_mode_continuous_video" : "focus_mode_auto", true, true, auto_focus);
 		}
 	}
 
@@ -4028,11 +4081,9 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 
 		is_auto_adjustment_locked = !is_auto_adjustment_locked;
 		cancelAutoFocus();
-		if( is_exposure_lock_supported ) {
-			camera_controller.setAutoExposureLock(is_auto_adjustment_locked);
-		}
-		if( is_awb_lock_supported ) {
-			camera_controller.setAutoWhiteBalanceLock(is_auto_adjustment_locked);
+		if( is_auto_adjustment_lock_supported ) {
+			resetAutoAdjustmentUnlockTimer();
+			camera_controller.setAutoAdjustmentLock(is_auto_adjustment_locked);
 		}
 	}
 	
@@ -4147,11 +4198,9 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 				this.is_burst = true;
 				set_recording_state = true;
 
-				if( is_exposure_lock_supported ) {
-					camera_controller.setAutoExposureLock(true);
-				}
-				if( is_awb_lock_supported ) {
-					camera_controller.setAutoWhiteBalanceLock(true);
+				if( is_auto_adjustment_lock_supported ) {
+					resetAutoAdjustmentUnlockTimer();
+					camera_controller.setAutoAdjustmentLock(true);
 				}
 			} else if (selfie_mode && !burst_mode_value.equals("1")) {
 				int n_burst = 1;
@@ -4992,6 +5041,9 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 			applicationInterface.cameraInOperation(false);
 			return;
 		}
+		
+		if (current_zoom != -1)
+			resetZoom();
 
 		final String focus_value = current_focus_index != -1 ? supported_focus_values.get(current_focus_index) : null;
 		if( MyDebug.LOG ) {
@@ -5138,12 +5190,12 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 				}
 			}
 			
-			public void onPictureTaken(byte[] data) {
+			public void onPictureTaken(CameraController.Photo photo) {
 				if( MyDebug.LOG )
 					Log.d(TAG, "onPictureTaken");
 				// n.b., this is automatically run in a different thread
 				initDate();
-				if( !applicationInterface.onPictureTaken(data, current_date) ) {
+				if( !applicationInterface.onPictureTaken(photo, current_date) ) {
 					if( MyDebug.LOG )
 						Log.e(TAG, "applicationInterface.onPictureTaken failed");
 					success = false;
@@ -5166,7 +5218,7 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 				}
 			}
 
-			public void onBurstPictureTaken(List<byte[]> images) {
+			public void onBurstPictureTaken(List<CameraController.Photo> images) {
 				if( MyDebug.LOG )
 					Log.d(TAG, "onBurstPictureTaken");
 				// n.b., this is automatically run in a different thread
@@ -5434,11 +5486,9 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 
 		setFocusDistance(fb_stack[0]);
 
-		if( is_exposure_lock_supported ) {
-			camera_controller.setAutoExposureLock(is_auto_adjustment_locked);
-		}
-		if( is_awb_lock_supported ) {
-			camera_controller.setAutoWhiteBalanceLock(is_auto_adjustment_locked);
+		if( is_auto_adjustment_lock_supported ) {
+			resetAutoAdjustmentUnlockTimer();
+			camera_controller.setAutoAdjustmentLock(is_auto_adjustment_locked);
 		}
 	}
 	
@@ -5822,6 +5872,20 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 			Log.d(TAG, "getSupportedOpticalStabilizationModes");
 		if (camera_controller == null) return new ArrayList<>();
 		return camera_controller.getAvailableOpticalStabilizationModes();
+	}
+	
+	public String getZeroShutterDelayMode() {
+		if( MyDebug.LOG )
+			Log.d(TAG, "getZeroShutterDelayMode");
+		if (camera_controller == null) return null;
+		return camera_controller.getZeroShutterDelayMode();
+	}
+
+	public List<String> getSupportedZeroShutterDelayModes() {
+		if( MyDebug.LOG )
+			Log.d(TAG, "getSupportedZeroShutterDelayModes");
+		if (camera_controller == null) return new ArrayList<>();
+		return camera_controller.getAvailableZeroShutterDelayModes();
 	}
 
 	/** Returns minimum ISO value. Only relevant if supportsISORange() returns true.
@@ -6298,7 +6362,7 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 	}
 	
 	public boolean supportsAutoAdjustmentLock() {
-		return (this.is_exposure_lock_supported || this.is_awb_lock_supported || this.supported_focus_values != null);
+		return (this.is_auto_adjustment_lock_supported || this.supported_focus_values != null);
 	}
 
 	public boolean isAutoAdjustmentLocked() {
@@ -6522,5 +6586,48 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 		}
 
 		tick_slow_if_busy = sharedPreferences.getBoolean(Prefs.IND_SLOW_IF_BUSY, false);
+	}
+	
+	public void focusZoom() {
+		if (camera_controller != null && !this.is_video && this.has_zoom) {
+			if( is_auto_adjustment_lock_supported ) {
+				resetAutoAdjustmentUnlockTimer();
+				camera_controller.setAutoAdjustmentLock(true);
+			}
+			if (current_zoom == -1)
+				current_zoom = camera_controller.getZoom();
+			camera_controller.setZoom(getMaxZoom());
+		}
+	}
+
+	public void resetZoom() {
+		if (camera_controller != null && !this.is_video && this.has_zoom && current_zoom != -1) {
+			camera_controller.setZoom(current_zoom);
+			current_zoom = -1;
+			if( is_auto_adjustment_lock_supported && !is_auto_adjustment_locked ) {
+				resetAutoAdjustmentUnlockTimer();
+				auto_adjustment_unlock_handler = new Handler();
+				auto_adjustment_unlock_runnable = new Runnable() {
+					@Override
+					public void run() {
+						if (camera_controller != null)
+							camera_controller.setAutoAdjustmentLock(is_auto_adjustment_locked);
+						
+						auto_adjustment_unlock_handler = null;
+						auto_adjustment_unlock_runnable = null;
+					}
+				};
+				
+				auto_adjustment_unlock_handler.postDelayed(auto_adjustment_unlock_runnable, 500);
+			}
+		}
+	}
+	
+	public void resetAutoAdjustmentUnlockTimer() {
+		if (auto_adjustment_unlock_handler != null && auto_adjustment_unlock_runnable != null) {
+			auto_adjustment_unlock_handler.removeCallbacks(auto_adjustment_unlock_runnable);
+			auto_adjustment_unlock_handler = null;
+			auto_adjustment_unlock_runnable = null;
+		}
 	}
 }

@@ -5,7 +5,11 @@
 	<string name="translation_author">Kaio Duarte</string>
 	<string name="intro_text">Toque para focar e pressione o botão de câmera azul para tirar fotos. Para mais ajuda, Clique em Ajuda Online nas Configurações. Open Camera é completamente gratuito. Se você gostou desse aplicativo, por favor considere comprando meu app de doação :) (veja link em Configurações ou Ajuda Online).\n\nPolítica de Privacidade: Permissão de localização é necessária para geotagging, porém isso é desabilitado por padrão. Se habilitado, sua localização é codificada nos arquivos salvos (e isso só é usado para esta finalidade).</string>
 	<string name="intro_ok">OK (Essa mensagem não será mostrada novamente)</string>
+	
+<!-- Translate me
+	<string name="charset">ISO-8859-1</string>
 
+-->
 	<string name="answer_yes">Sim</string>
 	<string name="answer_no">Não</string>
 
@@ -43,6 +47,9 @@
 
 -->
 	<string name="angle">Ângulo</string>
+<!-- Translate me
+	<string name="rotation">Rotation</string>
+-->
 	<string name="direction">Direção</string>
 	<string name="zoom">Zoom</string>
 	<string name="free_memory">Livre</string>
@@ -431,7 +438,7 @@
 
 -->
 	<string name="preference_immersive_mode">Modo Imersivo</string>
-	<string name="preference_immersive_mode_summary">Opções para comportamento do \"modo imersivo\"</string>
+	<string name="preference_immersive_mode_summary">%s\n\nOpções para comportamento do \"modo imersivo\"</string>
 <!-- Translate me
 	<string name="im_fullscreen">Fullscreen mode</string>
 	<string name="im_sticky">Sticky</string>
@@ -465,11 +472,13 @@
 	<string name="left_gap_for_buttons">Left, gap for buttons</string>
 -->
 	<string name="preference_rotate_preview">Rotação de visualização</string>
-	<string name="preference_rotate_preview_summary">Opção para rotacionar a visualização (não afetará o resultado das fotos/vídeos)</string>
+	<string name="preference_rotate_preview_summary">%s\n\nOpção para rotacionar a visualização (não afetará o resultado das fotos/vídeos)</string>
 	<string name="dont_rotate">Não rotacionar</string>
 	<string name="rotate_180_degrees">Rotacionar a 180º</string>
 <!-- Translate me
 	<string name="preference_preview_max_expo">Maximum exposure</string>
+	<string name="preference_zoom_when_focusing">Zoom when focusing</string>
+	<string name="preference_zoom_when_focusing_summary">Increase the center of the preview when adjusting manual focus</string>
 	<string name="preference_preview_max_expo_summary">Maximum preview exposure in manual mode (won\'t affect resultant photos/videos)</string>
 	<string name="preference_preview_surface">Preview surface</string>
 	<string name="preference_preview_surface_summary">%s\n\nSurface for displaying preview. Switch this option only if you know what you do</string>
@@ -524,7 +533,7 @@
 	<string name="preference_grid_alpha">Grid alpha</string>
 -->
 	<string name="preference_crop_guide">Mostrar uma guia cortada</string>
-	<string name="preference_crop_guide_summary">Uma guia cortada exibe um retângulo mostrando que a relação de aspecto especificado parece útil se você planeja cortar a foto/vídeo depois para um diferente aspecto especificado. Requer modo WYSIWYG ou estar em modo de vídeo.</string>
+	<string name="preference_crop_guide_summary">%s\n\nUma guia cortada exibe um retângulo mostrando que a relação de aspecto especificado parece útil se você planeja cortar a foto/vídeo depois para um diferente aspecto especificado. Requer modo WYSIWYG ou estar em modo de vídeo.</string>
 <!-- Translate me
 	<string name="preference_osd_frequency">Update frequency</string>
 	<string name="preference_osd_frequency_summary">OSD update frequency. Increasing this value will will make the indication smoother, but the battery will discharge faster</string>
@@ -583,6 +592,7 @@
 	<string name="preference_multitouch_zoom_summary">You must restart the application to apply this option</string>
 	<string name="preference_focus_range">Focus range</string>
 	<string name="preference_focus_range_summary">Manual focus range limit for for more precise control</string>
+	<string name="fr_landscape_macro">Landscape/Macro</string>
 	<string name="fr_room">Room</string>
 	<string name="fr_group">Group photo</string>
 	<string name="preference_level_angle_calibration">Level angle calibration</string>
@@ -596,6 +606,8 @@
 	<string name="preference_center_focus">Center focus</string>
 	<string name="preference_center_focus_summary">Set focus zone in the center of the frame at startup</string>
 	<string name="preference_min_focus_distance">Minimum focus distance</string>
+	<string name="preference_focus_distance_calibration">Focus distance calibration</string>
+	<string name="preference_focus_distance_calibration_summary">Positive values correspond to short distances, negative values to long distances.</string>
 	<string name="preference_update_focus_for_video">Update focus mode</string>
 	<string name="preference_update_focus_for_video_summary">Workaround for bug on Samsung Galaxy S5 with UHD, where if the user switches to another (non-continuous-video) focus mode, then goes to Settings, then returns and records video, the preview freezes and the video is corrupted</string>
 	<string name="preference_camera2_fake_flash">Use alternative flash method</string>
@@ -619,6 +631,20 @@
 	<string name="jpeg_and_dng">JPEG and DNG (RAW)</string>
 	<string name="preference_flip_front_facing">Flip photo</string>
 	<string name="preference_flip_front_facing_summary">Flip horizontally photos from front camera</string>
+	<string name="preference_uncompressed_photo">Uncompressed output</string>
+	<string name="preference_uncompressed_photo_summary">Use YUV 420 output instead of compressed JPEG. Speeds up saving and improves image quality when using image post-processing. Can work incorrectly on some devices.</string>
+	<string name="preference_category_metadata">Metadata</string>
+	<string name="preference_category_metadata_summary">Metadata that is stored inside the JPEG file</string>
+	<string name="preference_metadata_author">Author</string>
+	<string name="preference_metadata_comment">Comment</string>
+	<string name="preference_metadata_position_info">Device position</string>
+	<string name="preference_metadata_position_info_summary">Add to comment information about device position</string>
+	<string name="preference_metadata_mode_info">Mode info</string>
+	<string name="preference_metadata_mode_info_summary">Add to comment information about camera mode</string>
+	<string name="preference_metadata_sensor_info">Sensor info</string>
+	<string name="preference_metadata_sensor_info_summary">Add to comment information about sensor settings</string>
+	<string name="preference_metadata_processing_info">Processing info</string>
+	<string name="preference_metadata_processing_info_summary">Add to comment information about image processing</string>
 	<string name="preference_category_expo_bracketing_summary">Expobracketing settings. Most of the options in this section also apply to HDR.</string>
 	<string name="preference_expo_bracketing_n_images">Exposure Bracketing</string>
 	<string name="preference_expo_bracketing_n_images_summary">%s\n\nNumber of images for exposure bracketing mode</string>
@@ -635,8 +661,13 @@
 	<string name="preference_category_hdr_summary">HDR and DRO settings</string>
 	<string name="preference_hdr_save_expo">Save all images for HDR mode</string>
 	<string name="preference_hdr_save_expo_summary">If enabled, when using HDR photo mode, the three base exposure images will be saved as well as the final HDR photo. Note this will make saving slower, especially if options like \"Stamp photos\" or Auto-level are also used.</string>
+	<string name="preference_hdr_deghost">Deghosting</string>
 	<string name="preference_hdr_tonemapping">Tone mapping</string>
 	<string name="preference_hdr_tonemapping_summary">%s\n\nAlgorithm to use for HDR tonemapping</string>
+	<string name="preference_hdr_unsharp_mask">Unsharp mask</string>
+	<string name="preference_hdr_unsharp_mask_summary">%s\n\nLevel of the unsharp mask filter during processing HDR and DRO</string>
+	<string name="preference_hdr_unsharp_mask_radius">Radius</string>
+	<string name="preference_hdr_unsharp_mask_radius_summary">%s\n\nUnsharp mask blur radius</string>
 	<string name="preference_hdr_local_contrast">Local contrast</string>
 	<string name="preference_hdr_local_contrast_summary">%s\n\nLevel of the local contrast enhancement during processing HDR and DRO</string>
 	<string name="preference_hdr_n_tiles">Number of tiles</string>
@@ -703,11 +734,11 @@
 	<string name="preference_video_stabilization">Habilitar estabilização de vídeo</string>
 	<string name="preference_video_stabilization_summary">Estabilização de vídeo reduz a agitação devido a movimentação da câmera tanto na pré-visualização quanto em vídeos gravados.</string>
 	<string name="preference_video_bitrate">Taxa de bits de vídeo (aprox)</string>
-	<string name="preference_video_bitrate_summary">Defina aproximadamente a taxa de bits dos vídeos (maior quer dizer melhor qualidade, mas ocupa mais espaço; pode falhar a gravação se a taxa de bits não for suportada)</string>
+	<string name="preference_video_bitrate_summary">%s\n\nDefina aproximadamente a taxa de bits dos vídeos (maior quer dizer melhor qualidade, mas ocupa mais espaço; pode falhar a gravação se a taxa de bits não for suportada)</string>
 	<string name="preference_video_fps">Taxa de frame de vídeo (aprox)</string>
 	<string name="preference_video_fps_summary">Defina a taxa de frame (FPS) de vídeos (por ser aproximado, não é garantido que vai ser alcançado e pode causar falha na gravação de vídeo se taxa de frame se não for suportado)</string>
 	<string name="preference_video_max_duration">Duração máxima de vídeo</string>
-	<string name="preference_video_max_duration_summary">A gravação parará depois da duração especificada.</string>
+	<string name="preference_video_max_duration_summary">%s\n\nA gravação parará depois da duração especificada.</string>
 	<string name="preference_video_restart">Recomeçar vídeo depois da duração máx</string>
 	<string name="dont_restart">Não reiniciar</string>
 	<string name="repeat_1_time">Repetir 1x</string>
@@ -720,7 +751,7 @@
 	<string name="repeat_8_times">Repetir 8x</string>
 	<string name="repeat_9_times">Repetir 9x</string>
 	<string name="repeat_10_times">Repetir 10x</string>
-	<string name="preference_video_restart_summary">Se definido, o vídeo que foi parado depois de atingir duração máx irá recomeçar de acordo com o número de vezes especificado.</string>
+	<string name="preference_video_restart_summary">%s\n\nSe definido, o vídeo que foi parado depois de atingir duração máx irá recomeçar de acordo com o número de vezes especificado.</string>
 <!-- Translate me
 	<string name="preference_video_max_filesize">Maximum file size of video</string>
 	<string name="preference_video_max_filesize_summary">%s\n\nThe video recording will stop and/or restart (see option below) when the (approximate) maximum file size is reached. Note that almost all Android devices have a maximum file size for videos (typically around 2GB or 4GB), but this option allows setting a specific value</string>
@@ -782,8 +813,10 @@
 	<string name="nr_minimal">Minimal</string>
 -->
 	<string name="nr_zero_shutter_lag">Eliminar atraso do disparador</string>
-
 <!-- Translate me
+	<string name="preference_zero_shutter_delay">Zero shutter delay</string>
+	<string name="preference_zero_shutter_delay_summary">%s</string>
+
 	<string name="preference_screen_files">Files</string>
 -->
 	<string name="preference_save_location">Local de armazenamento</string>

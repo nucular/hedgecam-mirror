@@ -5,7 +5,11 @@
 	<string name="translation_author">Zmicer Turok</string>
 	<string name="intro_text">Дакраніцеся, каб сфакусавацца, і націсніце сінюю кнопку камеры, каб зрабіць фотаздымкі. Для дадатковай дапамогі, націсніце онлайн дапамогу ў наладах. Дадатак з\'яўляецца цалкам бясплатным. Калі вам падабаецца гэты дадатак, калі ласка, падумайце аб ахвяраванні :)\n\nПалітыка прыватнасці: дазвол патрабуецца для геатэгаў, але прадвызначана гэта  адключана. Калі опцыя ўключана, вашае месцазнаходжанне кадуецца ў захаваных файлах (і гэта выкарыстоўваецца толькі для гэтай мэты).</string>
 	<string name="intro_ok">Добра (Гэта паведамленне не будзе паказана зноў)</string>
+	
+<!-- Translate me
+	<string name="charset">ISO-8859-1</string>
 
+-->
 	<string name="answer_yes">Так</string>
 	<string name="answer_no">Не</string>
 
@@ -43,6 +47,9 @@
 
 -->
 	<string name="angle">Вугал</string>
+<!-- Translate me
+	<string name="rotation">Rotation</string>
+-->
 	<string name="direction">Напрамак</string>
 	<string name="zoom">Павялічыць</string>
 	<string name="free_memory">Бясплатна</string>
@@ -431,7 +438,7 @@
 
 -->
 	<string name="preference_immersive_mode">Рэжым захаплення</string>
-	<string name="preference_immersive_mode_summary">Варыянты  паводзін</string>
+	<string name="preference_immersive_mode_summary">%s\n\nВарыянты  паводзін</string>
 <!-- Translate me
 	<string name="im_fullscreen">Fullscreen mode</string>
 	<string name="im_sticky">Sticky</string>
@@ -463,11 +470,13 @@
 	<string name="left_gap_for_buttons">Left, gap for buttons</string>
 -->
 	<string name="preference_rotate_preview">Паварочваць пры папярэднім праглядзе</string>
-	<string name="preference_rotate_preview_summary">Опцыя паварочвання пры папярэднім праглядзе (не ўплывае на вынік фота / відэа)</string>
+	<string name="preference_rotate_preview_summary">%s\n\nОпцыя паварочвання пры папярэднім праглядзе (не ўплывае на вынік фота / відэа)</string>
 	<string name="dont_rotate">Не паварочваць </string>
 	<string name="rotate_180_degrees">Павярнуць на 180 градусаў</string>
 <!-- Translate me
 	<string name="preference_preview_max_expo">Maximum exposure</string>
+	<string name="preference_zoom_when_focusing">Zoom when focusing</string>
+	<string name="preference_zoom_when_focusing_summary">Increase the center of the preview when adjusting manual focus</string>
 	<string name="preference_preview_max_expo_summary">Maximum preview exposure in manual mode (won\'t affect resultant photos/videos)</string>
 	<string name="preference_preview_surface">Preview surface</string>
 	<string name="preference_preview_surface_summary">%s\n\nSurface for displaying preview. Switch this option only if you know what you do</string>
@@ -489,7 +498,7 @@
 	<string name="preference_show_angle_line">Паказваць лінію нахілу</string>
 	<string name="preference_show_angle_line_summary">Адлюстроўваць лінію нахілу камеры</string>
 	<string name="preference_angle_highlight_color">Колер падсвятлення</string>
-	<string name="preference_angle_highlight_color_summary">Абярыце колер падсвятлення </string>
+	<string name="preference_angle_highlight_color_summary">%s\n\nАбярыце колер падсвятлення </string>
 <!-- Translate me
 	<string name="preference_show_pitch_lines">Show pitch lines</string>
 	<string name="preference_show_pitch_lines_summary">Display horizontal pitch lines</string>
@@ -522,7 +531,7 @@
 	<string name="preference_grid_alpha">Grid alpha</string>
 -->
 	<string name="preference_crop_guide">Паказваць дапаможнік памеру</string>
-	<string name="preference_crop_guide_summary">Дапаможнік паказвае прапорцыі , калі вы плануеце пасля абрэзаць фота/відэа .Патрабуецца WYSIWYG рэжым. </string>
+	<string name="preference_crop_guide_summary">%s\n\nДапаможнік паказвае прапорцыі , калі вы плануеце пасля абрэзаць фота/відэа .Патрабуецца WYSIWYG рэжым. </string>
 <!-- Translate me
 	<string name="preference_osd_frequency">Update frequency</string>
 	<string name="preference_osd_frequency_summary">OSD update frequency. Increasing this value will will make the indication smoother, but the battery will discharge faster</string>
@@ -577,6 +586,7 @@
 	<string name="preference_multitouch_zoom_summary">You must restart the application to apply this option</string>
 	<string name="preference_focus_range">Focus range</string>
 	<string name="preference_focus_range_summary">Manual focus range limit for for more precise control</string>
+	<string name="fr_landscape_macro">Landscape/Macro</string>
 	<string name="fr_room">Room</string>
 	<string name="fr_group">Group photo</string>
 	<string name="preference_level_angle_calibration">Level angle calibration</string>
@@ -590,6 +600,8 @@
 	<string name="preference_center_focus">Center focus</string>
 	<string name="preference_center_focus_summary">Set focus zone in the center of the frame at startup</string>
 	<string name="preference_min_focus_distance">Minimum focus distance</string>
+	<string name="preference_focus_distance_calibration">Focus distance calibration</string>
+	<string name="preference_focus_distance_calibration_summary">Positive values correspond to short distances, negative values to long distances.</string>
 	<string name="preference_update_focus_for_video">Update focus mode</string>
 	<string name="preference_update_focus_for_video_summary">Workaround for bug on Samsung Galaxy S5 with UHD, where if the user switches to another (non-continuous-video) focus mode, then goes to Settings, then returns and records video, the preview freezes and the video is corrupted</string>
 	<string name="preference_camera2_fake_flash">Use alternative flash method</string>
@@ -613,6 +625,20 @@
 	<string name="jpeg_and_dng">JPEG and DNG (RAW)</string>
 	<string name="preference_flip_front_facing">Flip photo</string>
 	<string name="preference_flip_front_facing_summary">Flip horizontally photos from front camera</string>
+	<string name="preference_uncompressed_photo">Uncompressed output</string>
+	<string name="preference_uncompressed_photo_summary">Use YUV 420 output instead of compressed JPEG. Speeds up saving and improves image quality when using image post-processing. Can work incorrectly on some devices.</string>
+	<string name="preference_category_metadata">Metadata</string>
+	<string name="preference_category_metadata_summary">Metadata that is stored inside the JPEG file</string>
+	<string name="preference_metadata_author">Author</string>
+	<string name="preference_metadata_comment">Comment</string>
+	<string name="preference_metadata_position_info">Device position</string>
+	<string name="preference_metadata_position_info_summary">Add to comment information about device position</string>
+	<string name="preference_metadata_mode_info">Mode info</string>
+	<string name="preference_metadata_mode_info_summary">Add to comment information about camera mode</string>
+	<string name="preference_metadata_sensor_info">Sensor info</string>
+	<string name="preference_metadata_sensor_info_summary">Add to comment information about sensor settings</string>
+	<string name="preference_metadata_processing_info">Processing info</string>
+	<string name="preference_metadata_processing_info_summary">Add to comment information about image processing</string>
 	<string name="preference_category_expo_bracketing_summary">Expobracketing settings. Most of the options in this section also apply to HDR.</string>
 	<string name="preference_expo_bracketing_n_images">Exposure Bracketing</string>
 	<string name="preference_expo_bracketing_n_images_summary">%s\n\nNumber of images for exposure bracketing mode</string>
@@ -629,8 +655,13 @@
 	<string name="preference_category_hdr_summary">HDR and DRO settings</string>
 	<string name="preference_hdr_save_expo">Save all images for HDR mode</string>
 	<string name="preference_hdr_save_expo_summary">If enabled, when using HDR photo mode, the three base exposure images will be saved as well as the final HDR photo. Note this will make saving slower, especially if options like \"Stamp photos\" or Auto-level are also used.</string>
+	<string name="preference_hdr_deghost">Deghosting</string>
 	<string name="preference_hdr_tonemapping">Tone mapping</string>
 	<string name="preference_hdr_tonemapping_summary">%s\n\nAlgorithm to use for HDR tonemapping</string>
+	<string name="preference_hdr_unsharp_mask">Unsharp mask</string>
+	<string name="preference_hdr_unsharp_mask_summary">%s\n\nLevel of the unsharp mask filter during processing HDR and DRO</string>
+	<string name="preference_hdr_unsharp_mask_radius">Radius</string>
+	<string name="preference_hdr_unsharp_mask_radius_summary">%s\n\nUnsharp mask blur radius</string>
 	<string name="preference_hdr_local_contrast">Local contrast</string>
 	<string name="preference_hdr_local_contrast_summary">%s\n\nLevel of the local contrast enhancement during processing HDR and DRO</string>
 	<string name="preference_hdr_n_tiles">Number of tiles</string>
@@ -693,11 +724,11 @@
 	<string name="preference_video_stabilization">Уключыць стабілізацыю відэа</string>
 	<string name="preference_video_stabilization_summary">Стабілізацыя відэа памяншае трасяніну падчас руху камеры .</string>
 	<string name="preference_video_bitrate">Бітрэйт відэа (прыблізна)</string>
-	<string name="preference_video_bitrate_summary">Абраць бітрэйт відэа (чым вышэй ,тым лепш якасць, але займае больш месца на дыску; можа адбыцца памылка, калі бітрэйт не падтрымліваецца)</string>
+	<string name="preference_video_bitrate_summary">%s\n\nАбраць бітрэйт відэа (чым вышэй ,тым лепш якасць, але займае больш месца на дыску; можа адбыцца памылка, калі бітрэйт не падтрымліваецца)</string>
 	<string name="preference_video_fps">Частата кадраў (прыблізна)</string>
 	<string name="preference_video_fps_summary">Абраць частату кадраў (FPS) відэа </string>
 	<string name="preference_video_max_duration">Максімальная працягласць відэа</string>
-	<string name="preference_video_max_duration_summary">Запіс відэа спыніцца пасля вызначанай працягласці</string>
+	<string name="preference_video_max_duration_summary">%s\n\nЗапіс відэа спыніцца пасля вызначанай працягласці</string>
 	<string name="preference_video_restart">Перазапуск відэа пасля дасягнення найбольшай працягласці</string>
 	<string name="dont_restart">Не перезагружаць</string>
 	<string name="repeat_1_time">1 раз</string>
@@ -710,7 +741,7 @@
 	<string name="repeat_8_times">8 разоў</string>
 	<string name="repeat_9_times">9 разоў</string>
 	<string name="repeat_10_times">10 разоў</string>
-	<string name="preference_video_restart_summary">Калі відэазапіс спыніўся,  дасягнуўшы максімальнай працягласці (калі ўключана), гэтая опцыя перазапусціць відэа  прызначаную колькасць разоў</string>
+	<string name="preference_video_restart_summary">%s\n\nКалі відэазапіс спыніўся,  дасягнуўшы максімальнай працягласці (калі ўключана), гэтая опцыя перазапусціць відэа  прызначаную колькасць разоў</string>
 <!-- Translate me
 	<string name="preference_video_max_filesize">Maximum file size of video</string>
 	<string name="preference_video_max_filesize_summary">%s\n\nThe video recording will stop and/or restart (see option below) when the (approximate) maximum file size is reached. Note that almost all Android devices have a maximum file size for videos (typically around 2GB or 4GB), but this option allows setting a specific value</string>
@@ -725,7 +756,7 @@
 	<string name="as_default_source">Прадвызначаная крыніца гуку </string>
 	<string name="as_voice_optimized">Аптымізатар для голасу</string>
 	<string name="preference_record_audio_channels">Аўдыяканалы</string>
-	<string name="preference_record_audio_channels_summary">Мона або стэрэа падчас запісу аўдыё (стэрэа падтрымліваецца толькі на некаторых прыладах)</string>
+	<string name="preference_record_audio_channels_summary">%s\n\nМона або стэрэа падчас запісу аўдыё (стэрэа падтрымліваецца толькі на некаторых прыладах)</string>
 	<string name="am_mono">Мона</string>
 	<string name="am_stereo">Стэрэа (калі падтрымліваецца )</string>
 	<string name="preference_lock_video">Блакаваць экран падчас запісу відэа</string>
@@ -766,8 +797,10 @@
 	<string name="nr_minimal">Minimal</string>
 -->
 	<string name="nr_zero_shutter_lag">Нулявая затрымка засаўкі</string>
-
 <!-- Translate me
+	<string name="preference_zero_shutter_delay">Zero shutter delay</string>
+	<string name="preference_zero_shutter_delay_summary">%s</string>
+
 	<string name="preference_screen_files">Files</string>
 -->
 	<string name="preference_save_location">Захаваць месца</string>

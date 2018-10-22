@@ -21,6 +21,7 @@ import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -127,9 +128,6 @@ public class MyApplicationInterface implements ApplicationInterface {
 			Log.d(TAG, "onDestroy");
 		if( drawPreview != null ) {
 			drawPreview.onDestroy();
-		}
-		if( imageSaver != null ) {
-			imageSaver.onDestroy();
 		}
 		restoreSound();
 	}
@@ -929,7 +927,7 @@ public class MyApplicationInterface implements ApplicationInterface {
 		Prefs.PhotoMode photo_mode = Prefs.getPhotoMode();
 		if( main_activity.getPreview().isVideo() ) {
 			if( MyDebug.LOG )
-				Log.d(TAG, "snapshop mode");
+				Log.d(TAG, "snapshot mode");
 			// must be in photo snapshot while recording video mode, only support standard photo mode
 			photo_mode = Prefs.PhotoMode.Standard;
 		}
@@ -1170,7 +1168,7 @@ public class MyApplicationInterface implements ApplicationInterface {
 		return image_capture_intent;
 	}
 	
-	private boolean saveImage(Prefs.PhotoMode photo_mode, boolean save_expo, List<byte []> images, Date current_date) {
+	private boolean saveImage(Prefs.PhotoMode photo_mode, boolean save_expo, List<CameraController.Photo> images, Date current_date) {
 		if( MyDebug.LOG )
 			Log.d(TAG, "saveImage");
 
@@ -1201,12 +1199,6 @@ public class MyApplicationInterface implements ApplicationInterface {
 			level_angle = 45.0;
 		// I have received crashes where camera_controller was null - could perhaps happen if this thread was running just as the camera is closing?
 		boolean is_front_facing = main_activity.getPreview().getCameraController() != null && main_activity.getPreview().getCameraController().isFrontFacing();
-		boolean mirror = is_front_facing && sharedPreferences.getBoolean(Prefs.FLIP_FRONT_FACING, false);
-		boolean preference_stamp = sharedPreferences.getBoolean(Prefs.STAMP, false);
-		String preference_textstamp = sharedPreferences.getString(Prefs.TEXTSTAMP, "");
-		String preference_stamp_dateformat = sharedPreferences.getString(Prefs.STAMP_DATEFORMAT, "preference_stamp_dateformat_default");
-		String preference_stamp_timeformat = sharedPreferences.getString(Prefs.STAMP_TIMEFORMAT, "preference_stamp_timeformat_default");
-		String preference_stamp_gpsformat = sharedPreferences.getString(Prefs.STAMP_GPSFORMAT, "preference_stamp_gpsformat_default");
 		boolean store_location = Prefs.getGeotaggingPref() && getLocation() != null;
 		Location location = store_location ? getLocation() : null;
 		boolean store_geo_direction = main_activity.getPreview().hasGeoDirection() && Prefs.getGeodirectionPref();
@@ -1215,15 +1207,6 @@ public class MyApplicationInterface implements ApplicationInterface {
 		
 		boolean do_in_background = saveInBackground(image_capture_intent);
 		
-		String hdr_tonemapping = "";
-		String hdr_alpha = "";
-		String hdr_n_tiles = "";
-		if (photo_mode == Prefs.PhotoMode.HDR) {
-			hdr_tonemapping = sharedPreferences.getString(Prefs.HDR_TONEMAPPING, "reinhard");
-			hdr_alpha = sharedPreferences.getString(Prefs.HDR_LOCAL_CONTRAST, "5");
-			hdr_n_tiles = sharedPreferences.getString(Prefs.HDR_N_TILES, "4");
-		}
-
 		int sample_factor = 1;
 		if( !Prefs.getPausePreviewPref() ) {
 			// if pausing the preview, we use the thumbnail also for the preview, so don't downsample
@@ -1241,23 +1224,194 @@ public class MyApplicationInterface implements ApplicationInterface {
 		if ((photo_mode == Prefs.PhotoMode.FastBurst || photo_mode == Prefs.PhotoMode.NoiseReduction) && n_capture_images != Prefs.getBurstCount())
 			sample_factor = 0;
 			
-		int adjust_levels = 0;
-		if (photo_mode == Prefs.PhotoMode.NoiseReduction && n_capture_images == Prefs.getBurstCount()) {
-			try {
-				adjust_levels = Integer.parseInt(sharedPreferences.getString(Prefs.NR_ADJUST_LEVELS, "0"));
-			} catch(NumberFormatException e) {
-				adjust_levels = 0;
+
+		ImageSaver.ProcessingSettings settings = new ImageSaver.ProcessingSettings();
+
+		if (!main_activity.getPreview().isAutoAdjustmentLocked()) {
+			String adjust_levels_key = null;
+			if (photo_mode == Prefs.PhotoMode.NoiseReduction && n_capture_images == Prefs.getBurstCount()) {
+				adjust_levels_key = Prefs.NR_ADJUST_LEVELS;
+			} else if (photo_mode == Prefs.PhotoMode.HDR || photo_mode == Prefs.PhotoMode.DRO) {
+				adjust_levels_key = Prefs.HDR_ADJUST_LEVELS;
+			} else if (photo_mode != Prefs.PhotoMode.NoiseReduction) {
+				adjust_levels_key = Prefs.ADJUST_LEVELS;
+			}
+			if (adjust_levels_key != null) {
+				try {
+					settings.adjust_levels = Integer.parseInt(sharedPreferences.getString(adjust_levels_key, "0"));
+				} catch(NumberFormatException e) {
+					settings.adjust_levels = 0;
+				}
 			}
 		}
-		success = imageSaver.saveImageJpeg(do_in_background, photo_mode, save_expo,
-				hdr_tonemapping, hdr_alpha, hdr_n_tiles, images,
+	
+		if (photo_mode == Prefs.PhotoMode.HDR) {
+			settings.save_base = save_expo ? ImageSaver.ProcessingSettings.SaveBase.ALL : ImageSaver.ProcessingSettings.SaveBase.NONE;
+			settings.hdr_tonemapping = sharedPreferences.getString(Prefs.HDR_TONEMAPPING, "reinhard");
+			settings.hdr_deghost = sharedPreferences.getBoolean(Prefs.HDR_DEGHOST, true);
+		}
+		if (photo_mode == Prefs.PhotoMode.HDR || photo_mode == Prefs.PhotoMode.DRO) {
+			settings.hdr_local_contrast = sharedPreferences.getString(Prefs.HDR_LOCAL_CONTRAST, "5");
+			settings.hdr_n_tiles = sharedPreferences.getString(Prefs.HDR_N_TILES, "4");
+			settings.hdr_unsharp_mask = sharedPreferences.getString(Prefs.HDR_UNSHARP_MASK, "1");
+			settings.hdr_unsharp_mask_radius = sharedPreferences.getString(Prefs.HDR_UNSHARP_MASK_RADIUS, "5");
+		}
+
+		settings.do_auto_stabilise = do_auto_stabilise;
+		settings.level_angle = level_angle;
+		settings.mirror = is_front_facing && sharedPreferences.getBoolean(Prefs.FLIP_FRONT_FACING, false);
+		settings.stamp = sharedPreferences.getBoolean(Prefs.STAMP, false);
+		settings.stamp_text = sharedPreferences.getString(Prefs.TEXTSTAMP, "");
+		settings.stamp_dateformat = sharedPreferences.getString(Prefs.STAMP_DATEFORMAT, "preference_stamp_dateformat_default");
+		settings.stamp_timeformat = sharedPreferences.getString(Prefs.STAMP_TIMEFORMAT, "preference_stamp_timeformat_default");
+		settings.stamp_gpsformat = sharedPreferences.getString(Prefs.STAMP_GPSFORMAT, "preference_stamp_gpsformat_default");
+		
+		String yuv_conversion = "";
+		if (images.get(0).image != null) {
+			yuv_conversion = sharedPreferences.getString(Prefs.YUV_CONVERSION, "default");
+		}
+		
+		ImageSaver.Metadata metadata = new ImageSaver.Metadata();
+		metadata.author = sharedPreferences.getString(Prefs.METADATA_AUTHOR, "");
+		metadata.comment = sharedPreferences.getString(Prefs.METADATA_COMMENT, "");
+		
+		String info = "";
+		boolean position_info = sharedPreferences.getBoolean(Prefs.METADATA_POSITION_INFO, false);
+		boolean mode_info = sharedPreferences.getBoolean(Prefs.METADATA_MODE_INFO, false);
+		boolean sensor_info = sharedPreferences.getBoolean(Prefs.METADATA_MODE_INFO, false);
+		boolean processing_info = sharedPreferences.getBoolean(Prefs.METADATA_MODE_INFO, false);
+		if (position_info || mode_info || sensor_info || processing_info) {
+			Resources resources = getContext().getResources();
+			Preview preview = main_activity.getPreview();
+			CameraController camera_controller = preview.getCameraController();
+			if (camera_controller != null) {
+				if (position_info) {
+					info += "\n" + resources.getString(R.string.rotation) + ": " + main_activity.getPreview().getImageVideoRotation() + (char)0x00B0 +
+						"\n" + resources.getString(R.string.angle) + ": " + DrawPreview.formatLevelAngle(main_activity.getPreview().getLevelAngle()) + (char)0x00B0;
+				}
+				if (mode_info) {
+					if( preview.supportsFocus() && preview.getSupportedFocusValues().size() > 1 ) {
+						String focus_entry = preview.findFocusEntryForValue(preview.getCurrentFocusValue());
+						if( focus_entry != null ) {
+							info += "\n" + resources.getString(R.string.focus_mode) + ": " + focus_entry;
+						}
+					}
+					String iso_value = Prefs.getISOPref();
+					if( !iso_value.equals(camera_controller.getDefaultISO()) ) {
+						info += "\n" + preview.getISOString(iso_value);
+					}
+					int current_exposure = camera_controller.getExposureCompensation();
+					if( current_exposure != 0 ) {
+						info += "\n" + resources.getString(R.string.exposure_compensation) + ": " + preview.getExposureCompensationString(current_exposure);
+					}
+					String scene_mode = camera_controller.getSceneMode();
+					if( scene_mode != null && !scene_mode.equals(camera_controller.getDefaultSceneMode()) ) {
+						info += "\n" + resources.getString(R.string.scene_mode) + ": " + main_activity.getStringResourceByName("sm_", scene_mode);
+					}
+					String white_balance = camera_controller.getWhiteBalance();
+					if( white_balance != null && !white_balance.equals(camera_controller.getDefaultWhiteBalance()) ) {
+						info += "\n" + resources.getString(R.string.white_balance) + ": " + main_activity.getStringResourceByName("wb_", white_balance);
+						if( white_balance.equals("manual") && preview.supportsWhiteBalanceTemperature() ) {
+							info += " " + camera_controller.getWhiteBalanceTemperature();
+						}
+					}
+					String color_effect = camera_controller.getColorEffect();
+					if( color_effect != null && !color_effect.equals(camera_controller.getDefaultColorEffect()) ) {
+						info += "\n" + resources.getString(R.string.color_effect) + ": " + main_activity.getStringResourceByName("ce_", color_effect);
+					}
+					if (photo_mode == Prefs.PhotoMode.HDR || photo_mode == Prefs.PhotoMode.ExpoBracketing) {
+						info += "\n" + resources.getString(R.string.preference_expo_bracketing_stops_up) + ": " + Prefs.getExpoBracketingStopsUpPref();
+						info += "\n" + resources.getString(R.string.preference_expo_bracketing_stops_down) + ": " + Prefs.getExpoBracketingStopsDownPref();
+					}
+				}
+				if (sensor_info) {
+					String antibanding = camera_controller.getAntibanding();
+					if (antibanding != null) {
+						info += "\n" + resources.getString(R.string.preference_antibanding) + ": " + main_activity.getStringFromArrays(
+							antibanding,
+							R.array.preference_antibanding_entries,
+							R.array.preference_antibanding_values
+						);
+					}
+
+					String noise_reduction = camera_controller.getNoiseReductionMode();
+					if (noise_reduction != null) {
+						info += "\n" + resources.getString(R.string.preference_noise_reduction) + ": " + (camera_controller.isFilteringBlocked() ? resources.getString(R.string.off) :
+						main_activity.getStringFromArrays(
+							noise_reduction,
+							R.array.preference_noise_reduction_entries,
+							R.array.preference_noise_reduction_values
+						));
+					}
+
+					String edge = camera_controller.getEdgeMode();
+					if (edge != null) {
+						info += "\n" + resources.getString(R.string.preference_edge) + ": " + (camera_controller.isFilteringBlocked() ? resources.getString(R.string.off) :
+						main_activity.getStringFromArrays(
+							edge,
+							R.array.preference_edge_entries,
+							R.array.preference_edge_values
+						));
+					}
+				}
+				if ((mode_info || processing_info) && photo_mode != Prefs.PhotoMode.Standard) {
+					info += "\n" + resources.getString(R.string.photo_mode) + ": " + main_activity.getStringFromArrays(
+						Prefs.getPhotoModeStringValue(photo_mode),
+						R.array.photo_mode_entries,
+						R.array.photo_mode_values
+					);
+				}
+				if (processing_info) {
+					if (photo_mode == Prefs.PhotoMode.HDR) {
+						info += "\n" + resources.getString(R.string.preference_hdr_tonemapping) + ": " + main_activity.getStringFromArrays(
+							settings.hdr_tonemapping,
+							R.array.preference_hdr_tonemapping_entries,
+							R.array.preference_hdr_tonemapping_values
+						);
+					}
+					if (photo_mode == Prefs.PhotoMode.HDR || photo_mode == Prefs.PhotoMode.DRO) {
+						if (!settings.hdr_unsharp_mask.equals("0")) {
+							info += "\n" + resources.getString(R.string.preference_hdr_unsharp_mask) + ": " + main_activity.getStringFromArrays(
+								settings.hdr_unsharp_mask,
+								R.array.preference_hdr_local_contrast_entries,
+								R.array.preference_hdr_local_contrast_values
+							);
+							info += "\n" + resources.getString(R.string.preference_hdr_unsharp_mask_radius) + ": " + settings.hdr_unsharp_mask_radius;
+						}
+						if (!settings.hdr_local_contrast.equals("0")) {
+							info += "\n" + resources.getString(R.string.preference_hdr_local_contrast) + ": " + main_activity.getStringFromArrays(
+								settings.hdr_local_contrast,
+								R.array.preference_hdr_local_contrast_entries,
+								R.array.preference_hdr_local_contrast_values
+							);
+							info += "\n" + resources.getString(R.string.preference_hdr_n_tiles) + ": " + settings.hdr_n_tiles;
+						}
+					}
+					if (do_auto_stabilise) {
+						info += "\n" + resources.getString(R.string.preference_auto_stabilise) + ": " + level_angle;
+					}
+					if (settings.adjust_levels > 0) {
+						info += "\n" + resources.getString(R.string.preference_adjust_levels) + ": " + resources.getStringArray(R.array.preference_adjust_levels_entries)[settings.adjust_levels];
+					}
+				}
+			}
+		}
+		
+		if (info.length() > 0) {
+			if (metadata.comment.length() > 0)
+				metadata.comment += "\n";
+			metadata.comment += info;
+		}
+
+		success = imageSaver.saveImageJpeg(do_in_background, photo_mode,
+				images,
+				yuv_conversion,
 				image_capture_intent, image_capture_intent_uri,
 				using_camera2, image_quality,
-				do_auto_stabilise, level_angle,
+				settings,
+				metadata,
 				is_front_facing,
-				mirror,
-				current_date, n_capture_images, adjust_levels,
-				preference_stamp, preference_textstamp, preference_stamp_dateformat, preference_stamp_timeformat, preference_stamp_gpsformat,
+				current_date, n_capture_images,
 				store_location, location, store_geo_direction, geo_direction,
 				sample_factor);
 
@@ -1268,7 +1422,7 @@ public class MyApplicationInterface implements ApplicationInterface {
 	}
 
 	@Override
-	public boolean onPictureTaken(byte [] data, Date current_date) {
+	public boolean onPictureTaken(CameraController.Photo photo, Date current_date) {
 		if( MyDebug.LOG )
 			Log.d(TAG, "onPictureTaken");
 
@@ -1276,15 +1430,15 @@ public class MyApplicationInterface implements ApplicationInterface {
 		if( MyDebug.LOG )
 			Log.d(TAG, "n_capture_images is now " + n_capture_images);
 
-		List<byte []> images = new ArrayList<>();
-		images.add(data);
+		List<CameraController.Photo> images = new ArrayList<>();
+		images.add(photo);
 
 		// note, multi-image HDR and expo is handled under onBurstPictureTaken; here we look for DRO, as that's the photo mode to set
 		// single image HDR
 		Prefs.PhotoMode photo_mode = Prefs.getPhotoMode();
 		if( main_activity.getPreview().isVideo() ) {
 			if( MyDebug.LOG )
-				Log.d(TAG, "snapshop mode");
+				Log.d(TAG, "snapshot mode");
 			// must be in photo snapshot while recording video mode, only support standard photo mode
 			photo_mode = Prefs.PhotoMode.Standard;
 		}
@@ -1297,7 +1451,7 @@ public class MyApplicationInterface implements ApplicationInterface {
 	}
 	
 	@Override
-	public boolean onBurstPictureTaken(List<byte []> images, Date current_date) {
+	public boolean onBurstPictureTaken(List<CameraController.Photo> images, Date current_date) {
 		if( MyDebug.LOG )
 			Log.d(TAG, "onBurstPictureTaken: received " + images.size() + " images");
 

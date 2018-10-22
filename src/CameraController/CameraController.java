@@ -55,8 +55,7 @@ public abstract class CameraController {
 		public int max_num_focus_areas;
 		public int max_num_metering_areas;
 		public float minimum_focus_distance;
-		public boolean is_exposure_lock_supported;
-		public boolean is_awb_lock_supported;
+		public boolean is_auto_adjustment_lock_supported;
 		public boolean is_video_stabilization_supported;
 		public boolean is_photo_video_recording_supported;
 		public boolean supports_white_balance_temperature;
@@ -120,6 +119,21 @@ public abstract class CameraController {
 		}
 	}
 	
+	public static class Photo {
+		public byte [] jpeg;
+		public Image image;
+		public int orientation = 0;
+		
+		public Photo(byte [] jpeg) {
+			this.jpeg = jpeg;
+		}
+
+		public Photo(Image image, int orientation) {
+			this.image = image;
+			this.orientation = orientation;
+		}
+	}
+	
 	public interface FaceDetectionListener {
 		void onFaceDetection(Face[] faces);
 	}
@@ -131,14 +145,14 @@ public abstract class CameraController {
 	public interface PictureCallback {
 		void onStarted(); // called immediately before we start capturing the picture
 		void onCompleted(); // called after all relevant on*PictureTaken() callbacks have been called and returned
-		void onPictureTaken(byte[] data);
+		void onPictureTaken(Photo photo);
 		/** Only called if RAW is requested.
 		 *  Caller should call image.close() and dngCreator.close() when done with the image.
 		 */
 		void onRawPictureTaken(DngCreator dngCreator, Image image);
 		/** Only called if burst is requested.
 		 */
-		void onBurstPictureTaken(List<byte[]> images);
+		void onBurstPictureTaken(List<Photo> images);
 		/* This is called for flash_frontscreen_auto or flash_frontscreen_on mode to indicate the caller should light up the screen
 		 * (for flash_frontscreen_auto it will only be called if the scene is considered dark enough to require the screen flash).
 		 * The screen flash can be removed when or after onCompleted() is called.
@@ -244,6 +258,8 @@ public abstract class CameraController {
 	public abstract void setWantBurst(boolean want_burst);
 	public void setWantBurstCount(int count) {};
 	public void setDisableBurstFilters(boolean disable) {};
+	public void setUncompressedPhoto(boolean state) {};
+	public void setFullSizeCopy(boolean state) {};
 	public abstract void setExpoBracketing(boolean want_expo_bracketing);
 	/** n_images must be an odd number greater than 1.
 	 */
@@ -286,6 +302,9 @@ public abstract class CameraController {
 	public boolean setOpticalStabilizationMode(String value) {return false;}
 	public String getOpticalStabilizationMode() {return null;}
 	public List<String> getAvailableOpticalStabilizationModes() {return new ArrayList<>();}
+	public boolean setZeroShutterDelayMode(String value) {return false;}
+	public String getZeroShutterDelayMode() {return null;}
+	public List<String> getAvailableZeroShutterDelayModes() {return new ArrayList<>();}
 	public abstract void setVideoStabilization(boolean enabled);
 	public abstract boolean getVideoStabilization();
 	public abstract int getJpegQuality();
@@ -313,15 +332,13 @@ public abstract class CameraController {
 
 	public abstract void setFocusValue(String focus_value);
 	public abstract String getFocusValue();
-	public abstract float getFocusDistance();
-	public abstract boolean setFocusDistance(float focus_distance);
+	public float getFocusDistance() {return 0.0f;};
+	public boolean setFocusDistance(float focus_distance) {return false;};
+	public void setFocusDistanceCalibration(float value) {};
 	public abstract void setFlashValue(String flash_value);
 	public abstract String getFlashValue();
 	public abstract void setRecordingHint(boolean hint);
-	public abstract void setAutoExposureLock(boolean enabled);
-	public abstract void setAutoWhiteBalanceLock(boolean enabled);
-	public abstract boolean getAutoExposureLock();
-	public abstract boolean getAutoWhiteBalanceLock();
+	public abstract void setAutoAdjustmentLock(boolean enabled);
 	public abstract void setRotation(int rotation);
 	public abstract void setLocationInfo(Location location);
 	public abstract void removeLocationInfo();
@@ -377,6 +394,9 @@ public abstract class CameraController {
 	public boolean needsFlash() {
 		return false;
 	}
+	public boolean canReportNeedsFlash() {
+		return false;
+	}
 	public boolean captureResultHasWhiteBalanceTemperature() {
 		return false;
 	}
@@ -399,6 +419,7 @@ public abstract class CameraController {
 	public long getExposureTime() { return -1; }
 	public boolean isExposureOverRange() {return false;}
 	public void setSmartFilterISO(int iso) {}
+	public boolean isFilteringBlocked() {return false;}
 	/*public boolean captureResultHasFrameDuration() {
 		return false;
 	}*/

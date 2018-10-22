@@ -696,8 +696,26 @@
 						/>
 
 					<CheckBoxPreference
+						android:key="preference_popup_hdr_deghost"
+						android:title="@string/preference_hdr_deghost"
+						android:defaultValue="true"
+						/>
+
+					<CheckBoxPreference
 						android:key="preference_popup_hdr_tonemapping"
 						android:title="@string/preference_hdr_tonemapping"
+						android:defaultValue="true"
+						/>
+
+					<CheckBoxPreference
+						android:key="preference_popup_hdr_unsharp_mask"
+						android:title="@string/preference_hdr_unsharp_mask"
+						android:defaultValue="true"
+						/>
+
+					<CheckBoxPreference
+						android:key="preference_popup_hdr_unsharp_mask_radius"
+						android:title="@string/preference_hdr_unsharp_mask_radius"
 						android:defaultValue="true"
 						/>
 
@@ -1004,6 +1022,13 @@
 				android:entries="@array/preference_preview_max_expo_entries"
 				android:entryValues="@array/preference_preview_max_expo_values"
 				android:defaultValue="12"
+				/>
+
+			<CheckBoxPreference
+				android:key="preference_zoom_when_focusing"
+				android:title="@string/preference_zoom_when_focusing"
+				android:summary="@string/preference_zoom_when_focusing_summary"
+				android:defaultValue="false"
 				/>
 
 			<PreferenceCategory
@@ -1392,6 +1417,14 @@
 				android:defaultValue="default"
 				/>
 
+			<EditTextPreference
+				android:key="preference_focus_distance_calibration"
+				android:title="@string/preference_focus_distance_calibration"
+				android:summary="@string/preference_focus_distance_calibration_summary"
+				android:defaultValue="0"
+				android:inputType="numberDecimal|numberSigned"
+				/>
+
 			<!--  if we move this to another PreferenceGroup, we should update code to remove this Preference -->
 			<CheckBoxPreference
 				android:key="preference_update_focus_for_video"
@@ -1419,6 +1452,13 @@
 				android:key="preference_speed_up_sensors"
 				android:title="@string/preference_speed_up_sensors"
 				android:summary="@string/preference_speed_up_sensors_summary"
+				android:defaultValue="false"
+				/>
+
+			<CheckBoxPreference
+				android:key="preference_full_size_copy"
+				android:title="@string/preference_full_size_copy"
+				android:summary="@string/preference_full_size_copy_summary"
 				android:defaultValue="false"
 				/>
 <!--
@@ -1480,6 +1520,84 @@
 				android:summary="@string/preference_flip_front_facing_summary"
 				android:defaultValue="false"
 				/>
+
+			<ListPreference 
+				android:key="preference_adjust_levels"
+				android:title="@string/preference_adjust_levels"
+				android:summary="%s"
+				android:entries="@array/preference_adjust_levels_entries"
+				android:entryValues="@array/preference_adjust_levels_values"
+				android:defaultValue="0"
+				/>
+
+			<CheckBoxPreference
+				android:key="preference_uncompressed_photo"
+				android:title="@string/preference_uncompressed_photo"
+				android:summary="@string/preference_uncompressed_photo_summary"
+				android:defaultValue="false"
+				/>
+
+			<ListPreference 
+				android:key="preference_yuv_conversion"
+				android:title="@string/preference_yuv_conversion"
+				android:summary="%s"
+				android:entries="@array/preference_yuv_conversion_entries"
+				android:entryValues="@array/preference_yuv_conversion_values"
+				android:defaultValue="default"
+				android:dependency="preference_uncompressed_photo"
+				/>
+
+			<PreferenceScreen
+				android:key="preference_category_metadata"
+				android:title="@string/preference_category_metadata"
+				android:summary="@string/preference_category_metadata_summary"
+				android:persistent="false">
+
+			  	<EditTextPreference
+					android:key="preference_metadata_author"
+					android:title="@string/preference_metadata_author"
+					android:dialogTitle="@string/preference_metadata_author"
+					android:inputType="text"
+					android:defaultValue=""
+					/>
+
+			  	<EditTextPreference
+					android:key="preference_metadata_comment"
+					android:title="@string/preference_metadata_comment"
+					android:dialogTitle="@string/preference_metadata_comment"
+					android:inputType="textMultiLine"
+					android:defaultValue=""
+					/>
+
+				<CheckBoxPreference
+					android:key="preference_metadata_position_info"
+					android:title="@string/preference_metadata_position_info"
+					android:summary="@string/preference_metadata_position_info_summary"
+					android:defaultValue="false"
+					/>
+
+				<CheckBoxPreference
+					android:key="preference_metadata_mode_info"
+					android:title="@string/preference_metadata_mode_info"
+					android:summary="@string/preference_metadata_mode_info_summary"
+					android:defaultValue="false"
+					/>
+
+
+				<CheckBoxPreference
+					android:key="preference_metadata_sensor_info"
+					android:title="@string/preference_metadata_sensor_info"
+					android:summary="@string/preference_metadata_sensor_info_summary"
+					android:defaultValue="false"
+					/>
+
+				<CheckBoxPreference
+					android:key="preference_metadata_processing_info"
+					android:title="@string/preference_metadata_processing_info"
+					android:summary="@string/preference_metadata_processing_info_summary"
+					android:defaultValue="false"
+					/>
+			</PreferenceScreen>
 
 			<PreferenceScreen
 				android:key="preference_category_expo_bracketing"
@@ -1580,6 +1698,13 @@
 					/>
 
 				<!--  if we move this to another PreferenceGroup, we should update code to remove this Preference -->
+				<CheckBoxPreference
+					android:key="preference_hdr_deghost"
+					android:title="@string/preference_hdr_deghost"
+					android:defaultValue="true"
+					/>
+
+				<!--  if we move this to another PreferenceGroup, we should update code to remove this Preference -->
 				<ListPreference
 					android:key="preference_hdr_tonemapping"
 					android:title="@string/preference_hdr_tonemapping"
@@ -1591,10 +1716,30 @@
 
 				<!--  if we move this to another PreferenceGroup, we should update code to remove this Preference -->
 				<ListPreference
+					android:key="preference_hdr_unsharp_mask"
+					android:title="@string/preference_hdr_unsharp_mask"
+					android:summary="@string/preference_hdr_unsharp_mask_summary"
+					android:entries="@array/preference_hdr_local_contrast_entries"
+					android:entryValues="@array/preference_hdr_local_contrast_values"
+					android:defaultValue="1"
+					/>
+
+				<!--  if we move this to another PreferenceGroup, we should update code to remove this Preference -->
+				<ListPreference
+					android:key="preference_hdr_unsharp_mask_radius"
+					android:title="@string/preference_hdr_unsharp_mask_radius"
+					android:summary="@string/preference_hdr_unsharp_mask_radius_summary"
+					android:entries="@array/preference_radius_values"
+					android:entryValues="@array/preference_radius_values"
+					android:defaultValue="5"
+					/>
+
+				<!--  if we move this to another PreferenceGroup, we should update code to remove this Preference -->
+				<ListPreference
 					android:key="preference_hdr_local_contrast"
 					android:title="@string/preference_hdr_local_contrast"
 					android:summary="@string/preference_hdr_local_contrast_summary"
-					android:entries="@array/preference_hdr_local_contrast_values"
+					android:entries="@array/preference_hdr_local_contrast_entries"
 					android:entryValues="@array/preference_hdr_local_contrast_values"
 					android:defaultValue="5"
 					/>
@@ -1609,12 +1754,22 @@
 					android:defaultValue="4"
 					/>
 
+				<ListPreference 
+					android:key="preference_hdr_adjust_levels"
+					android:title="@string/preference_adjust_levels"
+					android:summary="%s"
+					android:entries="@array/preference_adjust_levels_entries"
+					android:entryValues="@array/preference_adjust_levels_values"
+					android:defaultValue="0"
+					/>
+
 				<CheckBoxPreference
 					android:key="preference_hdr_ignore_sf"
 					android:title="@string/preference_hdr_ignore_sf"
 					android:summary="@string/preference_hdr_ignore_sf_summary"
 					android:defaultValue="false"
 					/>
+
 			</PreferenceScreen>
 
 			<PreferenceScreen
@@ -2000,6 +2155,14 @@
 				android:entries="@array/preference_smart_filter_entries"
 				android:entryValues="@array/preference_smart_filter_values"
 				android:defaultValue="0"
+				/>
+
+			<ListPreference 
+				android:key="preference_zero_shutter_delay"
+				android:title="@string/preference_zero_shutter_delay"
+				android:summary="@string/preference_zero_shutter_delay_summary"
+				android:entries="@array/preference_optical_stabilization_entries"
+				android:entryValues="@array/preference_optical_stabilization_values"
 				/>
 
 		</PreferenceScreen>

@@ -881,6 +881,19 @@
 		<item>filmic</item>
 		<item>aces</item>
 	</string-array>
+	<string-array name="preference_hdr_local_contrast_entries">
+		<item>@string/none</item>
+		<item>10%</item>
+		<item>20%</item>
+		<item>30%</item>
+		<item>40%</item>
+		<item>50%</item>
+		<item>60%</item>
+		<item>70%</item>
+		<item>80%</item>
+		<item>90%</item>
+		<item>100%</item>
+	</string-array>
 	<string-array name="preference_hdr_local_contrast_values">
 		<item>0</item>
 		<item>1</item>
@@ -906,6 +919,20 @@
 		<item>9</item>
 		<item>10</item>
 	</string-array>
+	<string-array name="preference_radius_values">
+		<item>0</item>
+		<item>1</item>
+		<item>2</item>
+		<item>3</item>
+		<item>4</item>
+		<item>5</item>
+		<item>6</item>
+		<item>8</item>
+		<item>10</item>
+		<item>12</item>
+		<item>15</item>
+		<item>20</item>
+	</string-array>
 	<string-array name="preference_antibanding_entries">
 		<item>@string/auto</item>
 		<item>50 Hz</item>
@@ -920,6 +947,7 @@
 	</string-array>
 	<string-array name="preference_noise_reduction_entries">
 		<item>@string/off</item>
+		<item>@string/on</item>
 		<item>@string/nr_fast</item>
 		<item>@string/nr_high_quality</item>
 		<item>@string/nr_minimal</item>
@@ -927,6 +955,7 @@
 	</string-array>
 	<string-array name="preference_noise_reduction_values">
 		<item>off</item>
+		<item>on</item>
 		<item>fast</item>
 		<item>high_quality</item>
 		<item>minimal</item>
@@ -996,6 +1025,7 @@
 	</string-array>
 	<string-array name="preference_focus_range_entries">
 		<item>@string/default_str</item>
+		<item>@string/fr_landscape_macro</item>
 		<item>@string/fm_macro</item>
 		<item>@string/sm_portrait</item>
 		<item>@string/fr_room</item>
@@ -1004,6 +1034,7 @@
 	</string-array>
 	<string-array name="preference_focus_range_values">
 		<item>default</item>
+		<item>landscape_macro</item>
 		<item>macro</item>
 		<item>portrait</item>
 		<item>room</item>
@@ -1093,6 +1124,16 @@
 		<item>0</item>
 		<item>1</item>
 		<item>2</item>
+	</string-array>
+	<string-array name="preference_yuv_conversion_entries">
+		<item>@string/default_str</item>
+		<item>@string/yuv_wide_range</item>
+		<item>@string/yuv_saturated</item>
+	</string-array>
+	<string-array name="preference_yuv_conversion_values">
+		<item>default</item>
+		<item>wide_range</item>
+		<item>saturated</item>
 	</string-array>
 	
 </resources>

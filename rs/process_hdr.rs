@@ -49,6 +49,8 @@ static float Uncharted2Tonemap(float x) {
 	return ((x*(A*x+C*B)+D*E)/(x*(A*x+B)+D*F))-E/F;
 }
 
+int deghost = 1;
+
 static uchar4 tonemap(float3 hdr) {
 	// tonemap
 	uchar4 out;
@@ -300,7 +302,7 @@ uchar4 __attribute__((kernel)) hdr(uchar4 in, uint32_t x, uint32_t y) {
 
             float value = fmax(rgb.r, rgb.g);
             value = fmax(value, rgb.b);
-			if( value <= 250.0f )
+			if( deghost != 0 && value <= 250.0f )
 			{
                 // deghosting
                 // for overexposed pixels, we don't have a reliable value for that pixel, so we can't distinguish between

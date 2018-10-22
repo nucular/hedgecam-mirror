@@ -31,6 +31,8 @@ public class IconView extends TextView {
 	public static final String FACE = "d";
 	public static final String SELFIE = "e";
 	public static final String FOCUS = "f";
+	public static final String FOCUS_LANDSCAPE = "l";
+	public static final String FOCUS_MACRO = "m";
 	public static final String SHUTTER = "s";
 	public static final String RAW = "r";
 	public static final String NOISE_REDUCTION = "n";

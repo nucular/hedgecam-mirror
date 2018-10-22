@@ -1,6 +1,7 @@
 package com.caddish_hedgehog.hedgecam2.UI;
 
 import com.caddish_hedgehog.hedgecam2.CameraController.CameraController;
+import com.caddish_hedgehog.hedgecam2.IconView;
 import com.caddish_hedgehog.hedgecam2.MainActivity;
 import com.caddish_hedgehog.hedgecam2.MyDebug;
 import com.caddish_hedgehog.hedgecam2.Prefs;
@@ -2028,47 +2029,76 @@ public class MainUI {
 		focusBracketingSeekBar.setOnSeekBarChangeListener(null);
 		final boolean is_visible = is_bracketing || (preview.getCurrentFocusValue() != null && preview.getCurrentFocusValue().equals("focus_mode_manual2"));
 		if (is_visible) {
+			final boolean focus_range_macro;
+			String icon = IconView.FOCUS;
+
 			final double min_value;
 			final double max_value;
+			double focus_distance = (double)sharedPreferences.getFloat(Prefs.FOCUS_DISTANCE, 0.0f);
+
 			final String focus_range_pref = sharedPreferences.getString(Prefs.FOCUS_RANGE, "default");
 			switch (focus_range_pref) {
 				case "macro":
 					min_value = 4;
 					max_value = preview.getMinimumFocusDistance();
+					focus_range_macro = true;
 					break;
 				case "portrait":
 					min_value = 0.5;
 					max_value = 10;
+					focus_range_macro = false;
 					break;
 				case "room":
 					min_value = 0.2;
 					max_value = 5;
+					focus_range_macro = false;
 					break;
 				case "group":
 					min_value = 0.2;
 					max_value = 2;
+					focus_range_macro = false;
 					break;
 				case "landscape":
 					min_value = 0.0;
-					max_value = 0.5;
+					max_value = 2.0;
+					focus_range_macro = false;
 					break;
+				case "landscape_macro":
+					if (!is_bracketing) {
+						if (focus_distance < 2) {
+							focus_range_macro = false;
+						} else {
+							focus_range_macro = true;
+						}
+						min_value = focus_range_macro ? 1.9 : 0.0;
+						max_value = focus_range_macro ? preview.getMinimumFocusDistance() : 2.0;
+						
+						icon = focus_range_macro ? IconView.FOCUS_MACRO : IconView.FOCUS_LANDSCAPE;
+						break;
+					}
 				default:
 					min_value = 0.0;
 					max_value = preview.getMinimumFocusDistance();
+					focus_range_macro = false;
 			}
-			double focus_distance = (double)sharedPreferences.getFloat(Prefs.FOCUS_DISTANCE, 0.0f);
+
 			focus_distance = Math.min(Math.max(focus_distance, min_value), max_value);
 			
 			preview.setFocusDistance((float)focus_distance);
 
+			((IconView)main_activity.findViewById(R.id.focus_seekbar_icon)).setText(icon);
+
 			setProgressSeekbarExponential(focusSeekBar, min_value, max_value, focus_distance);
 			focusSeekBar.setOnSeekBarChangeListener(new OnSeekBarChangeListener() {
 				private float focus_distance = 0.0f;
+				private boolean is_macro = focus_range_macro;
+				double current_min_value = min_value;
+				double current_max_value = max_value;
 
 				@Override
 				public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
 					double frac = progress/(double)manual_n;
-					focus_distance = (float)MainActivity.exponentialScaling(frac, min_value, max_value);
+					focus_distance = (float)MainActivity.exponentialScaling(frac, current_min_value, current_max_value);
 					preview.setFocusDistance(focus_distance);
 					if (fromUser)
 						setSeekbarHint(seekBar, preview.getFocusDistanceString(focus_distance));
@@ -2078,16 +2108,42 @@ public class MainUI {
 
 				@Override
 				public void onStartTrackingTouch(SeekBar seekBar) {
+					if (sharedPreferences.getBoolean(Prefs.ZOOM_WHEN_FOCUSING, false))
+						preview.focusZoom();
+
 					showSeekbarHint(seekBar, preview.getFocusDistanceString(focus_distance));
 				}
 
 				@Override
 				public void onStopTrackingTouch(SeekBar seekBar) {
+					if (sharedPreferences.getBoolean(Prefs.ZOOM_WHEN_FOCUSING, false))
+						preview.resetZoom();
+
 					hideSeekbarHint();
 
 					SharedPreferences.Editor editor = sharedPreferences.edit();
 					editor.putFloat(Prefs.FOCUS_DISTANCE, focus_distance);
 					editor.apply();
+					
+					if (!is_bracketing && focus_range_pref.equals("landscape_macro")) {
+						int progress = seekBar.getProgress();
+						if (!is_macro && progress == manual_n) {
+							is_macro = true;
+
+							((IconView)main_activity.findViewById(R.id.focus_seekbar_icon)).setText(IconView.FOCUS_MACRO);
+							current_min_value = 1.9;
+							current_max_value = preview.getMinimumFocusDistance();
+							setProgressSeekbarExponential(focusSeekBar, current_min_value, current_max_value, focus_distance);
+						} else if (is_macro && progress == 0) {
+							is_macro = false;
+
+							((IconView)main_activity.findViewById(R.id.focus_seekbar_icon)).setText(IconView.FOCUS_LANDSCAPE);
+							current_min_value = 0.0;
+							current_max_value = 2.0;
+							setProgressSeekbarExponential(focusSeekBar, current_min_value, current_max_value, focus_distance);
+						}
+
+					}
 				}
 			});
 			
@@ -2115,11 +2171,17 @@ public class MainUI {
 
 					@Override
 					public void onStartTrackingTouch(SeekBar seekBar) {
+						if (sharedPreferences.getBoolean(Prefs.ZOOM_WHEN_FOCUSING, false))
+							preview.focusZoom();
+
 						showSeekbarHint(seekBar, preview.getFocusDistanceString(focus_distance));
 					}
 
 					@Override
 					public void onStopTrackingTouch(SeekBar seekBar) {
+						if (sharedPreferences.getBoolean(Prefs.ZOOM_WHEN_FOCUSING, false))
+							preview.resetZoom();
+
 						hideSeekbarHint();
 
 						SharedPreferences.Editor editor = sharedPreferences.edit();

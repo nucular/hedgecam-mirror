@@ -5,7 +5,11 @@
 	<string name="translation_author">Jaroslav Svoboda</string>
 	<string name="intro_text">Dotkněte se pro zaostření a zmáčkněte modré tlačítko pro pořízení fotografie. Pro nápovědu klikněte na Online nápověda v Nastavení. Open Camera je zcela zdarma. Pokud se vám aplikace líbí, zvažte koupi mé darovací aplikace :) (odkaz je v Nastavení nebo v Online nápovědě).\n\nZásady ochrany osobních údajů: Povolení k určení polohy je nutné pro geotagging, ale je implicitně vypnuto. Pokud jej povolíte, vaše poloha bude zakódována do uložených souborů (a použita pouze pro tyto účely).</string>
 	<string name="intro_ok">OK (Tato zpráva se již znovu nezobrazí.)</string>
+	
+<!-- Translate me
+	<string name="charset">ISO-8859-1</string>
 
+-->
 	<string name="answer_yes">Ano</string>
 	<string name="answer_no">Ne</string>
 
@@ -43,6 +47,9 @@
 
 -->
 	<string name="angle">Úhel</string>
+<!-- Translate me
+	<string name="rotation">Rotation</string>
+-->
 	<string name="direction">Směr</string>
 	<string name="zoom">Přiblížení</string>
 	<string name="free_memory">Volno</string>
@@ -433,7 +440,7 @@
 
 -->
 	<string name="preference_immersive_mode">Immersive režim</string>
-	<string name="preference_immersive_mode_summary">Nastavení pro chování v \"immersive režim\"</string>
+	<string name="preference_immersive_mode_summary">%s\n\nNastavení pro chování v \"immersive režim\"</string>
 <!-- Translate me
 	<string name="im_fullscreen">Fullscreen mode</string>
 	<string name="im_sticky">Sticky</string>
@@ -465,11 +472,13 @@
 	<string name="left_gap_for_buttons">Left, gap for buttons</string>
 -->
 	<string name="preference_rotate_preview">Otočit náhled</string>
-	<string name="preference_rotate_preview_summary">Možnosti otočení náhledu (nemá vliv na výsledné fotografie/videa)</string>
+	<string name="preference_rotate_preview_summary">%s\n\nMožnosti otočení náhledu (nemá vliv na výsledné fotografie/videa)</string>
 	<string name="dont_rotate">Neotáčet</string>
 	<string name="rotate_180_degrees">Otočit o 180°</string>
 <!-- Translate me
 	<string name="preference_preview_max_expo">Maximum exposure</string>
+	<string name="preference_zoom_when_focusing">Zoom when focusing</string>
+	<string name="preference_zoom_when_focusing_summary">Increase the center of the preview when adjusting manual focus</string>
 	<string name="preference_preview_max_expo_summary">Maximum preview exposure in manual mode (won\'t affect resultant photos/videos)</string>
 	<string name="preference_preview_surface">Preview surface</string>
 	<string name="preference_preview_surface_summary">%s\n\nSurface for displaying preview. Switch this option only if you know what you do</string>
@@ -491,7 +500,7 @@
 	<string name="preference_show_angle_line">Zobrazit úhlovou linku</string>
 	<string name="preference_show_angle_line_summary">Zobrazovat vodorovnou vyrovnávací linku</string>
 	<string name="preference_angle_highlight_color">Barva zvýraznění úhlu</string>
-	<string name="preference_angle_highlight_color_summary">Barva zvýraznění použita pokud je fotoaparát téměř vyrovnán</string>
+	<string name="preference_angle_highlight_color_summary">%s\n\nBarva zvýraznění použita pokud je fotoaparát téměř vyrovnán</string>
 <!-- Translate me
 	<string name="preference_show_pitch_lines">Show pitch lines</string>
 	<string name="preference_show_pitch_lines_summary">Display horizontal pitch lines</string>
@@ -524,7 +533,7 @@
 	<string name="preference_grid_alpha">Grid alpha</string>
 -->
 	<string name="preference_crop_guide">Zobrazit vodítka oříznutí</string>
-	<string name="preference_crop_guide_summary">Vodítko oříznutí zobrazuje obdélník ukazující jak zvolený poměr stran vypadá - vhodné pokud poté plánujete ořez fotografie/videa na jiný poměr stran. Vyžaduje WYSIWYG fotografický mód nebo video mód.</string>
+	<string name="preference_crop_guide_summary">%s\n\nVodítko oříznutí zobrazuje obdélník ukazující jak zvolený poměr stran vypadá - vhodné pokud poté plánujete ořez fotografie/videa na jiný poměr stran. Vyžaduje WYSIWYG fotografický mód nebo video mód.</string>
 <!-- Translate me
 	<string name="preference_osd_frequency">Update frequency</string>
 	<string name="preference_osd_frequency_summary">OSD update frequency. Increasing this value will will make the indication smoother, but the battery will discharge faster</string>
@@ -583,6 +592,7 @@
 	<string name="preference_multitouch_zoom_summary">You must restart the application to apply this option</string>
 	<string name="preference_focus_range">Focus range</string>
 	<string name="preference_focus_range_summary">Manual focus range limit for for more precise control</string>
+	<string name="fr_landscape_macro">Landscape/Macro</string>
 	<string name="fr_room">Room</string>
 	<string name="fr_group">Group photo</string>
 	<string name="preference_level_angle_calibration">Level angle calibration</string>
@@ -596,6 +606,8 @@
 	<string name="preference_center_focus">Center focus</string>
 	<string name="preference_center_focus_summary">Set focus zone in the center of the frame at startup</string>
 	<string name="preference_min_focus_distance">Minimum focus distance</string>
+	<string name="preference_focus_distance_calibration">Focus distance calibration</string>
+	<string name="preference_focus_distance_calibration_summary">Positive values correspond to short distances, negative values to long distances.</string>
 	<string name="preference_update_focus_for_video">Update focus mode</string>
 	<string name="preference_update_focus_for_video_summary">Workaround for bug on Samsung Galaxy S5 with UHD, where if the user switches to another (non-continuous-video) focus mode, then goes to Settings, then returns and records video, the preview freezes and the video is corrupted</string>
 	<string name="preference_camera2_fake_flash">Use alternative flash method</string>
@@ -619,6 +631,20 @@
 	<string name="jpeg_and_dng">JPEG and DNG (RAW)</string>
 	<string name="preference_flip_front_facing">Flip photo</string>
 	<string name="preference_flip_front_facing_summary">Flip horizontally photos from front camera</string>
+	<string name="preference_uncompressed_photo">Uncompressed output</string>
+	<string name="preference_uncompressed_photo_summary">Use YUV 420 output instead of compressed JPEG. Speeds up saving and improves image quality when using image post-processing. Can work incorrectly on some devices.</string>
+	<string name="preference_category_metadata">Metadata</string>
+	<string name="preference_category_metadata_summary">Metadata that is stored inside the JPEG file</string>
+	<string name="preference_metadata_author">Author</string>
+	<string name="preference_metadata_comment">Comment</string>
+	<string name="preference_metadata_position_info">Device position</string>
+	<string name="preference_metadata_position_info_summary">Add to comment information about device position</string>
+	<string name="preference_metadata_mode_info">Mode info</string>
+	<string name="preference_metadata_mode_info_summary">Add to comment information about camera mode</string>
+	<string name="preference_metadata_sensor_info">Sensor info</string>
+	<string name="preference_metadata_sensor_info_summary">Add to comment information about sensor settings</string>
+	<string name="preference_metadata_processing_info">Processing info</string>
+	<string name="preference_metadata_processing_info_summary">Add to comment information about image processing</string>
 	<string name="preference_category_expo_bracketing_summary">Expobracketing settings. Most of the options in this section also apply to HDR.</string>
 	<string name="preference_expo_bracketing_n_images">Exposure Bracketing</string>
 	<string name="preference_expo_bracketing_n_images_summary">%s\n\nNumber of images for exposure bracketing mode</string>
@@ -635,8 +661,13 @@
 	<string name="preference_category_hdr_summary">HDR and DRO settings</string>
 	<string name="preference_hdr_save_expo">Save all images for HDR mode</string>
 	<string name="preference_hdr_save_expo_summary">If enabled, when using HDR photo mode, the three base exposure images will be saved as well as the final HDR photo. Note this will make saving slower, especially if options like \"Stamp photos\" or Auto-level are also used.</string>
+	<string name="preference_hdr_deghost">Deghosting</string>
 	<string name="preference_hdr_tonemapping">Tone mapping</string>
 	<string name="preference_hdr_tonemapping_summary">%s\n\nAlgorithm to use for HDR tonemapping</string>
+	<string name="preference_hdr_unsharp_mask">Unsharp mask</string>
+	<string name="preference_hdr_unsharp_mask_summary">%s\n\nLevel of the unsharp mask filter during processing HDR and DRO</string>
+	<string name="preference_hdr_unsharp_mask_radius">Radius</string>
+	<string name="preference_hdr_unsharp_mask_radius_summary">%s\n\nUnsharp mask blur radius</string>
 	<string name="preference_hdr_local_contrast">Local contrast</string>
 	<string name="preference_hdr_local_contrast_summary">%s\n\nLevel of the local contrast enhancement during processing HDR and DRO</string>
 	<string name="preference_hdr_n_tiles">Number of tiles</string>
@@ -699,11 +730,11 @@
 	<string name="preference_video_stabilization">Zapnout stabilizaci videa</string>
 	<string name="preference_video_stabilization_summary">Stabilizace videa snižuje otřesy při pohybu fotoaparátu, a to jak v náhledu tak i v nahraných videích</string>
 	<string name="preference_video_bitrate">Přenosová rychlost videa (cca)</string>
-	<string name="preference_video_bitrate_summary">Nastavit přibližnou přenosovou rychlost pro videa (vyšší znamená lepší kvalitu, ale zabírá více místa na diskhigher means better quality, but takes up more disk space; may cause video recording to fail if bitrate not supported)</string>
+	<string name="preference_video_bitrate_summary">%s\n\nNastavit přibližnou přenosovou rychlost pro videa (vyšší znamená lepší kvalitu, ale zabírá více místa na diskhigher means better quality, but takes up more disk space; may cause video recording to fail if bitrate not supported)</string>
 	<string name="preference_video_fps">Snímková frekvence videa (cca)</string>
 	<string name="preference_video_fps_summary">Nastavit snímkovou frekvenci (FPS) videa (může být přibližné, není zaručeno jeho dosažení a může způsobovat selhání nahrávání pokud není snímková frekvence podporována)</string>
 	<string name="preference_video_max_duration">Maximální délka videa</string>
-	<string name="preference_video_max_duration_summary">Nahrávání videa bude zastaveno po určené době</string>
+	<string name="preference_video_max_duration_summary">%s\n\nNahrávání videa bude zastaveno po určené době</string>
 	<string name="preference_video_restart">Restartovat nahrávání videa po uplynutí maximální délky</string>
 	<string name="dont_restart">Nerestartovat</string>
 	<string name="repeat_1_time">Opakovat 1×</string>
@@ -716,7 +747,7 @@
 	<string name="repeat_8_times">Opakovat 8×</string>
 	<string name="repeat_9_times">Opakovat 9×</string>
 	<string name="repeat_10_times">Opakovat 10×</string>
-	<string name="preference_video_restart_summary">Pokud je nahrávání videa zastaveno po zmáčknutí maximální délky (pokud je nastavena), toto nastavení restartuje nahrávání videa kolikrát je upřesněno</string>
+	<string name="preference_video_restart_summary">%s\n\nPokud je nahrávání videa zastaveno po zmáčknutí maximální délky (pokud je nastavena), toto nastavení restartuje nahrávání videa kolikrát je upřesněno</string>
 <!-- Translate me
 	<string name="preference_video_max_filesize">Maximum file size of video</string>
 	<string name="preference_video_max_filesize_summary">%s\n\nThe video recording will stop and/or restart (see option below) when the (approximate) maximum file size is reached. Note that almost all Android devices have a maximum file size for videos (typically around 2GB or 4GB), but this option allows setting a specific value</string>
@@ -731,7 +762,7 @@
 	<string name="as_default_source">Implicitní zdroj zvuku</string>
 	<string name="as_voice_optimized">Optimalizováno pro hlas</string>
 	<string name="preference_record_audio_channels">Kanály zvuku</string>
-	<string name="preference_record_audio_channels_summary">Nastavit mono nebo stereo pro nahrávání zvuku (stereo je podporováno jen na některých zařízeních)</string>
+	<string name="preference_record_audio_channels_summary">%s\n\nNastavit mono nebo stereo pro nahrávání zvuku (stereo je podporováno jen na některých zařízeních)</string>
 	<string name="am_mono">Mono</string>
 	<string name="am_stereo">Stereo (podoporují pouze některá zařízení)</string>
 	<string name="preference_lock_video">Zamknout obrazovku při nahrávání videa</string>
@@ -776,8 +807,10 @@
 	<string name="nr_minimal">Minimal</string>
 -->
 	<string name="nr_zero_shutter_lag">Bez zpoždění závěrky</string>
-
 <!-- Translate me
+	<string name="preference_zero_shutter_delay">Zero shutter delay</string>
+	<string name="preference_zero_shutter_delay_summary">%s</string>
+
 	<string name="preference_screen_files">Files</string>
 -->
 	<string name="preference_save_location">Uložit polohu</string>

@@ -7,12 +7,13 @@ set APP_NAME=HedgeCam
 set APP_PACKAGE=com.caddish_hedgehog.hedgecam2
 
 set MIN_SDK=15
-set TARGET_SDK=24
+set TARGET_SDK=26
 
 set JDK_HOME=C:\Program Files\Java\jdk1.7.0_79
 set BUILD_TOOLS_PATH=K:\android\sdk\build-tools\23.0.3
+rem set NDK_PATH=K:\android\android-ndk-r11c
 set ANDROID_JAR=K:\android\sdk\platforms\android-24\android.jar
-set CLASS_PATH=%ANDROID_JAR%;libs\annotations.jar;libs\android-support-v4.jar;libs\exifinterface.jar
+set CLASS_PATH=%ANDROID_JAR%;libs\annotations.jar;libs\android-support-v4.jar
 
 set PROGUARD_HOME=D:\Android\proguard
 
@@ -38,11 +39,22 @@ set GEN_DIR=%CD%\gen\_debug
 @md %GEN_DIR%\java > nul 2> nul
 @md %GEN_DIR%\obj > nul 2> nul
 
+
+rem echo Building jni binaries...
+rem set NDK_PROJECT_PATH=%CD%
+rem set NDK_OUT=%GEN_DIR%\obj-jni
+rem set NDK_LIBS_OUT=%GEN_DIR%\dex\lib
+rem call %NDK_PATH%\ndk-build.cmd
+rem @if errorlevel 1 goto err_jni
+
+
 rem		Parsing version name from AndroidManifest.xml
 for /F usebackq^ tokens^=2^ delims^=^" %%i in (`findstr android:versionName AndroidManifest.xml`) do set VERSION=%%i
 IF [%VERSION%] == [] goto err_version
 
 
+echo:
+echo:
 echo Compiling renderscripts...
 FOR /R "%CD%\rs" %%i IN (*.rs) DO call set RS_LIST=%%RS_LIST%% %%i
 call "%BUILD_TOOLS_PATH%\llvm-rs-cc.exe" -target-api 19 -I "%BUILD_TOOLS_PATH%\renderscript\include" -I "%BUILD_TOOLS_PATH%\renderscript\clang-include" -o "%GEN_DIR%\res\raw" -java-reflection-path-base "%GEN_DIR%\java" %RS_LIST%
@@ -147,6 +159,10 @@ goto make_pause
 
 :err_r
 echo Error creating R.java
+goto make_pause
+
+:err_jni
+echo Building jni libs error
 goto make_pause
 
 :err_compile_rs

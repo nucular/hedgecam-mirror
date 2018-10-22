@@ -47,6 +47,9 @@ public class CameraController1 extends CameraController {
 	private int current_zoom_value;
 	private int picture_width;
 	private int picture_height;
+	
+	private boolean want_burst;
+	private int want_burst_count = 0;
 
 	/** Opens the camera device.
 	 * @param cameraId Which camera to open (must be between 0 and CameraControllerManager1.getNumberOfCameras()-1).
@@ -329,8 +332,7 @@ public class CameraController1 extends CameraController {
 		camera_features.max_num_focus_areas = parameters.getMaxNumFocusAreas();
 		camera_features.max_num_metering_areas = parameters.getMaxNumMeteringAreas();
 
-		camera_features.is_exposure_lock_supported = parameters.isAutoExposureLockSupported();
-		camera_features.is_awb_lock_supported = parameters.isAutoWhiteBalanceLockSupported();
+		camera_features.is_auto_adjustment_lock_supported = parameters.isAutoExposureLockSupported() || parameters.isAutoWhiteBalanceLockSupported();
 
 		camera_features.is_video_stabilization_supported = parameters.isVideoStabilizationSupported();
 
@@ -679,7 +681,12 @@ public class CameraController1 extends CameraController {
 	
 	@Override
 	public void setWantBurst(boolean want_burst) {
-		// not supported
+		this.want_burst = want_burst;
+	}
+
+	@Override
+	public void setWantBurstCount(int count) {
+		want_burst_count = count;
 	}
 
 	@Override
@@ -924,18 +931,6 @@ public class CameraController1 extends CameraController {
 		return convertFocusModeToValue(focus_mode);
 	}
 
-	@Override
-	public float getFocusDistance() {
-		// not supported for CameraController1!
-		return 0.0f;
-	}
-
-	@Override
-	public boolean setFocusDistance(float focus_distance) {
-		// not supported for CameraController1!
-		return false;
-	}
-
 	private String convertFlashValueToMode(String flash_value) {
 		String flash_mode = "";
 		switch(flash_value) {
@@ -1063,30 +1058,16 @@ public class CameraController1 extends CameraController {
 		}
 	}
 
-	public void setAutoExposureLock(boolean enabled) {
-		Camera.Parameters parameters = this.getParameters();
-		parameters.setAutoExposureLock(enabled);
-		setCameraParameters(parameters);
-	}
-	
-	public boolean getAutoExposureLock() {
-		Camera.Parameters parameters = this.getParameters();
-		if( !parameters.isAutoExposureLockSupported() )
-			return false;
-		return parameters.getAutoExposureLock();
-	}
+	public void setAutoAdjustmentLock(boolean enabled) {
+		if( MyDebug.LOG )
+			Log.d(TAG, "setAutoAdjustmentLock: " + enabled);
 
-	public void setAutoWhiteBalanceLock(boolean enabled) {
 		Camera.Parameters parameters = this.getParameters();
-		parameters.setAutoWhiteBalanceLock(enabled);
+		if( parameters.isAutoExposureLockSupported() )
+			parameters.setAutoExposureLock(enabled);
+		if( parameters.isAutoWhiteBalanceLockSupported() )
+			parameters.setAutoWhiteBalanceLock(enabled);
 		setCameraParameters(parameters);
-	}
-	
-	public boolean getAutoWhiteBalanceLock() {
-		Camera.Parameters parameters = this.getParameters();
-		if( !parameters.isAutoWhiteBalanceLockSupported() )
-			return false;
-		return parameters.getAutoWhiteBalanceLock();
 	}
 
 	public void setRotation(int rotation) {
@@ -1471,16 +1452,16 @@ public class CameraController1 extends CameraController {
 						// also allows us to reorder from dark to light
 						// since we took the images with the base exposure being first
 						int n_half_images = pending_burst_images.size()/2;
-						List<byte []> images = new ArrayList<>();
+						List<Photo> images = new ArrayList<>();
 						// darker images
 						for(int i=0;i<n_half_images;i++) {
-							images.add(pending_burst_images.get(i+1));
+							images.add(new Photo(pending_burst_images.get(i+1)));
 						}
 						// base image
-						images.add(pending_burst_images.get(0));
+						images.add(new Photo(pending_burst_images.get(0)));
 						// lighter images
 						for(int i=0;i<n_half_images;i++) {
-							images.add(pending_burst_images.get(n_half_images+1));
+							images.add(new Photo(pending_burst_images.get(n_half_images+1)));
 						}
 
 						picture.onBurstPictureTaken(images);
@@ -1516,15 +1497,29 @@ public class CameraController1 extends CameraController {
 						   }
 						}, exposure_compensation_delay);
 					}
-				}
-				else {
-					picture.onPictureTaken(data);
-					picture.onCompleted();
+				} else {
+					picture.onPictureTaken(new Photo(data));
+					if (!want_burst || n_burst == 1) picture.onCompleted();
+					
+					if (want_burst && n_burst > 0) {
+						n_burst--;
+						if (n_burst > 0) {
+							try {
+								startPreview();
+							}
+							catch(CameraControllerException e) {
+								if( MyDebug.LOG )
+									Log.d(TAG, "CameraControllerException trying to startPreview");
+								e.printStackTrace();
+							}
+							takePictureNow(shutter, picture, error);
+						}
+					}
 				}
 			}
 		};
 
-		if( picture != null ) {
+		if( picture != null && (!want_burst || n_burst == want_burst_count) ) {
 			if( MyDebug.LOG )
 				Log.d(TAG, "call onStarted() in callback");
 			picture.onStarted();
@@ -1596,9 +1591,11 @@ public class CameraController1 extends CameraController {
 
 			burst_exposures = requests;
 			n_burst = requests.size();
+		} else if (want_burst && want_burst_count > 0) {
+			n_burst = want_burst_count;
 		}
 
-		if( frontscreen_flash ) {
+		if( !want_burst && frontscreen_flash ) {
 			if( MyDebug.LOG )
 				Log.d(TAG, "front screen flash");
 			picture.onFrontScreenTurnOn();
@@ -1696,4 +1693,176 @@ public class CameraController1 extends CameraController {
 			return current.equals(value);
 		return false;
 	}
+	
+	@Override
+	public boolean setNoiseReductionMode(String value) {
+		if( MyDebug.LOG )
+			Log.d(TAG, "setNoiseReductionMode: " + value);
+
+		Camera.Parameters parameters = this.getParameters();
+		String current_value = parameters.get("denoise");
+		if (current_value != null) {
+			if (current_value.equals("denoise-off") || current_value.equals("denoise-on")) parameters.set("denoise", "denoise-" + value);
+			else parameters.set("denoise", value);
+			setCameraParameters(parameters);
+			return true;
+		} else {
+			current_value = parameters.get("3dnr-mode");
+			if (current_value != null) {
+				parameters.set("3dnr-mode", value);
+				setCameraParameters(parameters);
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	@Override
+	public String getNoiseReductionMode() {
+		// Qualcomm
+		String result = this.getParameters().get("denoise");
+		if (result == null) {
+			// MediaTek
+			result = this.getParameters().get("3dnr-mode");
+		}
+		if (result != null) {
+			if (result.equals("denoise-off")) return "off";
+			else if (result.equals("denoise-on")) return "on";
+		}
+		return result;
+	}
+	
+	@Override
+	public List<String> getAvailableNoiseReductionModes() {
+		List<String> values = new ArrayList<>();
+
+		if (this.getParameters().get("denoise") != null || this.getParameters().get("3dnr-mode") != null) {
+			values.add("off");
+			values.add("on");
+		}
+
+		return values;
+	}
+
+	@Override
+	public boolean setEdgeMode(String value) {
+		if( MyDebug.LOG )
+			Log.d(TAG, "setEdgeMode: " + value);
+
+		Camera.Parameters parameters = this.getParameters();
+
+		if (parameters.get("sharpness") != null) {
+			try {
+				int new_value = Integer.parseInt(value);
+				parameters.set("sharpness", new_value);
+				setCameraParameters(parameters);
+				String current_value = this.getParameters().get("sharpness");
+				if (current_value != null && !current_value.equals(value)) {
+					parameters.set("sharpness", value);
+					setCameraParameters(parameters);
+				}
+			}
+			catch(NumberFormatException e) {
+				parameters.set("sharpness", value);
+				setCameraParameters(parameters);
+			}
+			String current_value = this.getParameters().get("sharpness");
+			return current_value != null && current_value.equals(value);
+		} else if (parameters.get("edge") != null) {
+			parameters.set("edge", value);
+			setCameraParameters(parameters);
+
+			String current_value = this.getParameters().get("edge");
+			return current_value != null && current_value.equals(value);
+		}
+		return false;
+	}
+
+	@Override
+	public String getEdgeMode() {
+		String value = this.getParameters().get("sharpness");
+		if (value == null) value = this.getParameters().get("edge");
+		return value;
+	}
+
+	@Override
+	public List<String> getAvailableEdgeModes() {
+		List<String> values = new ArrayList<>();
+		
+		Camera.Parameters parameters = this.getParameters();
+
+		String edge_values = parameters.get("edge-values");
+		if (edge_values != null) {
+			String [] values_array = edge_values.split(",");
+			for (String v : values_array) {
+				values.add(v);
+			}
+		} else {
+			String min = parameters.get("sharpness-min");
+			if (min == null) min = parameters.get("min-sharpness");
+			int min_value = 0;
+			if (min != null) {
+				try {min_value = Integer.parseInt(min);}
+				catch(NumberFormatException e) {min_value = 0;}
+			}
+
+			String max = parameters.get("sharpness-max");
+			if (max == null) max = parameters.get("max-sharpness");
+			int max_value = 0;
+			if (max != null) {
+				try {max_value = Integer.parseInt(max);}
+				catch(NumberFormatException e) {max_value = 0;}
+			}
+			
+			if( MyDebug.LOG ) {
+				Log.d(TAG, "sharpness min_value: " + min_value);
+				Log.d(TAG, "sharpness max_value: " + max_value);
+			}
+
+			if (min_value < max_value) {
+				for (int i = min_value; i <= max_value; i++) {
+					values.add(Integer.toString(i));
+				}
+			}
+		}
+
+		return values;
+	}
+
+	@Override
+	public boolean setZeroShutterDelayMode(String value) {
+		if( MyDebug.LOG )
+			Log.d(TAG, "setZeroShutterDelayMode: " + value);
+
+		Camera.Parameters parameters = this.getParameters();
+		String current_value = parameters.get("zsd-mode");
+		if (current_value != null) {
+			parameters.set("zsd-mode", value);
+			setCameraParameters(parameters);
+
+			current_value = this.getParameters().get("zsd-mode");
+			return current_value != null && current_value.equals(value);
+		}
+
+		return false;
+	}
+
+	@Override
+	public String getZeroShutterDelayMode() {
+		return this.getParameters().get("zsd-mode");
+	}
+	
+	@Override
+	public List<String> getAvailableZeroShutterDelayModes() {
+		List<String> values = new ArrayList<>();
+
+		if (this.getParameters().get("zsd-mode") != null) {
+			values.add("off");
+			values.add("on");
+		}
+
+		return values;
+	}
+
 }

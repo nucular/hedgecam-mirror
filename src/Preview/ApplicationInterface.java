@@ -1,5 +1,7 @@
 package com.caddish_hedgehog.hedgecam2.Preview;
 
+import com.caddish_hedgehog.hedgecam2.CameraController.CameraController;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Date;
@@ -85,8 +87,8 @@ public interface ApplicationInterface {
 	
 	// callbacks
 	void onDrawPreview(Canvas canvas);
-	boolean onPictureTaken(byte [] data, Date current_date);
-	boolean onBurstPictureTaken(List<byte []> images, Date current_date);
+	boolean onPictureTaken(CameraController.Photo photo, Date current_date);
+	boolean onBurstPictureTaken(List<CameraController.Photo> images, Date current_date);
 	boolean onRawPictureTaken(DngCreator dngCreator, Image image, Date current_date);
 	void onCaptureStarted(); // called immediately before we start capturing the picture
 	void onPictureCompleted(); // called after all picture callbacks have been called and returned

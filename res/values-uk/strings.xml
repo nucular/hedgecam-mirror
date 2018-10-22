@@ -6,6 +6,8 @@
 	<string name="intro_text">Торкніться екрану щоб зфокусуватись та натисніть синю кнопку, аби зробити фото. В налаштуваннях вас чекає дуже багато цікавого. :)\n\nПолітика приватності: Доступ до місця-знаходження потрібне для гео-міток, але в типових параметрах це вимкнено. Якщо увімкнути, ваше місце-розташування кодуватиметься в збережених файлах (і тільки для цього використовується).</string>
 	<string name="intro_ok">Гаразд (Більше це повідомлення не з\'явиться.)</string>
 
+	<string name="charset">windows-1251</string>
+
 	<string name="answer_yes">Так</string>
 	<string name="answer_no">Ні</string>
 
@@ -39,6 +41,7 @@
 	<string name="saf_permission_failed">Неможливо зберегти в цю папку</string>
 
 	<string name="angle">Кут</string>
+	<string name="rotation">Поворот</string>
 	<string name="direction">Напрямок</string>
 	<string name="zoom">Масштаб</string>
 	<string name="free_memory">Пам\'ять</string>
@@ -388,6 +391,8 @@
 	<string name="rotate_180_degrees">Повернути на 180°</string>
 	<string name="preference_preview_max_expo">Максимальна експозиція</string>
 	<string name="preference_preview_max_expo_summary">Максимальна експозиція попереднього перегляду (не впливає на фото/відео)</string>
+	<string name="preference_zoom_when_focusing">Приближувати при фокусуванні</string>
+	<string name="preference_zoom_when_focusing_summary">Збільшувати центральну зону передперегляду під час ручного фокусування</string>
 	<string name="preference_preview_surface">Поверхня</string>
 	<string name="preference_preview_surface_summary">%s\n\nПоверхня попереднього перегляду. Переключайте цей параметр тільки якщо ви знаєте, на що він впливає</string>
 
@@ -478,6 +483,7 @@
 	<string name="preference_multitouch_zoom_summary">Регулювання масштабу за допомогою жестів</string>
 	<string name="preference_focus_range">Диапазон фокусування</string>
 	<string name="preference_focus_range_summary">%s\n\nОбмеження диапазону ручного фокусування для більш точного наведення</string>
+	<string name="fr_landscape_macro">Краєвид/Макро</string>
 	<string name="fr_room">Кімната</string>
 	<string name="fr_group">Групове фото</string>
 	<string name="preference_level_angle_calibration">Калібрування рівня</string>
@@ -491,6 +497,8 @@
 	<string name="preference_center_focus">Фокус у центрі</string>
 	<string name="preference_center_focus_summary">Встановити зону фокусування в центрі кадру під час запуску додатку</string>
 	<string name="preference_min_focus_distance">Мінімальна фокусна відстань</string>
+	<string name="preference_focus_distance_calibration">Калібрування фокусної відстані</string>
+	<string name="preference_focus_distance_calibration_summary">Позитивні значення відповідають ближньої відстані, негативні - далекої.</string>
 	<string name="preference_update_focus_for_video">Скидати режим фокусування</string>
 	<string name="preference_update_focus_for_video_summary">Виправляє помилку Samsung Galaxy S5, що приводить до завмирання попереднього перегляду і створення пошкодженого відеофайлу під час запису відео надвисокої чіткості після виходу з налаштувань</string>
 	<string name="preference_camera2_fake_flash">Альтернативний спалах</string>
@@ -512,6 +520,20 @@
 	<string name="jpeg_and_dng">JPEG та DNG (RAW)</string>
 	<string name="preference_flip_front_facing">Дзеркальне відображення</string>
 	<string name="preference_flip_front_facing_summary">Дзеркальне відображення фото, зроблених передньою камерою</string>
+	<string name="preference_uncompressed_photo">Незжатий вивід</string>
+	<string name="preference_uncompressed_photo_summary">Використовувати YUV 420 замість JPEG. Пошвидшує збереження та підвищуе якість зображення при використанні пост-обробки. Може працювати некоректно на деяких пристроях.</string>
+	<string name="preference_category_metadata">Метадані</string>
+	<string name="preference_category_metadata_summary">Метадані, що зберігаються всередині файлів JPEG</string>
+	<string name="preference_metadata_author">Автор</string>
+	<string name="preference_metadata_comment">Коментар</string>
+	<string name="preference_metadata_position_info">Положення</string>
+	<string name="preference_metadata_position_info_summary">Додавати в коментар інформацію про положення пристрою (поворот, нахил, тощо)</string>
+	<string name="preference_metadata_mode_info">Режим зйомки</string>
+	<string name="preference_metadata_mode_info_summary">Додавати в коментар інформацію про режим зйомки</string>
+	<string name="preference_metadata_sensor_info">Сенсор</string>
+	<string name="preference_metadata_sensor_info_summary">Додавати в коментар інформацію про налаштування сенсора</string>
+	<string name="preference_metadata_processing_info">Обробка</string>
+	<string name="preference_metadata_processing_info_summary">Додавати в коментар інформацію про обробку фото</string>
 	<string name="preference_category_expo_bracketing_summary">Налаштування експобрекетингу. Деякі налаштування також використовуються у режимі HDR</string>
 	<string name="preference_expo_bracketing_n_images">Брекетинг експозиції</string>
 	<string name="preference_expo_bracketing_n_images_summary">%s\n\nКількість фото</string>
@@ -522,12 +544,19 @@
 	<string name="preference_expo_bracketing_stops_down_summary">%s\n\nКількість ступінів між темними знімками</string>
 	<string name="preference_expo_bracketing_use_iso">Використовувати ISO</string>
 	<string name="preference_expo_bracketing_use_iso_summary">По можливості використовувати регулювання ISO при зйомці темних знімків</string>
+	<string name="preference_expo_bracketing_delay">Затримка</string>
+	<string name="preference_expo_bracketing_delay_summary">%s\n\nЗатримка між знімками, необхідна для установки компенсації експозиції</string>
 	<string name="preference_category_hdr">HDR та DRO</string>
 	<string name="preference_category_hdr_summary">Налаштування режимів HDR та DRO</string>
 	<string name="preference_hdr_save_expo">Зберігати всі зображення в режимі HDR</string>
 	<string name="preference_hdr_save_expo_summary">У режимі HDR зберігати 3 знімки експобрекетингу, що були використані під час створення HDR-знімка. Уповільнює процес збереження, особливо при включенні опції \ "Відмітки \" або автовирівнювання.</string>
+	<string name="preference_hdr_deghost">Усунення примар</string>
 	<string name="preference_hdr_tonemapping">Тональна компресія</string>
 	<string name="preference_hdr_tonemapping_summary">%s\n\nАлгоритм тональної компресії, який використовується при створенні HDR</string>
+	<string name="preference_hdr_unsharp_mask">Нерізка маска</string>
+	<string name="preference_hdr_unsharp_mask_summary">%s\n\nРівень впливу фільтра "Нерізка маска" при обробці HDR та DRO</string>
+	<string name="preference_hdr_unsharp_mask_radius">Радіус</string>
+	<string name="preference_hdr_unsharp_mask_radius_summary">%s\n\nРадіус розмиття нерізкої маски</string>
 	<string name="preference_hdr_local_contrast">Локальний контраст</string>
 	<string name="preference_hdr_local_contrast_summary">%s\n\nРівень підвищення локального контрасту при обробці HDR та DRO</string>
 	<string name="preference_hdr_n_tiles">Кількість блоків</string>
@@ -646,6 +675,8 @@
 	<string name="nr_high_quality">Висока якість</string>
 	<string name="nr_minimal">Мінімально</string>
 	<string name="nr_zero_shutter_lag">Без відставання затвору</string>
+	<string name="preference_zero_shutter_delay">Нульова затримка затвора</string>
+	<string name="preference_zero_shutter_delay_summary">%s</string>
 
 	<string name="preference_screen_files">Файли</string>
 	<string name="preference_save_location">Тека збереження</string>

@@ -12,6 +12,7 @@ import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.ImageFormat;
+import android.graphics.PixelFormat;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
@@ -74,9 +75,9 @@ public class CameraController2 extends CameraController {
 	private final Object open_camera_lock = new Object(); // lock to wait for camera to be opened from CameraDevice.StateCallback
 	private final Object create_capture_session_lock = new Object(); // lock to wait for capture session to be created from CameraCaptureSession.StateCallback
 	private ImageReader imageReader;
+	private ImageReader imageReaderUncompressed;
 	private boolean want_expo_bracketing;
 	private final static int max_expo_bracketing_n_images = 5; // could be more, but limit to 5 for now
-	private int expo_bracketing_n_images = 3;
 	private int exposure_compensation_delay = 1000;
 	private double expo_bracketing_stops_up = 2.0;
 	private double expo_bracketing_stops_down = 2.0;
@@ -96,7 +97,7 @@ public class CameraController2 extends CameraController {
 	private int want_burst_count = 0;
 	private boolean burst_disable_filters;
 	private boolean burst_single_request; // if n_burst > 1: if true then the burst images are returned in a single call to onBurstPictureTaken(), if false, then multiple calls to onPictureTaken() are made as soon as the image is available
-	private final List<byte []> pending_burst_images = new ArrayList<>(); // burst images that have been captured so far, but not yet sent to the application
+	private final List<Photo> pending_burst_images = new ArrayList<>(); // burst images that have been captured so far, but not yet sent to the application
 	private List<CaptureRequest> slow_burst_capture_requests; // the set of burst capture requests - used when not using captureBurst() (i.e., when use_expo_fast_burst==false)
 	private List<Integer> exposure_compensations;
 	private long slow_burst_start_ms = 0; // time when burst started (used for measuring performance of captures when not using fast burst)
@@ -160,6 +161,7 @@ public class CameraController2 extends CameraController {
 	private boolean exposure_over_range;
 
 	private int smart_filter_iso = 0;
+	private boolean is_filtering_blocked = false;
 	
 	private enum RequestTag {
 		CAPTURE
@@ -167,6 +169,12 @@ public class CameraController2 extends CameraController {
 
 	private final static int min_white_balance_temperature_c = 1000;
 	private final static int max_white_balance_temperature_c = 15000;
+
+	private boolean uncompressed_photo = false;
+	private boolean full_size_copy = false;
+	private int image_reader_burst_count = 3;
+	private final List<Photo> pair_photos = new ArrayList<>();
+	private final List<Long> pair_photo_timestamps = new ArrayList<>();
 
 	private class CameraSettings {
 		// keys that we need to store, to pass to the stillBuilder, but doesn't need to be passed to previewBuilder (should set sensible defaults)
@@ -192,10 +200,13 @@ public class CameraController2 extends CameraController {
 		private int ae_exposure_compensation;
 		private boolean has_af_mode;
 		private int af_mode = CaptureRequest.CONTROL_AF_MODE_AUTO;
+		private boolean focus_mode_manual = false;
 		private float focus_distance; // actual value passed to camera device (set to 0.0 if in infinity mode)
 		private float focus_distance_manual; // saved setting when in manual mode
+		private float focus_distance_calibration;
 		private boolean ae_lock;
 		private boolean awb_lock;
+		private boolean bl_lock;
 		private MeteringRectangle [] af_regions; // no need for has_scalar_crop_region, as we can set to null instead
 		private MeteringRectangle [] ae_regions; // no need for has_scalar_crop_region, as we can set to null instead
 		private boolean has_face_detect_mode;
@@ -256,6 +267,8 @@ public class CameraController2 extends CameraController {
 			setFocusMode(builder);
 			setFocusDistance(builder);
 			setAutoExposureLock(builder);
+			setAutoWhiteBalanceLock(builder);
+			setBlackLevelLock(builder);
 			setAFRegions(builder);
 			setAERegions(builder);
 			setFaceDetectMode(builder);
@@ -491,6 +504,10 @@ public class CameraController2 extends CameraController {
 
 		private void setAutoWhiteBalanceLock(CaptureRequest.Builder builder) {
 			builder.set(CaptureRequest.CONTROL_AWB_LOCK, awb_lock);
+		}
+
+		private void setBlackLevelLock(CaptureRequest.Builder builder) {
+			builder.set(CaptureRequest.CONTROL_AWB_LOCK, bl_lock);
 		}
 
 		private void setAFRegions(CaptureRequest.Builder builder) {
@@ -1099,6 +1116,10 @@ public class CameraController2 extends CameraController {
 			imageReader.close();
 			imageReader = null;
 		}
+		if( imageReaderUncompressed != null ) {
+			imageReaderUncompressed.close();
+			imageReaderUncompressed = null;
+		}
 		if( imageReaderRaw != null ) {
 			imageReaderRaw.close();
 			imageReaderRaw = null;
@@ -1420,8 +1441,7 @@ public class CameraController2 extends CameraController {
 		camera_features.max_num_focus_areas = characteristics.get(CameraCharacteristics.CONTROL_MAX_REGIONS_AF);
 		camera_features.max_num_metering_areas = characteristics.get(CameraCharacteristics.CONTROL_MAX_REGIONS_AE);
 
-		camera_features.is_exposure_lock_supported = true;
-		camera_features.is_awb_lock_supported = true;
+		camera_features.is_auto_adjustment_lock_supported = true;
 		
 		camera_features.is_video_stabilization_supported = true;
 
@@ -2173,6 +2193,8 @@ public class CameraController2 extends CameraController {
 		this.want_expo_bracketing = want_expo_bracketing;
 		updateUseFakePrecaptureMode(camera_settings.flash_value);
 		camera_settings.setAEMode(previewBuilder, false); // need to set the ae mode, as flash is disabled for expo mode
+		
+		if (uncompressed_photo) setUncompressedPhoto(true);
 	}
 
 	@Override
@@ -2189,7 +2211,9 @@ public class CameraController2 extends CameraController {
 			if( MyDebug.LOG )
 				Log.e(TAG, "limiting n_images to max of " + n_images);
 		}
-		this.expo_bracketing_n_images = n_images;
+		this.want_burst_count = n_images;
+		
+		if (uncompressed_photo) setUncompressedPhoto(true);
 	}
 
 	@Override
@@ -2250,16 +2274,40 @@ public class CameraController2 extends CameraController {
 		this.want_burst = want_burst;
 		updateUseFakePrecaptureMode(camera_settings.flash_value);
 		camera_settings.setAEMode(previewBuilder, false); // need to set the ae mode, as flash is disabled for burst mode
+
+		if (uncompressed_photo) setUncompressedPhoto(true);
 	}
 
 	@Override
 	public void setWantBurstCount(int count) {
 		want_burst_count = count;
+		
+		if (uncompressed_photo) setUncompressedPhoto(true);
 	}
 	
 	@Override
 	public void setDisableBurstFilters(boolean disable) {
 		burst_disable_filters = disable;
+	}
+	
+	@Override
+	public void setUncompressedPhoto(boolean state) {
+		if (uncompressed_photo != state || (uncompressed_photo && (want_burst || want_expo_bracketing) && want_burst_count != image_reader_burst_count)) {
+			uncompressed_photo = state;
+			
+			if( captureSession != null ) {
+				try {
+					stopPreview();
+					startPreview();
+				} catch(CameraControllerException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+	}
+
+	public void setFullSizeCopy(boolean state) {
+		full_size_copy = state;
 	}
 
 	@Override
@@ -2283,6 +2331,7 @@ public class CameraController2 extends CameraController {
 	public boolean getUseCamera2FakeFlash() {
 		return this.use_fake_precapture;
 	}
+
 	@Override
 	public String getAntibanding() {
 		if( previewBuilder.get(CaptureRequest.CONTROL_AE_ANTIBANDING_MODE) == null )
@@ -2629,7 +2678,14 @@ public class CameraController2 extends CameraController {
 				Log.e(TAG, "application needs to call setPictureSize()");
 			throw new RuntimeException(); // throw as RuntimeException, as this is a programming error
 		}
-		imageReader = ImageReader.newInstance(picture_width, picture_height, ImageFormat.JPEG, 2); 
+		
+		if (uncompressed_photo) {
+			image_reader_burst_count = (want_burst || want_expo_bracketing) ? want_burst_count : 3;
+		} else {
+			image_reader_burst_count = 3;
+		}
+		
+		imageReader = ImageReader.newInstance(uncompressed_photo && !full_size_copy ? 320 : picture_width, uncompressed_photo && !full_size_copy ? 240 : picture_height, ImageFormat.JPEG, image_reader_burst_count);
 		if( MyDebug.LOG ) {
 			Log.d(TAG, "created new imageReader: " + imageReader.toString());
 			Log.d(TAG, "imageReader surface: " + imageReader.getSurface().toString());
@@ -2650,161 +2706,83 @@ public class CameraController2 extends CameraController {
 					 * OnRawImageAvailableListener.setCaptureResult()), which may be in a separate thread.
 					 */
 					Image image = reader.acquireNextImage();
+					final long timestamp = image.getTimestamp();
 					if( MyDebug.LOG )
-						Log.d(TAG, "image timestamp: " + image.getTimestamp());
+						Log.d(TAG, "image timestamp: " + timestamp);
 					ByteBuffer buffer = image.getPlanes()[0].getBuffer();
-					byte [] bytes = new byte[buffer.remaining()]; 
+					byte [] bytes = new byte[buffer.remaining()];
 					if( MyDebug.LOG )
 						Log.d(TAG, "read " + bytes.length + " bytes");
 					buffer.get(bytes);
 					image.close();
-					if( burst_single_request && n_burst > 1 ) {
-						pending_burst_images.add(bytes);
-						if( pending_burst_images.size() >= n_burst ) { // shouldn't ever be greater, but just in case
-							if( MyDebug.LOG )
-								Log.d(TAG, "all burst images available");
-							if( pending_burst_images.size() > n_burst ) {
-								Log.e(TAG, "pending_burst_images size " + pending_burst_images.size() + " is greater than n_burst " + n_burst);
-							}
-							if (exposure_compensations != null) {
-								camera_settings.has_ae_exposure_compensation = true;
-								camera_settings.ae_exposure_compensation = exposure_compensations.get(0);
-								if( camera_settings.setExposureCompensation(previewBuilder) ) {
-									try {
-										setRepeatingRequest();
-									}
-									catch(CameraAccessException e) {
-										if( MyDebug.LOG ) {
-											Log.e(TAG, "failed to set exposure compensation");
-											Log.e(TAG, "reason: " + e.getReason());
-											Log.e(TAG, "message: " + e.getMessage());
-										}
-										e.printStackTrace();
-									}
-								}
-								exposure_compensations = null;
-							}
-							// need to set jpeg_cb etc to null before calling onCompleted, as that may reenter CameraController to take another photo (if in burst mode) - see testTakePhotoBurst()
-							PictureCallback cb = jpeg_cb;
-							jpeg_cb = null;
-							// no need to check raw_cb, as raw not supported for burst
-							// take a copy, so that we can clear pending_burst_images
-							List<byte []> images = new ArrayList<>(pending_burst_images);
-							cb.onBurstPictureTaken(images);
-							pending_burst_images.clear();
-							cb.onCompleted();
+					
+					if (uncompressed_photo) {
+						int index = pair_photo_timestamps.indexOf(timestamp);
+						if (index >= 0) {
+							Photo photo = pair_photos.get(index);
+							pair_photos.remove(index);
+							pair_photo_timestamps.remove(index);
+							
+							photo.jpeg = bytes;
+							imageAvailable(photo);
+						} else {
+							pair_photo_timestamps.add(timestamp);
+							pair_photos.add(new Photo(bytes));
 						}
-						else {
-							if( MyDebug.LOG )
-								Log.d(TAG, "number of burst images is now: " + pending_burst_images.size());
-							if (exposure_compensations != null) {
-								camera_settings.has_ae_exposure_compensation = true;
-								camera_settings.ae_exposure_compensation = exposure_compensations.get(pending_burst_images.size());
-								if( camera_settings.setExposureCompensation(previewBuilder) ) {
-									try {
-										setRepeatingRequest();
-									}
-									catch(CameraAccessException e) {
-										if( MyDebug.LOG ) {
-											Log.e(TAG, "failed to set exposure compensation");
-											Log.e(TAG, "reason: " + e.getReason());
-											Log.e(TAG, "message: " + e.getMessage());
-										}
-										e.printStackTrace();
-									}
-								}
-
-								try {
-									Thread.sleep(exposure_compensation_delay);
-								}
-								catch(InterruptedException e) {}
-
-								try {
-									CaptureRequest.Builder stillBuilder = camera.createCaptureRequest(previewIsVideoMode ? CameraDevice.TEMPLATE_VIDEO_SNAPSHOT : CameraDevice.TEMPLATE_STILL_CAPTURE);
-									stillBuilder.set(CaptureRequest.CONTROL_CAPTURE_INTENT, CaptureRequest.CONTROL_CAPTURE_INTENT_STILL_CAPTURE);
-									camera_settings.setupBuilder(stillBuilder, true);
-									stillBuilder.addTarget(imageReader.getSurface());
-
-									stillBuilder.set(CaptureRequest.CONTROL_AE_MODE, CameraMetadata.CONTROL_AE_MODE_ON);
-									stillBuilder.set(CaptureRequest.FLASH_MODE, CameraMetadata.FLASH_MODE_OFF);
-
-									if (smart_filter_iso != 0) {
-										int actual_iso = getIso();
-										if (actual_iso > 0 && actual_iso <= smart_filter_iso) {
-											stillBuilder.set(CaptureRequest.NOISE_REDUCTION_MODE, CaptureRequest.NOISE_REDUCTION_MODE_OFF);
-											stillBuilder.set(CaptureRequest.EDGE_MODE, CaptureRequest.EDGE_MODE_OFF);
-										}
-									}
-									captureSession.capture(stillBuilder.build(), previewCaptureCallback, handler);
-								}
-								catch(CameraAccessException e) {
-									if( MyDebug.LOG ) {
-										Log.e(TAG, "failed to take picture expo burst");
-										Log.e(TAG, "reason: " + e.getReason());
-										Log.e(TAG, "message: " + e.getMessage());
-									}
-									e.printStackTrace();
-									jpeg_cb = null;
-									if( take_picture_error_cb != null ) {
-										take_picture_error_cb.onError();
-										take_picture_error_cb = null;
-									}
-								}
-							} else if( slow_burst_capture_requests != null ) {
-								if( MyDebug.LOG ) {
-									Log.d(TAG, "need to execute the next capture");
-									Log.d(TAG, "time since start: " + (System.currentTimeMillis() - slow_burst_start_ms));
-								}
-								try {
-									captureSession.capture(slow_burst_capture_requests.get(pending_burst_images.size()), previewCaptureCallback, handler);
-								}
-								catch(CameraAccessException e) {
-									if( MyDebug.LOG ) {
-										Log.e(TAG, "failed to take next burst");
-										Log.e(TAG, "reason: " + e.getReason());
-										Log.e(TAG, "message: " + e.getMessage());
-									}
-									e.printStackTrace();
-									jpeg_cb = null;
-									if( take_picture_error_cb != null ) {
-										take_picture_error_cb.onError();
-										take_picture_error_cb = null;
-									}
-								}
-							}
-						}
-					}
-					else {
-						jpeg_cb.onPictureTaken(bytes);
-						n_burst--;
-						if( MyDebug.LOG )
-							Log.d(TAG, "n_burst is now " + n_burst);
-						if( n_burst == 0 ) {
-							// need to set jpeg_cb etc to null before calling onCompleted, as that may reenter CameraController to take another photo (if in auto-repeat burst mode) - see testTakePhotoBurst()
-							PictureCallback cb = jpeg_cb;
-							jpeg_cb = null;
-							if( raw_cb == null ) {
-								if( MyDebug.LOG )
-									Log.d(TAG, "all image callbacks now completed");
-								cb.onCompleted();
-							}
-							else if( pending_dngCreator != null ) {
-								if( MyDebug.LOG )
-									Log.d(TAG, "can now call pending raw callback");
-								takePendingRaw();
-								if( MyDebug.LOG )
-									Log.d(TAG, "all image callbacks now completed");
-								cb.onCompleted();
-							}
-						}
+					} else {
+						Photo photo = new Photo(bytes);
+						imageAvailable(photo);
 					}
 				}
 				if( MyDebug.LOG )
 					Log.d(TAG, "done onImageAvailable");
 			}
 		}, null);
+		if (uncompressed_photo) {
+			imageReaderUncompressed = ImageReader.newInstance(picture_width, picture_height, ImageFormat.YUV_420_888, image_reader_burst_count);
+			if( MyDebug.LOG ) {
+				Log.d(TAG, "created new imageReaderUncompressed: " + imageReaderUncompressed.toString());
+				Log.d(TAG, "imageReaderUncompressed surface: " + imageReaderUncompressed.getSurface().toString());
+			}
+			imageReaderUncompressed.setOnImageAvailableListener(new ImageReader.OnImageAvailableListener() {
+				@Override
+				public void onImageAvailable(ImageReader reader) {
+					if( MyDebug.LOG )
+						Log.d(TAG, "new still image available");
+					if( jpeg_cb == null ) {
+						if( MyDebug.LOG )
+							Log.d(TAG, "no picture callback available");
+						return;
+					}
+					synchronized( image_reader_lock ) {
+						/* Whilst in theory the two setOnImageAvailableListener methods (for JPEG and RAW) seem to be called separately, I don't know if this is always true;
+						 * also, we may process the RAW image when the capture result is available (see
+						 * OnRawImageAvailableListener.setCaptureResult()), which may be in a separate thread.
+						 */
+						Image image = reader.acquireNextImage();
+						final long timestamp = image.getTimestamp();
+						if( MyDebug.LOG )
+							Log.d(TAG, "uncompressed image timestamp: " + image.getTimestamp());
+							
+						int index = pair_photo_timestamps.indexOf(timestamp);
+						if (index >= 0) {
+							Photo photo = pair_photos.get(index);
+							pair_photos.remove(index);
+							pair_photo_timestamps.remove(index);
+							
+							photo.image = image;
+							photo.orientation = camera_settings.getExifOrientation();
+							imageAvailable(photo);
+						} else {
+							pair_photo_timestamps.add(timestamp);
+							pair_photos.add(new Photo(image, camera_settings.getExifOrientation()));
+						}
+					}
+				}
+			}, null);
+		}
 		if( want_raw && raw_size != null&& !previewIsVideoMode  ) {
-			imageReaderRaw = ImageReader.newInstance(raw_size.getWidth(), raw_size.getHeight(), ImageFormat.RAW_SENSOR, 2);
+			imageReaderRaw = ImageReader.newInstance(raw_size.getWidth(), raw_size.getHeight(), ImageFormat.RAW_SENSOR, image_reader_burst_count);
 			if( MyDebug.LOG ) {
 				Log.d(TAG, "created new imageReaderRaw: " + imageReaderRaw.toString());
 				Log.d(TAG, "imageReaderRaw surface: " + imageReaderRaw.getSurface().toString());
@@ -2813,6 +2791,152 @@ public class CameraController2 extends CameraController {
 		}
 	}
 	
+	private void imageAvailable(final Photo photo) {
+		if( burst_single_request && n_burst > 1 ) {
+			pending_burst_images.add(photo);
+			if( pending_burst_images.size() >= n_burst ) { // shouldn't ever be greater, but just in case
+				if( MyDebug.LOG )
+					Log.d(TAG, "all burst images available");
+				if( pending_burst_images.size() > n_burst ) {
+					Log.e(TAG, "pending_burst_images size " + pending_burst_images.size() + " is greater than n_burst " + n_burst);
+				}
+				if (exposure_compensations != null) {
+					camera_settings.has_ae_exposure_compensation = true;
+					camera_settings.ae_exposure_compensation = exposure_compensations.get(0);
+					if( camera_settings.setExposureCompensation(previewBuilder) ) {
+						try {
+							setRepeatingRequest();
+						}
+						catch(CameraAccessException e) {
+							if( MyDebug.LOG ) {
+								Log.e(TAG, "failed to set exposure compensation");
+								Log.e(TAG, "reason: " + e.getReason());
+								Log.e(TAG, "message: " + e.getMessage());
+							}
+							e.printStackTrace();
+						}
+					}
+					exposure_compensations = null;
+				}
+				// need to set jpeg_cb etc to null before calling onCompleted, as that may reenter CameraController to take another photo (if in burst mode) - see testTakePhotoBurst()
+				PictureCallback cb = jpeg_cb;
+				jpeg_cb = null;
+				// no need to check raw_cb, as raw not supported for burst
+				// take a copy, so that we can clear pending_burst_images
+				List<Photo> images = new ArrayList<>(pending_burst_images);
+				cb.onBurstPictureTaken(images);
+				pending_burst_images.clear();
+				cb.onCompleted();
+			}
+			else {
+				if( MyDebug.LOG )
+					Log.d(TAG, "number of burst images is now: " + pending_burst_images.size());
+				if (exposure_compensations != null) {
+					camera_settings.has_ae_exposure_compensation = true;
+					camera_settings.ae_exposure_compensation = exposure_compensations.get(pending_burst_images.size());
+					if( camera_settings.setExposureCompensation(previewBuilder) ) {
+						try {
+							setRepeatingRequest();
+						}
+						catch(CameraAccessException e) {
+							if( MyDebug.LOG ) {
+								Log.e(TAG, "failed to set exposure compensation");
+								Log.e(TAG, "reason: " + e.getReason());
+								Log.e(TAG, "message: " + e.getMessage());
+							}
+							e.printStackTrace();
+						}
+					}
+
+					try {
+						Thread.sleep(exposure_compensation_delay);
+					}
+					catch(InterruptedException e) {}
+
+					try {
+						CaptureRequest.Builder stillBuilder = camera.createCaptureRequest(previewIsVideoMode ? CameraDevice.TEMPLATE_VIDEO_SNAPSHOT : CameraDevice.TEMPLATE_STILL_CAPTURE);
+						stillBuilder.set(CaptureRequest.CONTROL_CAPTURE_INTENT, CaptureRequest.CONTROL_CAPTURE_INTENT_STILL_CAPTURE);
+						camera_settings.setupBuilder(stillBuilder, true);
+						stillBuilder.addTarget(imageReader.getSurface());
+						if( imageReaderUncompressed != null )
+							stillBuilder.addTarget(imageReaderUncompressed.getSurface());
+
+						stillBuilder.set(CaptureRequest.CONTROL_AE_MODE, CameraMetadata.CONTROL_AE_MODE_ON);
+						stillBuilder.set(CaptureRequest.FLASH_MODE, CameraMetadata.FLASH_MODE_OFF);
+
+						is_filtering_blocked = false;
+						if (smart_filter_iso != 0) {
+							int actual_iso = getIso();
+							if (actual_iso > 0 && actual_iso <= smart_filter_iso) {
+								stillBuilder.set(CaptureRequest.NOISE_REDUCTION_MODE, CaptureRequest.NOISE_REDUCTION_MODE_OFF);
+								stillBuilder.set(CaptureRequest.EDGE_MODE, CaptureRequest.EDGE_MODE_OFF);
+								is_filtering_blocked = true;
+							}
+						}
+						captureSession.capture(stillBuilder.build(), previewCaptureCallback, handler);
+					}
+					catch(CameraAccessException e) {
+						if( MyDebug.LOG ) {
+							Log.e(TAG, "failed to take picture expo burst");
+							Log.e(TAG, "reason: " + e.getReason());
+							Log.e(TAG, "message: " + e.getMessage());
+						}
+						e.printStackTrace();
+						jpeg_cb = null;
+						if( take_picture_error_cb != null ) {
+							take_picture_error_cb.onError();
+							take_picture_error_cb = null;
+						}
+					}
+				} else if( slow_burst_capture_requests != null ) {
+					if( MyDebug.LOG ) {
+						Log.d(TAG, "need to execute the next capture");
+						Log.d(TAG, "time since start: " + (System.currentTimeMillis() - slow_burst_start_ms));
+					}
+					try {
+						captureSession.capture(slow_burst_capture_requests.get(pending_burst_images.size()), previewCaptureCallback, handler);
+					}
+					catch(CameraAccessException e) {
+						if( MyDebug.LOG ) {
+							Log.e(TAG, "failed to take next burst");
+							Log.e(TAG, "reason: " + e.getReason());
+							Log.e(TAG, "message: " + e.getMessage());
+						}
+						e.printStackTrace();
+						jpeg_cb = null;
+						if( take_picture_error_cb != null ) {
+							take_picture_error_cb.onError();
+							take_picture_error_cb = null;
+						}
+					}
+				}
+			}
+		}
+		else {
+			jpeg_cb.onPictureTaken(photo);
+			n_burst--;
+			if( MyDebug.LOG )
+				Log.d(TAG, "n_burst is now " + n_burst);
+			if( n_burst == 0 ) {
+				// need to set jpeg_cb etc to null before calling onCompleted, as that may reenter CameraController to take another photo (if in auto-repeat burst mode) - see testTakePhotoBurst()
+				PictureCallback cb = jpeg_cb;
+				jpeg_cb = null;
+				if( raw_cb == null ) {
+					if( MyDebug.LOG )
+						Log.d(TAG, "all image callbacks now completed");
+					cb.onCompleted();
+				}
+				else if( pending_dngCreator != null ) {
+					if( MyDebug.LOG )
+						Log.d(TAG, "can now call pending raw callback");
+					takePendingRaw();
+					if( MyDebug.LOG )
+						Log.d(TAG, "all image callbacks now completed");
+					cb.onCompleted();
+				}
+			}
+		}
+	}
 	private void clearPending() {
 		if( MyDebug.LOG )
 			Log.d(TAG, "clearPending");
@@ -3020,6 +3144,7 @@ public class CameraController2 extends CameraController {
 		if( MyDebug.LOG )
 			Log.d(TAG, "setFocusValue: " + focus_value);
 		int focus_mode;
+		camera_settings.focus_mode_manual = false;
 		switch(focus_value) {
 			case "focus_mode_auto":
 			case "focus_mode_locked":
@@ -3027,11 +3152,12 @@ public class CameraController2 extends CameraController {
 				break;
 			case "focus_mode_infinity":
 				focus_mode = CaptureRequest.CONTROL_AF_MODE_OFF;
-				camera_settings.focus_distance = 0.0f;
+				camera_settings.focus_distance = camera_settings.focus_distance_calibration;
 				break;
 			case "focus_mode_manual2":
 				focus_mode = CaptureRequest.CONTROL_AF_MODE_OFF;
-				camera_settings.focus_distance = camera_settings.focus_distance_manual;
+				camera_settings.focus_distance = camera_settings.focus_distance_manual+camera_settings.focus_distance_calibration;
+				camera_settings.focus_mode_manual = true;
 				break;
 			case "focus_mode_macro":
 				focus_mode = CaptureRequest.CONTROL_AF_MODE_MACRO;
@@ -3070,26 +3196,28 @@ public class CameraController2 extends CameraController {
 	private String convertFocusModeToValue(int focus_mode) {
 		if( MyDebug.LOG )
 			Log.d(TAG, "convertFocusModeToValue: " + focus_mode);
-		String focus_value = "";
 		if( focus_mode == CaptureRequest.CONTROL_AF_MODE_AUTO ) {
-			focus_value = "focus_mode_auto";
+			return "focus_mode_auto";
 		}
 		else if( focus_mode == CaptureRequest.CONTROL_AF_MODE_MACRO ) {
-			focus_value = "focus_mode_macro";
+			return "focus_mode_macro";
 		}
 		else if( focus_mode == CaptureRequest.CONTROL_AF_MODE_EDOF ) {
-			focus_value = "focus_mode_edof";
+			return "focus_mode_edof";
 		}
 		else if( focus_mode == CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE ) {
-			focus_value = "focus_mode_continuous_picture";
+			return "focus_mode_continuous_picture";
 		}
 		else if( focus_mode == CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO ) {
-			focus_value = "focus_mode_continuous_video";
+			return "focus_mode_continuous_video";
 		}
 		else if( focus_mode == CaptureRequest.CONTROL_AF_MODE_OFF ) {
-			focus_value = "focus_mode_manual2"; // n.b., could be infinity
+			if (camera_settings.focus_mode_manual)
+				return "focus_mode_manual2";
+			else
+				return "focus_mode_infinity";
 		}
-		return focus_value;
+		return "";
 	}
 	
 	@Override
@@ -3113,7 +3241,7 @@ public class CameraController2 extends CameraController {
 				Log.d(TAG, "already set");
 			return false;
 		}
-		camera_settings.focus_distance = focus_distance;
+		camera_settings.focus_distance = focus_distance+camera_settings.focus_distance_calibration;
 		camera_settings.focus_distance_manual = focus_distance;
 		camera_settings.setFocusDistance(previewBuilder);
 		try {
@@ -3126,8 +3254,21 @@ public class CameraController2 extends CameraController {
 				Log.e(TAG, "message: " + e.getMessage());
 			}
 			e.printStackTrace();
-		} 
+		}
 		return true;
+	}
+
+	@Override
+	public void setFocusDistanceCalibration(float value) {
+		camera_settings.focus_distance_calibration = value;
+		if (previewBuilder.get(CaptureRequest.CONTROL_AF_MODE) != null && previewBuilder.get(CaptureRequest.CONTROL_AF_MODE) == CaptureRequest.CONTROL_AF_MODE_OFF) {
+			if (camera_settings.focus_mode_manual)
+				camera_settings.focus_distance = camera_settings.focus_distance_manual+camera_settings.focus_distance_calibration;
+			else
+				camera_settings.focus_distance = camera_settings.focus_distance_calibration;
+			
+			camera_settings.setFocusDistance(previewBuilder);
+		}
 	}
 
 	/** Decides whether we should be using fake precapture mode.
@@ -3203,9 +3344,16 @@ public class CameraController2 extends CameraController {
 	}
 
 	@Override
-	public void setAutoExposureLock(boolean enabled) {
+	public void setAutoAdjustmentLock(boolean enabled) {
 		camera_settings.ae_lock = enabled;
 		camera_settings.setAutoExposureLock(previewBuilder);
+
+		camera_settings.awb_lock = enabled;
+		camera_settings.setAutoWhiteBalanceLock(previewBuilder);
+
+		camera_settings.bl_lock = enabled;
+		camera_settings.setBlackLevelLock(previewBuilder);
+
 		try {
 			setRepeatingRequest();
 		}
@@ -3217,37 +3365,6 @@ public class CameraController2 extends CameraController {
 			}
 			e.printStackTrace();
 		} 
-	}
-	
-	@Override
-	public boolean getAutoExposureLock() {
-		if( previewBuilder.get(CaptureRequest.CONTROL_AE_LOCK) == null )
-			return false;
-		return previewBuilder.get(CaptureRequest.CONTROL_AE_LOCK);
-	}
-
-	@Override
-	public void setAutoWhiteBalanceLock(boolean enabled) {
-		camera_settings.awb_lock = enabled;
-		camera_settings.setAutoWhiteBalanceLock(previewBuilder);
-		try {
-			setRepeatingRequest();
-		}
-		catch(CameraAccessException e) {
-			if( MyDebug.LOG ) {
-				Log.e(TAG, "failed to set auto white balance lock");
-				Log.e(TAG, "reason: " + e.getReason());
-				Log.e(TAG, "message: " + e.getMessage());
-			}
-			e.printStackTrace();
-		} 
-	}
-	
-	@Override
-	public boolean getAutoWhiteBalanceLock() {
-		if( previewBuilder.get(CaptureRequest.CONTROL_AWB_LOCK) == null )
-			return false;
-		return previewBuilder.get(CaptureRequest.CONTROL_AWB_LOCK);
 	}
 
 	@Override
@@ -3799,7 +3916,10 @@ public class CameraController2 extends CameraController {
 			List<Surface> surfaces;
 			if( video_recorder != null ) {
 				if( supports_photo_video_recording ) {
-					surfaces = Arrays.asList(preview_surface, video_recorder.getSurface(), imageReader.getSurface());
+					if (uncompressed_photo)
+						surfaces = Arrays.asList(preview_surface, video_recorder.getSurface(), imageReader.getSurface(), imageReaderUncompressed.getSurface());
+					else
+						surfaces = Arrays.asList(preview_surface, video_recorder.getSurface(), imageReader.getSurface());
 				}
 				else {
 					surfaces = Arrays.asList(preview_surface, video_recorder.getSurface());
@@ -3807,10 +3927,16 @@ public class CameraController2 extends CameraController {
 				// n.b., raw not supported for photo snapshots while video recording
 			}
 			else if( imageReaderRaw != null ) {
-				surfaces = Arrays.asList(preview_surface, imageReader.getSurface(), imageReaderRaw.getSurface());
+				if (uncompressed_photo)
+					surfaces = Arrays.asList(preview_surface, imageReader.getSurface(), imageReaderUncompressed.getSurface(), imageReaderRaw.getSurface());
+				else
+					surfaces = Arrays.asList(preview_surface, imageReader.getSurface(), imageReaderRaw.getSurface());
 			}
 			else {
-				surfaces = Arrays.asList(preview_surface, imageReader.getSurface());
+				if (uncompressed_photo)
+					surfaces = Arrays.asList(preview_surface, imageReader.getSurface(), imageReaderUncompressed.getSurface());
+				else
+					surfaces = Arrays.asList(preview_surface, imageReader.getSurface());
 			}
 			if( MyDebug.LOG ) {
 				Log.d(TAG, "texture: " + texture);
@@ -3830,9 +3956,7 @@ public class CameraController2 extends CameraController {
 					}
 				}
 			}
-			camera.createCaptureSession(surfaces,
-				myStateCallback,
-		 		handler);
+			camera.createCaptureSession(surfaces, myStateCallback, handler);
 			if( MyDebug.LOG )
 				Log.d(TAG, "wait until session created...");
 			synchronized( create_capture_session_lock ) {
@@ -4267,11 +4391,13 @@ public class CameraController2 extends CameraController {
 			stillBuilder.set(CaptureRequest.CONTROL_CAPTURE_INTENT, CaptureRequest.CONTROL_CAPTURE_INTENT_STILL_CAPTURE);
 			stillBuilder.setTag(RequestTag.CAPTURE);
 			camera_settings.setupBuilder(stillBuilder, true);
+			is_filtering_blocked = false;
 			if (smart_filter_iso != 0) {
 				int actual_iso = getIso();
 				if (actual_iso > 0 && actual_iso <= smart_filter_iso) {
 					stillBuilder.set(CaptureRequest.NOISE_REDUCTION_MODE, CaptureRequest.NOISE_REDUCTION_MODE_OFF);
 					stillBuilder.set(CaptureRequest.EDGE_MODE, CaptureRequest.EDGE_MODE_OFF);
+					is_filtering_blocked = true;
 				}
 			}
 			if( use_fake_precapture_mode && fake_precapture_torch_performed ) {
@@ -4309,6 +4435,8 @@ public class CameraController2 extends CameraController {
 			clearPending();
 			// shouldn't add preview surface as a target - no known benefit to doing so
 			stillBuilder.addTarget(imageReader.getSurface());
+			if( imageReaderUncompressed != null )
+				stillBuilder.addTarget(imageReaderUncompressed.getSurface());
 			if( imageReaderRaw != null )
 				stillBuilder.addTarget(imageReaderRaw.getSurface());
 
@@ -4373,20 +4501,24 @@ public class CameraController2 extends CameraController {
 			// shouldn't add preview surface as a target - see note in takePictureAfterPrecapture()
 			// but also, adding the preview surface causes the dark/light exposures to be visible, which we don't want
 			stillBuilder.addTarget(imageReader.getSurface());
+			if( imageReaderUncompressed != null )
+				stillBuilder.addTarget(imageReaderUncompressed.getSurface());
 			// don't add target imageReaderRaw, as Raw not supported for burst
 			raw_cb = null; // raw not supported for burst
 
 			List<CaptureRequest> requests = new ArrayList<>();
 
+			is_filtering_blocked = false;
 			if (smart_filter_iso != 0) {
 				int actual_iso = getIso();
 				if (actual_iso > 0 && actual_iso <= smart_filter_iso) {
 					stillBuilder.set(CaptureRequest.NOISE_REDUCTION_MODE, CaptureRequest.NOISE_REDUCTION_MODE_OFF);
 					stillBuilder.set(CaptureRequest.EDGE_MODE, CaptureRequest.EDGE_MODE_OFF);
+					is_filtering_blocked = true;
 				}
 			}
 
-			int n_half_images = expo_bracketing_n_images/2;
+			int n_half_images = want_burst_count/2;
 			Range<Long> exposure_time_range = characteristics.get(CameraCharacteristics.SENSOR_INFO_EXPOSURE_TIME_RANGE); // may be null on some devices
 			
 			boolean expo_bracketing_exposure_compensation = exposure_time_range == null;
@@ -4478,7 +4610,7 @@ public class CameraController2 extends CameraController {
 				}
 
 				if( MyDebug.LOG ) {
-					Log.d(TAG, "taking expo bracketing with n_images: " + expo_bracketing_n_images);
+					Log.d(TAG, "taking expo bracketing with n_images: " + want_burst_count);
 					Log.d(TAG, "ISO: " + stillBuilder.get(CaptureRequest.SENSOR_SENSITIVITY));
 					Log.d(TAG, "Frame duration: " + stillBuilder.get(CaptureRequest.SENSOR_FRAME_DURATION));
 					Log.d(TAG, "Base exposure time: " + base_exposure_time);
@@ -4561,7 +4693,7 @@ public class CameraController2 extends CameraController {
 			}
 
 			if (expo_bracketing_exposure_compensation) {
-				n_burst = expo_bracketing_n_images;
+				n_burst = want_burst_count;
 			} else {
 				n_burst = requests.size();
 			}
@@ -4652,6 +4784,8 @@ public class CameraController2 extends CameraController {
 			clearPending();
 			// shouldn't add preview surface as a target - see note in takePictureAfterPrecapture()
 			stillBuilder.addTarget(imageReader.getSurface());
+			if( imageReaderUncompressed != null )
+				stillBuilder.addTarget(imageReaderUncompressed.getSurface());
 			// don't add target imageReaderRaw, as Raw not supported for burst
 			raw_cb = null; // raw not supported for burst
 
@@ -4678,9 +4812,11 @@ public class CameraController2 extends CameraController {
 			if (exposure_time != 0)
 				setManualExposureTime(stillBuilder, exposure_time);
 
+			is_filtering_blocked = false;
 			if (burst_disable_filters || (smart_filter_iso != 0 && iso > 0 && iso <= smart_filter_iso)) {
 				stillBuilder.set(CaptureRequest.NOISE_REDUCTION_MODE, CaptureRequest.NOISE_REDUCTION_MODE_OFF);
 				stillBuilder.set(CaptureRequest.EDGE_MODE, CaptureRequest.EDGE_MODE_OFF);
+				is_filtering_blocked = true;
 			}
 
 			final CaptureRequest request = stillBuilder.build();
@@ -5120,6 +5256,12 @@ public class CameraController2 extends CameraController {
 	}
 
 	@Override
+	public boolean canReportNeedsFlash() {
+		return characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE) &&
+			characteristics.get(CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL) != CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY;
+	}
+
+	@Override
 	public boolean captureResultHasWhiteBalanceTemperature() {
 		return capture_result_has_white_balance_rggb;
 	}
@@ -5198,6 +5340,11 @@ public class CameraController2 extends CameraController {
 	@Override
 	public void setSmartFilterISO(int iso) {
 		smart_filter_iso = iso;
+	}
+
+	@Override
+	public boolean isFilteringBlocked() {
+		return is_filtering_blocked;
 	}
 
 	/*

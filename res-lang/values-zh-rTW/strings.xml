@@ -5,7 +5,11 @@
 	<string name="translation_author">You-Cheng Hsieh</string>
 	<string name="intro_text">輕觸對焦，按下藍色相機按鈕來拍照。按下設定中的線上說明可以取得更多協助。Open Camera 是完全免費的。如果您喜歡這個 app，請考慮購買我的捐贈 app :)(查看設定中的連結，或線上說明)。\n\n隱私政策：必須允許位置許可才能進行地理標記，但預設這是關閉的。如果開啟，您的位置會編碼在儲存的檔案中(且僅被用於此目的).\n\n(此訊息將不會再顯示。)</string>
 	<string name="intro_ok">好 (此訊息將不再顯示)</string>
+	
+<!-- Translate me
+	<string name="charset">ISO-8859-1</string>
 
+-->
 	<string name="answer_yes">是</string>
 	<string name="answer_no">否</string>
 
@@ -43,6 +47,9 @@
 
 -->
 	<string name="angle">角度</string>
+<!-- Translate me
+	<string name="rotation">Rotation</string>
+-->
 	<string name="direction">方向</string>
 	<string name="zoom">縮放</string>
 	<string name="free_memory">可用記憶體</string>
@@ -431,7 +438,7 @@
 
 -->
 	<string name="preference_immersive_mode">全螢幕模式</string>
-	<string name="preference_immersive_mode_summary">\"全螢幕模式\" 行為選項</string>
+	<string name="preference_immersive_mode_summary">%s\n\n\"全螢幕模式\" 行為選項</string>
 <!-- Translate me
 	<string name="im_fullscreen">Fullscreen mode</string>
 	<string name="im_sticky">Sticky</string>
@@ -463,11 +470,13 @@
 	<string name="left_gap_for_buttons">Left, gap for buttons</string>
 -->
 	<string name="preference_rotate_preview">旋轉預覽</string>
-	<string name="preference_rotate_preview_summary">旋轉預覽選項 (不會影響最終的照片/影片)</string>
+	<string name="preference_rotate_preview_summary">%s\n\n旋轉預覽選項 (不會影響最終的照片/影片)</string>
 	<string name="dont_rotate">不旋轉</string>
 	<string name="rotate_180_degrees">旋轉 180 度</string>
 <!-- Translate me
 	<string name="preference_preview_max_expo">Maximum exposure</string>
+	<string name="preference_zoom_when_focusing">Zoom when focusing</string>
+	<string name="preference_zoom_when_focusing_summary">Increase the center of the preview when adjusting manual focus</string>
 	<string name="preference_preview_max_expo_summary">Maximum preview exposure in manual mode (won\'t affect resultant photos/videos)</string>
 	<string name="preference_preview_surface">Preview surface</string>
 	<string name="preference_preview_surface_summary">%s\n\nSurface for displaying preview. Switch this option only if you know what you do</string>
@@ -489,7 +498,7 @@
 	<string name="preference_show_angle_line">顯示角度線</string>
 	<string name="preference_show_angle_line_summary">顯示水平線</string>
 	<string name="preference_angle_highlight_color">角度標示顏色</string>
-	<string name="preference_angle_highlight_color_summary">相機接近水平時的標示顏色</string>
+	<string name="preference_angle_highlight_color_summary">%s\n\n相機接近水平時的標示顏色</string>
 <!-- Translate me
 	<string name="preference_show_pitch_lines">Show pitch lines</string>
 	<string name="preference_show_pitch_lines_summary">Display horizontal pitch lines</string>
@@ -522,7 +531,7 @@
 	<string name="preference_grid_alpha">Grid alpha</string>
 -->
 	<string name="preference_crop_guide">顯示裁切輔助</string>
-	<string name="preference_crop_guide_summary">裁切輔助顯示一個矩形來表示指定的長寬比看起來如何 - 如果您計畫以後裁切照片/影片為不同的解析度很有用。需要所見即所得拍照模式，或處於錄影模式中。</string>
+	<string name="preference_crop_guide_summary">%s\n\n裁切輔助顯示一個矩形來表示指定的長寬比看起來如何 - 如果您計畫以後裁切照片/影片為不同的解析度很有用。需要所見即所得拍照模式，或處於錄影模式中。</string>
 <!-- Translate me
 	<string name="preference_osd_frequency">Update frequency</string>
 	<string name="preference_osd_frequency_summary">OSD update frequency. Increasing this value will will make the indication smoother, but the battery will discharge faster</string>
@@ -581,6 +590,7 @@
 	<string name="preference_multitouch_zoom_summary">You must restart the application to apply this option</string>
 	<string name="preference_focus_range">Focus range</string>
 	<string name="preference_focus_range_summary">Manual focus range limit for for more precise control</string>
+	<string name="fr_landscape_macro">Landscape/Macro</string>
 	<string name="fr_room">Room</string>
 	<string name="fr_group">Group photo</string>
 	<string name="preference_level_angle_calibration">Level angle calibration</string>
@@ -594,6 +604,8 @@
 	<string name="preference_center_focus">Center focus</string>
 	<string name="preference_center_focus_summary">Set focus zone in the center of the frame at startup</string>
 	<string name="preference_min_focus_distance">Minimum focus distance</string>
+	<string name="preference_focus_distance_calibration">Focus distance calibration</string>
+	<string name="preference_focus_distance_calibration_summary">Positive values correspond to short distances, negative values to long distances.</string>
 	<string name="preference_update_focus_for_video">Update focus mode</string>
 	<string name="preference_update_focus_for_video_summary">Workaround for bug on Samsung Galaxy S5 with UHD, where if the user switches to another (non-continuous-video) focus mode, then goes to Settings, then returns and records video, the preview freezes and the video is corrupted</string>
 	<string name="preference_camera2_fake_flash">Use alternative flash method</string>
@@ -617,6 +629,20 @@
 	<string name="jpeg_and_dng">JPEG and DNG (RAW)</string>
 	<string name="preference_flip_front_facing">Flip photo</string>
 	<string name="preference_flip_front_facing_summary">Flip horizontally photos from front camera</string>
+	<string name="preference_uncompressed_photo">Uncompressed output</string>
+	<string name="preference_uncompressed_photo_summary">Use YUV 420 output instead of compressed JPEG. Speeds up saving and improves image quality when using image post-processing. Can work incorrectly on some devices.</string>
+	<string name="preference_category_metadata">Metadata</string>
+	<string name="preference_category_metadata_summary">Metadata that is stored inside the JPEG file</string>
+	<string name="preference_metadata_author">Author</string>
+	<string name="preference_metadata_comment">Comment</string>
+	<string name="preference_metadata_position_info">Device position</string>
+	<string name="preference_metadata_position_info_summary">Add to comment information about device position</string>
+	<string name="preference_metadata_mode_info">Mode info</string>
+	<string name="preference_metadata_mode_info_summary">Add to comment information about camera mode</string>
+	<string name="preference_metadata_sensor_info">Sensor info</string>
+	<string name="preference_metadata_sensor_info_summary">Add to comment information about sensor settings</string>
+	<string name="preference_metadata_processing_info">Processing info</string>
+	<string name="preference_metadata_processing_info_summary">Add to comment information about image processing</string>
 	<string name="preference_category_expo_bracketing_summary">Expobracketing settings. Most of the options in this section also apply to HDR.</string>
 	<string name="preference_expo_bracketing_n_images">Exposure Bracketing</string>
 	<string name="preference_expo_bracketing_n_images_summary">%s\n\nNumber of images for exposure bracketing mode</string>
@@ -633,8 +659,13 @@
 	<string name="preference_category_hdr_summary">HDR and DRO settings</string>
 	<string name="preference_hdr_save_expo">Save all images for HDR mode</string>
 	<string name="preference_hdr_save_expo_summary">If enabled, when using HDR photo mode, the three base exposure images will be saved as well as the final HDR photo. Note this will make saving slower, especially if options like \"Stamp photos\" or Auto-level are also used.</string>
+	<string name="preference_hdr_deghost">Deghosting</string>
 	<string name="preference_hdr_tonemapping">Tone mapping</string>
 	<string name="preference_hdr_tonemapping_summary">%s\n\nAlgorithm to use for HDR tonemapping</string>
+	<string name="preference_hdr_unsharp_mask">Unsharp mask</string>
+	<string name="preference_hdr_unsharp_mask_summary">%s\n\nLevel of the unsharp mask filter during processing HDR and DRO</string>
+	<string name="preference_hdr_unsharp_mask_radius">Radius</string>
+	<string name="preference_hdr_unsharp_mask_radius_summary">%s\n\nUnsharp mask blur radius</string>
 	<string name="preference_hdr_local_contrast">Local contrast</string>
 	<string name="preference_hdr_local_contrast_summary">%s\n\nLevel of the local contrast enhancement during processing HDR and DRO</string>
 	<string name="preference_hdr_n_tiles">Number of tiles</string>
@@ -697,11 +728,11 @@
 	<string name="preference_video_stabilization">啟用影片穩定</string>
 	<string name="preference_video_stabilization_summary">影片穩定減少在預覽和錄影中由於相機移動引起的晃動。</string>
 	<string name="preference_video_bitrate">影片位元率 (大約)</string>
-	<string name="preference_video_bitrate_summary">設定影片的大致位元率 (越高表示越好的品質，但佔用更多磁碟空間；如果位元率不支援可能造成錄影失敗)</string>
+	<string name="preference_video_bitrate_summary">%s\n\n設定影片的大致位元率 (越高表示越好的品質，但佔用更多磁碟空間；如果位元率不支援可能造成錄影失敗)</string>
 	<string name="preference_video_fps">影片FPS (大約)</string>
 	<string name="preference_video_fps_summary">設定影片的 FPS(大約值，不能保證有用，且如果不支援可能造成錄影失敗)</string>
 	<string name="preference_video_max_duration">影片最長持續時間</string>
-	<string name="preference_video_max_duration_summary">在指定的時間後錄影將停止。</string>
+	<string name="preference_video_max_duration_summary">%s\n\n在指定的時間後錄影將停止。</string>
 	<string name="preference_video_restart">在最大持續時間後重啟錄影</string>
 	<string name="dont_restart">不重複</string>
 	<string name="repeat_1_time">重複 1 次</string>
@@ -714,7 +745,7 @@
 	<string name="repeat_8_times">重複 8 次</string>
 	<string name="repeat_9_times">重複 9 次</string>
 	<string name="repeat_10_times">重複 10 次</string>
-	<string name="preference_video_restart_summary">如果在達到最大持續時間(如果有設定)後影片停止，此選項將使錄影重啟，最多為指定的次數。</string>
+	<string name="preference_video_restart_summary">%s\n\n如果在達到最大持續時間(如果有設定)後影片停止，此選項將使錄影重啟，最多為指定的次數。</string>
 <!-- Translate me
 	<string name="preference_video_max_filesize">Maximum file size of video</string>
 	<string name="preference_video_max_filesize_summary">%s\n\nThe video recording will stop and/or restart (see option below) when the (approximate) maximum file size is reached. Note that almost all Android devices have a maximum file size for videos (typically around 2GB or 4GB), but this option allows setting a specific value</string>
@@ -729,7 +760,7 @@
 	<string name="as_default_source">預設的音源</string>
 	<string name="as_voice_optimized">優化語音</string>
 	<string name="preference_record_audio_channels">音源頻道</string>
-	<string name="preference_record_audio_channels_summary">指定使用單聲道或立體聲來錄音 (立體聲只支援某些裝置)</string>
+	<string name="preference_record_audio_channels_summary">%s\n\n指定使用單聲道或立體聲來錄音 (立體聲只支援某些裝置)</string>
 	<string name="am_mono">單聲道</string>
 	<string name="am_stereo">立體聲 (只支援某些裝置)</string>
 	<string name="preference_lock_video">錄影時鎖定螢幕</string>
@@ -774,8 +805,10 @@
 	<string name="nr_minimal">Minimal</string>
 -->
 	<string name="nr_zero_shutter_lag">零快門延遲</string>
-
 <!-- Translate me
+	<string name="preference_zero_shutter_delay">Zero shutter delay</string>
+	<string name="preference_zero_shutter_delay_summary">%s</string>
+
 	<string name="preference_screen_files">Files</string>
 -->
 	<string name="preference_save_location">儲存位置</string>

@@ -18,6 +18,7 @@ import java.util.Map;
 
 import android.Manifest;
 import android.content.pm.PackageInfo;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -61,6 +62,7 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.renderscript.RenderScript;
+import android.renderscript.RSInvalidStateException;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
@@ -92,6 +94,7 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 	private Sensor mSensorAccelerometer;
 	private Sensor mSensorMagnetic;
 
+	private Resources resources;
 	private SharedPreferences sharedPreferences;
 
 	private MainUI mainUI;
@@ -180,6 +183,11 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 	private Handler immersive_timer_handler = null;
 	private Runnable immersive_timer_runnable = null;
 
+	private RenderScript rs; // lazily created, so we don't take up resources if application isn't using HDR
+	
+	private Handler reset_zoom_handler = null;
+	private Runnable reset_zoom_runnable = null;
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		long debug_time = 0;
@@ -215,6 +223,8 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 			if( MyDebug.LOG )
 				Log.d(TAG, "take_photo?: " + getIntent().getExtras().getBoolean(TakePhoto.TAKE_PHOTO));
 		}
+		resources = getResources();
+		
 		sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 		Prefs.setSharedPreferences(sharedPreferences);
 
@@ -658,12 +668,12 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 			Log.d(TAG, "preloadIcons: " + icons_id);
 			debug_time = System.currentTimeMillis();
 		}
-		String [] icons = getResources().getStringArray(icons_id);
+		String [] icons = resources.getStringArray(icons_id);
 		for(String icon : icons) {
-			int resource = getResources().getIdentifier(icon, null, this.getApplicationContext().getPackageName());
+			int resource = resources.getIdentifier(icon, null, this.getApplicationContext().getPackageName());
 			if( MyDebug.LOG )
 				Log.d(TAG, "load resource: " + resource);
-			Bitmap bm = BitmapFactory.decodeResource(getResources(), resource);
+			Bitmap bm = BitmapFactory.decodeResource(resources, resource);
 			this.preloaded_bitmap_resources.put(resource, bm);
 		}
 		if( MyDebug.LOG ) {
@@ -683,6 +693,18 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 		}
 		if( applicationInterface != null ) {
 			applicationInterface.onDestroy();
+		}
+		if( rs != null ) {
+			// need to destroy context, otherwise this isn't necessarily garbage collected - we had tests failing with out of memory
+			// problems e.g. when running MainTests as a full set with Camera2 API. Although we now reduce the problem by creating
+			// the rs lazily, it's still good to explicitly clear.
+			try {
+				rs.destroy(); // on Android M onwards this is a NOP - instead we call RenderScript.releaseAllContexts(); in MainActivity.onDestroy()
+			}
+			catch(RSInvalidStateException e) {
+				e.printStackTrace();
+			}
+			rs = null;
 		}
 		if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ) {
 			// see note in HDRProcessor.onDestroy() - but from Android M, renderscript contexts are released with releaseAllContexts()
@@ -878,9 +900,15 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 					}
 					return true;
 				} else if (key_action.equals("focus_plus")) {
+					if (sharedPreferences.getBoolean(Prefs.ZOOM_WHEN_FOCUSING, false))
+						this.zoomWhenFocusing();
+
 					this.changeFocusDistance(1);
 					return true;
 				} else if (key_action.equals("focus_minus")) {
+					if (sharedPreferences.getBoolean(Prefs.ZOOM_WHEN_FOCUSING, false))
+						this.zoomWhenFocusing();
+
 					this.changeFocusDistance(-1);
 					return true;
 				} else if (key_action.equals("exposure_plus")) {
@@ -898,10 +926,42 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 		}
 
 		if (keyCode == KeyEvent.KEYCODE_MENU) {
-			openSettings();
+			final MyPreferenceFragment fragment = getPreferenceFragment();
+			if (fragment == null)
+				openSettings();
+/*			else {
+				getFragmentManager().beginTransaction().remove(fragment).commit();
+				getFragmentManager().popBackStack();
+				closeSettings();
+			}*/
 			return true;
 		}
 		return super.onKeyDown(keyCode, event); 
+	}
+	
+	private void zoomWhenFocusing() {
+		if (preview.supportsZoom()) {
+			preview.focusZoom();
+			
+			if( reset_zoom_handler != null && reset_zoom_runnable != null ) {
+				reset_zoom_handler.removeCallbacks(reset_zoom_runnable);
+			}
+
+			if (reset_zoom_handler == null) {
+				reset_zoom_handler = new Handler();
+			}
+			
+			if (reset_zoom_runnable == null) {
+				reset_zoom_runnable = new Runnable(){
+					@Override
+					public void run(){
+						preview.resetZoom();
+				   }
+				};
+			}
+
+			reset_zoom_handler.postDelayed(reset_zoom_runnable, 1500);
+		}
 	}
 
 	public void zoomIn() {
@@ -1013,6 +1073,7 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 		}
 		super.onPause(); // docs say to call this before freeing other things
 		mainUI.destroyPopup(); // important as user could change/reset settings from Android settings when pausing
+		preview.cancelTimer();
 		mSensorManager.unregisterListener(accelerometerListener);
 		mSensorManager.unregisterListener(magneticListener);
 		orientationEventListener.disable();
@@ -1024,10 +1085,10 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 		applicationInterface.clearLastImages(); // this should happen when pausing the preview, but call explicitly just to be safe
 		preview.onPause();
 		applicationInterface.restoreSound();
+		if (fullscreen) setFullscreen();
 		if( MyDebug.LOG ) {
 			Log.d(TAG, "onPause: total time to pause: " + (System.currentTimeMillis() - debug_time));
 		}
-		if (fullscreen) setFullscreen();
 	}
 
 	@Override
@@ -1336,6 +1397,7 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 				case Prefs.GUI_ORIENTATION:
 					mainUI.updateOrientationPrefs(sharedPreferences);
 					break;
+				case Prefs.RAW:
 				case Prefs.IMMERSIVE_MODE:
 				case Prefs.FACE_DETECTION:
 				case Prefs.AUDIO_CONTROL:
@@ -1382,7 +1444,13 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 				case Prefs.PREVIEW_MAX_EXPO:
 				case Prefs.HDR_IGNORE_SMART_FILTER:
 				case Prefs.FAST_BURST_DISABLE_FILTERS:
+				case Prefs.NR_DISABLE_FILTERS:
 				case Prefs.ISO_STEPS:
+				case Prefs.UNCOMPRESSED_PHOTO:
+				case Prefs.FULL_SIZE_COPY:
+				case Prefs.FOCUS_DISTANCE_CALIBRATION+"_0":
+				case Prefs.FOCUS_DISTANCE_CALIBRATION+"_1":
+				case Prefs.FOCUS_DISTANCE_CALIBRATION+"_2":
 					need_reconnect = true;
 					break;
 				case Prefs.SHOW_WHEN_LOCKED:
@@ -1421,6 +1489,7 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 		bundle.putBoolean("supports_camera2", this.supports_camera2);
 		bundle.putBoolean("supports_face_detection", this.preview.supportsFaceDetection());
 		bundle.putBoolean("supports_raw", this.preview.supportsRaw());
+		bundle.putBoolean("supports_renderscript", this.supportsRenderScript());
 		bundle.putBoolean("supports_dro", this.supportsDRO());
 		bundle.putBoolean("supports_hdr", this.supportsHDR());
 		bundle.putBoolean("supports_nr", this.supportsNoiseReduction());
@@ -1461,6 +1530,11 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 		putBundleExtra(bundle, "edge_modes", this.preview.getSupportedEdgeModes());
 		bundle.putString("optical_stabilization_mode", this.preview.getOpticalStabilizationMode());
 		putBundleExtra(bundle, "optical_stabilization_modes", this.preview.getSupportedOpticalStabilizationModes());
+
+		if (!this.preview.usingCamera2API()) {
+			bundle.putString("zero_shutter_delay_mode", this.preview.getZeroShutterDelayMode());
+			putBundleExtra(bundle, "zero_shutter_delay_modes", this.preview.getSupportedZeroShutterDelayModes());
+		}
 
 		if( this.preview.getCameraController() != null ) {
 			bundle.putString("parameters_string", preview.getCameraController().getParametersString());
@@ -1548,6 +1622,31 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 		// use commitAllowingStateLoss() instead of commit(), does to "java.lang.IllegalStateException: Can not perform this action after onSaveInstanceState" crash seen on Google Play
 		// see http://stackoverflow.com/questions/7575921/illegalstateexception-can-not-perform-this-action-after-onsaveinstancestate-wit
 		getFragmentManager().beginTransaction().add(R.id.prefs_container, fragment, "PREFERENCE_FRAGMENT").addToBackStack(null).commitAllowingStateLoss();
+	}
+	
+	public void closeSettings() {
+		if( MyDebug.LOG )
+			Log.d(TAG, "closeSettings");
+
+		if( preferencesListener.needRestart() ) {
+			preview.onPause();
+			Intent i = getBaseContext().getPackageManager().getLaunchIntentForPackage( getBaseContext().getPackageName() );
+			i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+			startActivity(i);
+			return;
+		}
+
+		preferencesListener.stopListening();
+		setWindowFlagsForCamera();
+		if( preferencesListener.needReconnect() ) {
+			updateForSettings();
+		}
+		preview.setCameraDisplayOrientation(); // need to call in case the preview rotation option was changed
+		if (!mainUI.inImmersiveMode()) {
+			mainUI.showGUI(true);
+			mainUI.setPopupIcons();
+		}
+		showPreview(true);
 	}
 
 	public void updateForSettings() {
@@ -1691,28 +1790,7 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 		}
 		final MyPreferenceFragment fragment = getPreferenceFragment();
 		if( fragment != null ) {
-			if( preferencesListener.needRestart() ) {
-				preview.onPause();
-				Intent i = getBaseContext().getPackageManager().getLaunchIntentForPackage( getBaseContext().getPackageName() );
-				i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-				startActivity(i);
-				return;
-			}
-
-			if( MyDebug.LOG )
-				Log.d(TAG, "close settings");
-
-			preferencesListener.stopListening();
-			setWindowFlagsForCamera();
-			if( preferencesListener.needReconnect() ) {
-				updateForSettings();
-			}
-			preview.setCameraDisplayOrientation(); // need to call in case the preview rotation option was changed
-			if (!mainUI.inImmersiveMode()) {
-				mainUI.showGUI(true);
-				mainUI.setPopupIcons();
-			}
-			showPreview(true);
+			closeSettings();
 		}
 		else {
 			if( popupIsOpen() ) {
@@ -2135,6 +2213,9 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 	public void clickedGallery(View view) {
 		if( MyDebug.LOG )
 			Log.d(TAG, "clickedGallery");
+		
+		if (gallery_bitmap == null) return;
+			
 		//Intent intent = new Intent(Intent.ACTION_VIEW, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
 		Uri uri = applicationInterface.getStorageUtils().getLastMediaScanned();
 		if( uri == null ) {
@@ -2257,7 +2338,7 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 
 					File file = applicationInterface.getStorageUtils().getImageFolder();
 					if( file != null ) {
-						preview.showToast(null, getResources().getString(R.string.changed_save_location) + "\n" + file.getAbsolutePath());
+						preview.showToast(null, resources.getString(R.string.changed_save_location) + "\n" + file.getAbsolutePath());
 					}
 				}
 				catch(SecurityException e) {
@@ -2311,7 +2392,7 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 				editor.apply();
 
 				this.save_location_history.updateFolderHistory(this.getStorageUtils().getSaveLocation(), true);
-				this.preview.showToast(null, getResources().getString(R.string.changed_save_location) + "\n" + this.applicationInterface.getStorageUtils().getSaveLocation());
+				this.preview.showToast(null, resources.getString(R.string.changed_save_location) + "\n" + this.applicationInterface.getStorageUtils().getSaveLocation());
 			}
 		}
 	}
@@ -2371,7 +2452,7 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 		AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
 		alertDialog.setTitle(R.string.choose_save_location);
 		
-		alertDialog.setNegativeButton(getResources().getString(R.string.clear_folder_history), new DialogInterface.OnClickListener() {
+		alertDialog.setNegativeButton(resources.getString(R.string.clear_folder_history), new DialogInterface.OnClickListener() {
 			@Override
 			public void onClick(DialogInterface dialog, int which) {
 				if( MyDebug.LOG )
@@ -2416,7 +2497,7 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 			}
 		});
 
-		alertDialog.setNeutralButton(getResources().getString(R.string.choose_another_folder), new DialogInterface.OnClickListener() {
+		alertDialog.setNeutralButton(resources.getString(R.string.choose_another_folder), new DialogInterface.OnClickListener() {
 			@Override
 			public void onClick(DialogInterface dialog, int which) {
 				if( MyDebug.LOG )
@@ -2461,7 +2542,7 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 							save_folder_name = file.getAbsolutePath();
 						}
 					}
-					preview.showToast(null, getResources().getString(R.string.changed_save_location) + "\n" + save_folder_name);
+					preview.showToast(null, resources.getString(R.string.changed_save_location) + "\n" + save_folder_name);
 					SharedPreferences.Editor editor = sharedPreferences.edit();
 					if( applicationInterface.getStorageUtils().isUsingSAF() )
 						editor.putString(Prefs.SAVE_LOCATION_SAF, save_folder);
@@ -2613,7 +2694,7 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 					Log.d(TAG, "from " + e1.getX() + " , " + e1.getY() + " to " + e2.getX() + " , " + e2.getY());
 				final ViewConfiguration vc = ViewConfiguration.get(MainActivity.this);
 				//final int swipeMinDistance = 4*vc.getScaledPagingTouchSlop();
-				final float scale = getResources().getDisplayMetrics().density;
+				final float scale = resources.getDisplayMetrics().density;
 				final int swipeMinDistance = (int) (160 * scale + 0.5f); // convert dps to pixels
 				final int swipeThresholdVelocity = vc.getScaledMinimumFlingVelocity();
 				if( MyDebug.LOG ) {
@@ -2725,17 +2806,18 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 	public boolean supportsAutoStabilise() {
 		return this.supports_auto_stabilise;
 	}
+	
+	public boolean supportsRenderScript() {
+		return( Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT );
+	}
 
 	public boolean supportsDRO() {
-		// require at least Android 5, for the Renderscript support in HDRProcessor
-		return( Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT );
+		return this.supportsRenderScript();
 	}
 
 	public boolean supportsHDR() {
 		// we also require the device have sufficient memory to do the processing, simplest to use the same test as we do for auto-stabilise...
-		// also require at least Android 5, for the Renderscript support in HDRProcessor
-		return( Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT &&
-				this.supportsAutoStabilise() && preview.supportsExpoBracketing() );
+		return( this.supportsRenderScript() && this.supportsAutoStabilise() && preview.supportsExpoBracketing() );
 	}
 	
 	public boolean supportsExpoBracketing() {
@@ -2751,11 +2833,11 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 	}
 
 	public boolean supportsFastBurst() {
-		return preview.usingCamera2API();
+		return true;
 	}
 
 	public boolean supportsNoiseReduction() {
-		return preview.usingCamera2API();
+		return this.supportsRenderScript();
 	}
 
 	private int maxExpoBracketingNImages() {
@@ -2884,36 +2966,34 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 			else
 				bitrate_string = profile.videoBitRate + "bps";
 
-			toast_string = getResources().getString(R.string.video) + ": " + profile.videoFrameWidth + "x" + profile.videoFrameHeight + ", " + profile.videoFrameRate + "fps, " + bitrate_string;
+			toast_string = resources.getString(R.string.video) + ": " + profile.videoFrameWidth + "x" + profile.videoFrameHeight + ", " + profile.videoFrameRate + "fps, " + bitrate_string;
 			boolean record_audio = sharedPreferences.getBoolean(Prefs.RECORD_AUDIO, true);
 			if( !record_audio ) {
-				toast_string += "\n" + getResources().getString(R.string.audio_disabled);
+				toast_string += "\n" + resources.getString(R.string.audio_disabled);
 				simple = false;
 			}
 			String max_duration_value = sharedPreferences.getString(Prefs.VIDEO_MAX_DURATION, "0");
 			if( max_duration_value.length() > 0 && !max_duration_value.equals("0") ) {
-				String [] entries_array = getResources().getStringArray(R.array.preference_video_max_duration_entries);
-				String [] values_array = getResources().getStringArray(R.array.preference_video_max_duration_values);
-				int index = Arrays.asList(values_array).indexOf(max_duration_value);
-				if( index != -1 ) { // just in case!
-					String entry = entries_array[index];
-					toast_string += "\n" + getResources().getString(R.string.max_duration) +": " + entry;
-					simple = false;
-				}
+				toast_string += "\n" + resources.getString(R.string.max_duration) + ": " + getStringFromArrays(
+					max_duration_value,
+					R.array.preference_video_max_duration_entries,
+					R.array.preference_video_max_duration_values
+				);
+				simple = false;
 			}
 			long max_filesize = Prefs.getVideoMaxFileSizeUserPref();
 			if( max_filesize != 0 ) {
 				long max_filesize_mb = max_filesize/(1024*1024);
-				toast_string += "\n" + getResources().getString(R.string.max_filesize) +": " + max_filesize_mb + getResources().getString(R.string.mb_abbreviation);
+				toast_string += "\n" + resources.getString(R.string.max_filesize) +": " + max_filesize_mb + resources.getString(R.string.mb_abbreviation);
 				simple = false;
 			}
 			if( sharedPreferences.getBoolean(Prefs.VIDEO_FLASH, false) && preview.supportsFlash() ) {
-				toast_string += "\n" + getResources().getString(R.string.preference_video_flash);
+				toast_string += "\n" + resources.getString(R.string.preference_video_flash);
 				simple = false;
 			}
 		}
 		else {
-			toast_string = getResources().getString(R.string.photo);
+			toast_string = resources.getString(R.string.photo);
 			CameraController.Size current_size = preview.getCurrentPictureSize();
 			toast_string += " " + current_size.width + "x" + current_size.height;
 			if( preview.supportsFocus() && preview.getSupportedFocusValues().size() > 1 ) {
@@ -2927,28 +3007,21 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 			}
 			if( sharedPreferences.getBoolean(Prefs.AUTO_STABILISE, false) ) {
 				// important as users are sometimes confused at the behaviour if they don't realise the option is on
-				toast_string += "\n" + getResources().getString(R.string.preference_auto_stabilise);
+				toast_string += "\n" + resources.getString(R.string.preference_auto_stabilise);
 				simple = false;
 			}
-			String photo_mode_string = null;
-			Prefs.PhotoMode photo_mode = Prefs.getPhotoMode();
-			if( photo_mode == Prefs.PhotoMode.DRO ) {
-				photo_mode_string = getResources().getString(R.string.photo_mode_dro);
-			}
-			else if( photo_mode == Prefs.PhotoMode.HDR ) {
-				photo_mode_string = getResources().getString(R.string.photo_mode_hdr);
-			}
-			else if( photo_mode == Prefs.PhotoMode.ExpoBracketing ) {
-				photo_mode_string = getResources().getString(R.string.photo_mode_expo_bracketing);
-			}
-			if( photo_mode_string != null ) {
-				toast_string += "\n" + getResources().getString(R.string.photo_mode) + ": " + photo_mode_string;
+			if (Prefs.getPhotoMode() != Prefs.PhotoMode.Standard) {
+				toast_string += "\n" + resources.getString(R.string.photo_mode) + ": " + getStringFromArrays(
+					Prefs.getPhotoModePref(),
+					R.array.photo_mode_entries,
+					R.array.photo_mode_values
+				);
 				simple = false;
 			}
 		}
 		if( Prefs.getFaceDetectionPref() ) {
 			// important so that the user realises why touching for focus/metering areas won't work - easy to forget that face detection has been turned on!
-			toast_string += "\n" + getResources().getString(R.string.preference_face_detection);
+			toast_string += "\n" + resources.getString(R.string.preference_face_detection);
 			simple = false;
 		}
 		String iso_value = Prefs.getISOPref();
@@ -2958,17 +3031,17 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 		}
 		int current_exposure = camera_controller.getExposureCompensation();
 		if( current_exposure != 0 ) {
-			toast_string += "\n" + getResources().getString(R.string.exposure_compensation) + ": " + preview.getExposureCompensationString(current_exposure);
+			toast_string += "\n" + resources.getString(R.string.exposure_compensation) + ": " + preview.getExposureCompensationString(current_exposure);
 			simple = false;
 		}
 		String scene_mode = camera_controller.getSceneMode();
 		if( scene_mode != null && !scene_mode.equals(camera_controller.getDefaultSceneMode()) ) {
-			toast_string += "\n" + getResources().getString(R.string.scene_mode) + ": " + getStringResourceByName("sm_", scene_mode);
+			toast_string += "\n" + resources.getString(R.string.scene_mode) + ": " + getStringResourceByName("sm_", scene_mode);
 			simple = false;
 		}
 		String white_balance = camera_controller.getWhiteBalance();
 		if( white_balance != null && !white_balance.equals(camera_controller.getDefaultWhiteBalance()) ) {
-			toast_string += "\n" + getResources().getString(R.string.white_balance) + ": " + getStringResourceByName("wb_", white_balance);
+			toast_string += "\n" + resources.getString(R.string.white_balance) + ": " + getStringResourceByName("wb_", white_balance);
 			if( white_balance.equals("manual") && preview.supportsWhiteBalanceTemperature() ) {
 				toast_string += " " + camera_controller.getWhiteBalanceTemperature();
 			}
@@ -2976,46 +3049,40 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 		}
 		String color_effect = camera_controller.getColorEffect();
 		if( color_effect != null && !color_effect.equals(camera_controller.getDefaultColorEffect()) ) {
-			toast_string += "\n" + getResources().getString(R.string.color_effect) + ": " + getStringResourceByName("ce_", color_effect);
+			toast_string += "\n" + resources.getString(R.string.color_effect) + ": " + getStringResourceByName("ce_", color_effect);
 			simple = false;
 		}
 		String lock_orientation = sharedPreferences.getString(Prefs.LOCK_ORIENTATION, "none");
 		if( !lock_orientation.equals("none") ) {
-			String [] entries_array = getResources().getStringArray(R.array.preference_lock_orientation_entries);
-			String [] values_array = getResources().getStringArray(R.array.preference_lock_orientation_values);
-			int index = Arrays.asList(values_array).indexOf(lock_orientation);
-			if( index != -1 ) { // just in case!
-				String entry = entries_array[index];
-				toast_string += "\n" + entry;
-				simple = false;
-			}
+			toast_string += "\n" + getStringFromArrays(
+				lock_orientation,
+				R.array.preference_lock_orientation_entries,
+				R.array.preference_lock_orientation_values
+			);
+			simple = false;
 		}
 		if (selfie_mode) {
 			String timer = sharedPreferences.getString(Prefs.TIMER, "5");
 			if( !timer.equals("0") ) {
-				String [] entries_array = getResources().getStringArray(R.array.preference_timer_entries);
-				String [] values_array = getResources().getStringArray(R.array.preference_timer_values);
-				int index = Arrays.asList(values_array).indexOf(timer);
-				if( index != -1 ) { // just in case!
-					String entry = entries_array[index];
-					toast_string += "\n" + getResources().getString(R.string.preference_timer) + ": " + entry;
-					simple = false;
-				}
+				toast_string += "\n" + resources.getString(R.string.preference_timer) + ": " + getStringFromArrays(
+					timer,
+					R.array.preference_timer_entries,
+					R.array.preference_timer_values
+				);
+				simple = false;
 			}
 			String repeat = Prefs.getRepeatPref();
 			if( !repeat.equals("1") ) {
-				String [] entries_array = getResources().getStringArray(R.array.preference_burst_mode_entries);
-				String [] values_array = getResources().getStringArray(R.array.preference_burst_mode_values);
-				int index = Arrays.asList(values_array).indexOf(repeat);
-				if( index != -1 ) { // just in case!
-					String entry = entries_array[index];
-					toast_string += "\n" + getResources().getString(R.string.preference_burst_mode) + ": " + entry;
-					simple = false;
-				}
+				toast_string += "\n" + resources.getString(R.string.preference_burst_mode) + ": " + getStringFromArrays(
+					repeat,
+					R.array.preference_burst_mode_entries,
+					R.array.preference_burst_mode_values
+				);
+				simple = false;
 			}
 		}
 		/*if( audio_listener != null ) {
-			toast_string += "\n" + getResources().getString(R.string.preference_audio_noise_control);
+			toast_string += "\n" + resources.getString(R.string.preference_audio_noise_control);
 		}*/
 
 		if( MyDebug.LOG ) {
@@ -3288,7 +3355,7 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 		String shutter = PreferenceManager.getDefaultSharedPreferences(this)
 			.getString(Prefs.SHUTTER_SOUND_SELECT, "default");
 
-		int resource_id = getResources().getIdentifier(shutter, "raw", getPackageName());
+		int resource_id = resources.getIdentifier(shutter, "raw", getPackageName());
 		
 		if (resource_id != 0)
 			sound_shutter = sound_pool.load(this, resource_id, 1);
@@ -3629,15 +3696,36 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 	}
 
 	public String getStringResourceByName(String prefix, String string) {
-		int resId = getResources().getIdentifier(prefix.concat(string.replace("-", "_")), "string", getPackageName());
+		int resId = resources.getIdentifier(prefix.concat(string.replace("-", "_")), "string", getPackageName());
 		if (resId == 0) {
 			return string;
 		} else {
-			return getResources().getString(resId);
+			return resources.getString(resId);
 		}
 	}
-	
+
+	public String getStringFromArrays(String value, int entries, int values) {
+		String [] entries_array = resources.getStringArray(entries);
+		String [] values_array = resources.getStringArray(values);
+		int index = Arrays.asList(values_array).indexOf(value);
+		if( index != -1 ) { // just in case!
+			return entries_array[index];
+		}
+		return value;
+	}
+
 	public SharedPreferences getSharedPrefs() {
 		return sharedPreferences;
 	}
+	
+	public RenderScript getRenderScript() {
+		if( rs == null ) {
+			// initialise renderscript
+			this.rs = RenderScript.create(this);
+			if( MyDebug.LOG )
+				Log.d(TAG, "create renderscript object");
+		}
+		return rs;
+	}
+
 }

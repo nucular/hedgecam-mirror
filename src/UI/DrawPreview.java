@@ -1450,7 +1450,7 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 					case "flash_auto":
 					case "flash_frontscreen_auto":
 						icon = IconView.FLASH_AUTO;
-						if (!camera_controller.needsFlash()) {
+						if (camera_controller.canReportNeedsFlash() && !camera_controller.needsFlash()) {
 							p.setAlpha(63);
 						}
 						break;
@@ -1709,7 +1709,7 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 		canvas.drawCircle(canvas.getWidth()/2.0f + distance_x, canvas.getHeight()/2.0f + distance_y, radius, p);
 		p.setAlpha(255);
 	}*/
-	
+
 	private void drawText(final Canvas canvas, final Paint paint, final String text, final int foreground, final int location_x, int location_y, boolean align_top) {
 		final float scale = resources.getDisplayMetrics().density;
 		final int alpha = paint.getAlpha();

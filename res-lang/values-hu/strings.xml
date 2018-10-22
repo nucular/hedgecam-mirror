@@ -5,7 +5,11 @@
 	<string name="translation_author">Báthory Péter</string>
 	<string name="intro_text">Érintéssel állíthatsz élességet, és a kék kamera gombbal tudsz fényképezni. További segítséget a beállítások online súgójában találsz. Az Open Camera teljesen ingyenes. Ha tetszik az alkalmazás, kérlek fontold meg az adományozói verzió megvásárlását :) (lásd a hivatkozást a Beállításokban és az online súgóban). \ N \ nAdatvédelmi feltételek: A helymeghatározás a fényképek geokódolásához szükséges, de alapértelmezésben le van tiltva. Ha engedélyezed, a kép készítésének helye bele lesz mentve a fájlokba (és semmi másra nem lesz használva).</string>
 	<string name="intro_ok">OK (Ez az üzenet nem jelenik meg újra)</string>
+	
+<!-- Translate me
+	<string name="charset">ISO-8859-1</string>
 
+-->
 	<string name="answer_yes">Igen</string>
 	<string name="answer_no">Nem</string>
 
@@ -41,6 +45,9 @@
 
 -->
 	<string name="angle">Szög</string>
+<!-- Translate me
+	<string name="rotation">Rotation</string>
+-->
 	<string name="direction">Irány</string>
 	<string name="zoom">Zoom</string>
 	<string name="free_memory">Szabad</string>
@@ -291,7 +298,7 @@
 	<string name="vc_loud_noise">Hangos zaj</string>
 	<string name="vc_cheese">Hangutasítás: \"csíííz\"</string>
 	<string name="preference_audio_noise_control_sensitivity">Hangvezérlés érzékenysége</string>
-	<string name="preference_audio_noise_control_sensitivity_summary">Hangvezérlés zajszintérzékenysége</string>
+	<string name="preference_audio_noise_control_sensitivity_summary">%s\n\nHangvezérlés zajszintérzékenysége</string>
 	<string name="vc_high_sensitivity">+3 (nagy érzékenység)</string>
 	<string name="vc_default_sensitivity">0 (alapértelmezett)</string>
 	<string name="vc_low_sensitivity">-2 (alacsony érzékenység)</string>
@@ -413,7 +420,7 @@
 
 -->
 	<string name="preference_immersive_mode">Kiterjesztett üzemmód</string>
-	<string name="preference_immersive_mode_summary">\"Kiterjesztett módú\" üzemmód beállításai</string>
+	<string name="preference_immersive_mode_summary">%s\n\n\"Kiterjesztett módú\" üzemmód beállításai</string>
 <!-- Translate me
 	<string name="im_fullscreen">Fullscreen mode</string>
 	<string name="im_sticky">Sticky</string>
@@ -445,11 +452,13 @@
 	<string name="left_gap_for_buttons">Left, gap for buttons</string>
 -->
 	<string name="preference_rotate_preview">Előnézet forgatása</string>
-	<string name="preference_rotate_preview_summary">Az előnézet forgatásának lehetősége (nem befolyásolja az elkészített fotót, videót)</string>
+	<string name="preference_rotate_preview_summary">%s\n\nAz előnézet forgatásának lehetősége (nem befolyásolja az elkészített fotót, videót)</string>
 	<string name="dont_rotate">Ne forgassa</string>
 	<string name="rotate_180_degrees">Forgatás 180 fokkal</string>
 <!-- Translate me
 	<string name="preference_preview_max_expo">Maximum exposure</string>
+	<string name="preference_zoom_when_focusing">Zoom when focusing</string>
+	<string name="preference_zoom_when_focusing_summary">Increase the center of the preview when adjusting manual focus</string>
 	<string name="preference_preview_max_expo_summary">Maximum preview exposure in manual mode (won\'t affect resultant photos/videos)</string>
 	<string name="preference_preview_surface">Preview surface</string>
 	<string name="preference_preview_surface_summary">%s\n\nSurface for displaying preview. Switch this option only if you know what you do</string>
@@ -471,7 +480,7 @@
 	<string name="preference_show_angle_line">Vízszintező</string>
 	<string name="preference_show_angle_line_summary">Megjeleníti a vízszint vonalát</string>
 	<string name="preference_angle_highlight_color">Szög/magasság kiemelés színe</string>
-	<string name="preference_angle_highlight_color_summary">A kiemelés színe, amikor a kamera közel vízszintesen áll</string>
+	<string name="preference_angle_highlight_color_summary">%s\n\nA kiemelés színe, amikor a kamera közel vízszintesen áll</string>
 	<string name="preference_show_pitch_lines">Osztóvonalak megjelenítése</string>
 	<string name="preference_show_pitch_lines_summary">Vízszintes osztóköz megjelenítése</string>
 	<string name="preference_show_geo_direction">Iránytű szög megjelenítése</string>
@@ -500,7 +509,7 @@
 	<string name="preference_grid_alpha">Grid alpha</string>
 -->
 	<string name="preference_crop_guide">Vágási segédvonal megjelenítése</string>
-	<string name="preference_crop_guide_summary">A vágási segéd egy négyzetet jelenít meg, mutatva, hogy nézne ki a megadott oldalarány – hasznos, ha a fotót/videót később más oldalarányúra tervezed vágni. WYSIWYG fényképmód, vagy videózás mód szükséges hozzá.</string>
+	<string name="preference_crop_guide_summary">%s\n\nA vágási segéd egy négyzetet jelenít meg, mutatva, hogy nézne ki a megadott oldalarány – hasznos, ha a fotót/videót később más oldalarányúra tervezed vágni. WYSIWYG fényképmód, vagy videózás mód szükséges hozzá.</string>
 <!-- Translate me
 	<string name="preference_osd_frequency">Update frequency</string>
 	<string name="preference_osd_frequency_summary">OSD update frequency. Increasing this value will will make the indication smoother, but the battery will discharge faster</string>
@@ -559,6 +568,7 @@
 	<string name="preference_multitouch_zoom_summary">You must restart the application to apply this option</string>
 	<string name="preference_focus_range">Focus range</string>
 	<string name="preference_focus_range_summary">Manual focus range limit for for more precise control</string>
+	<string name="fr_landscape_macro">Landscape/Macro</string>
 	<string name="fr_room">Room</string>
 	<string name="fr_group">Group photo</string>
 	<string name="preference_level_angle_calibration">Level angle calibration</string>
@@ -574,6 +584,8 @@
 	<string name="preference_center_focus">Center focus</string>
 	<string name="preference_center_focus_summary">Set focus zone in the center of the frame at startup</string>
 	<string name="preference_min_focus_distance">Minimum focus distance</string>
+	<string name="preference_focus_distance_calibration">Focus distance calibration</string>
+	<string name="preference_focus_distance_calibration_summary">Positive values correspond to short distances, negative values to long distances.</string>
 	<string name="preference_update_focus_for_video">Update focus mode</string>
 	<string name="preference_update_focus_for_video_summary">Workaround for bug on Samsung Galaxy S5 with UHD, where if the user switches to another (non-continuous-video) focus mode, then goes to Settings, then returns and records video, the preview freezes and the video is corrupted</string>
 -->
@@ -593,16 +605,30 @@
 	<string name="preference_auto_stabilise">Auto-stabilizálás</string>
 	<string name="preference_auto_stabilise_summary">A képek elforgatásra kerülnek, így automatikusan jó irányba fognak állni (csak fotók) (a fotózás kicsit lassabb, és kevés memóriájú eszközön sikertelen is lehet)</string>
 	<string name="preference_raw">RAW</string>
-	<string name="preference_raw_summary">Mentsen-e RAW (DNG) formátumban</string>
+	<string name="preference_raw_summary">%s\n\nMentsen-e RAW (DNG) formátumban</string>
 	<string name="jpeg_only">Csak JPEG</string>
 	<string name="jpeg_and_dng">JPEG és DNG (RAW)</string>
 <!-- Translate me
 	<string name="preference_flip_front_facing">Flip photo</string>
 	<string name="preference_flip_front_facing_summary">Flip horizontally photos from front camera</string>
+	<string name="preference_uncompressed_photo">Uncompressed output</string>
+	<string name="preference_uncompressed_photo_summary">Use YUV 420 output instead of compressed JPEG. Speeds up saving and improves image quality when using image post-processing. Can work incorrectly on some devices.</string>
+	<string name="preference_category_metadata">Metadata</string>
+	<string name="preference_category_metadata_summary">Metadata that is stored inside the JPEG file</string>
+	<string name="preference_metadata_author">Author</string>
+	<string name="preference_metadata_comment">Comment</string>
+	<string name="preference_metadata_position_info">Device position</string>
+	<string name="preference_metadata_position_info_summary">Add to comment information about device position</string>
+	<string name="preference_metadata_mode_info">Mode info</string>
+	<string name="preference_metadata_mode_info_summary">Add to comment information about camera mode</string>
+	<string name="preference_metadata_sensor_info">Sensor info</string>
+	<string name="preference_metadata_sensor_info_summary">Add to comment information about sensor settings</string>
+	<string name="preference_metadata_processing_info">Processing info</string>
+	<string name="preference_metadata_processing_info_summary">Add to comment information about image processing</string>
 	<string name="preference_category_expo_bracketing_summary">Expobracketing settings. Most of the options in this section also apply to HDR.</string>
 -->
 	<string name="preference_expo_bracketing_n_images">Expozíciósorozat</string>
-	<string name="preference_expo_bracketing_n_images_summary">Képek száma az expozíciósorozat módban</string>
+	<string name="preference_expo_bracketing_n_images_summary">%s\n\nKépek száma az expozíciósorozat módban</string>
 	<string name="preference_expo_bracketing_stops">Expozíciósorozat lépésköz</string>
 <!-- Translate me
 	<string name="preference_expo_bracketing_stops_up">Stops Up</string>
@@ -619,8 +645,13 @@
 	<string name="preference_hdr_save_expo">Az összes kép mentése HDR módban</string>
 	<string name="preference_hdr_save_expo_summary">Ha engedélyezve van, HDR mód használatakor a három eltérő expozíciójú alapkép is el lesz mentve a végleges HDR fotó mellett. Megjegyzendő, hogy a mentés így lassabb lesz, főleg ha a „Fotók feliratozása” vagy az „Auto-stabilizálás” is be van kapcsolva.</string>
 <!-- Translate me
+	<string name="preference_hdr_deghost">Deghosting</string>
 	<string name="preference_hdr_tonemapping">Tone mapping</string>
 	<string name="preference_hdr_tonemapping_summary">%s\n\nAlgorithm to use for HDR tonemapping</string>
+	<string name="preference_hdr_unsharp_mask">Unsharp mask</string>
+	<string name="preference_hdr_unsharp_mask_summary">%s\n\nLevel of the unsharp mask filter during processing HDR and DRO</string>
+	<string name="preference_hdr_unsharp_mask_radius">Radius</string>
+	<string name="preference_hdr_unsharp_mask_radius_summary">%s\n\nUnsharp mask blur radius</string>
 	<string name="preference_hdr_local_contrast">Local contrast</string>
 	<string name="preference_hdr_local_contrast_summary">%s\n\nLevel of the local contrast enhancement during processing HDR and DRO</string>
 	<string name="preference_hdr_n_tiles">Number of tiles</string>
@@ -685,11 +716,11 @@
 	<string name="preference_video_stabilization">Videó stabilizáció engedélyezése</string>
 	<string name="preference_video_stabilization_summary">A videó stabilizálása csökkenti a kamera mozgásából származó remegést az előnézeten és a felvett videón.</string>
 	<string name="preference_video_bitrate">Videó bitráta (nagyjából)</string>
-	<string name="preference_video_bitrate_summary">A videók hozzávetőleges bitrátájának beállítása (a magasabb jobb minőséget jelent, de több tárhelyet foglal; ha a bitráta nem támogatott, sikertelen lehet a felvétel)</string>
+	<string name="preference_video_bitrate_summary">%s\n\nA videók hozzávetőleges bitrátájának beállítása (a magasabb jobb minőséget jelent, de több tárhelyet foglal; ha a bitráta nem támogatott, sikertelen lehet a felvétel)</string>
 	<string name="preference_video_fps">Videó képkockaszám (nagyjából)</string>
 	<string name="preference_video_fps_summary">A videók képkockasebességének (FPS) beállítása (hozzávetőleges, az elérése nem garantálható és ha a képkockaszám nem támogatott, sikertelen lehet a felvétel)</string>
 	<string name="preference_video_max_duration">Videó maximális időtartama</string>
-	<string name="preference_video_max_duration_summary">A videofelvétel leáll a megadott idő után</string>
+	<string name="preference_video_max_duration_summary">%s\n\nA videofelvétel leáll a megadott idő után</string>
 	<string name="preference_video_restart">Újraindítás a maximális időtartam után</string>
 	<string name="dont_restart">Ne induljon újra</string>
 	<string name="repeat_1_time">Ismétlés egyszer</string>
@@ -702,9 +733,9 @@
 	<string name="repeat_8_times">Ismétlés nyolcszor</string>
 	<string name="repeat_9_times">Ismétlés kilencszer</string>
 	<string name="repeat_10_times">Ismétlés tízszer</string>
-	<string name="preference_video_restart_summary">Ha a videó elérte a maximális időtartamot (ha be lett állítva) és megállt, újraindítja a felvételt a megadott számú alkalommal</string>
+	<string name="preference_video_restart_summary">%s\n\nHa a videó elérte a maximális időtartamot (ha be lett állítva) és megállt, újraindítja a felvételt a megadott számú alkalommal</string>
 	<string name="preference_video_max_filesize">Videó maximális fáljmérete</string>
-	<string name="preference_video_max_filesize_summary">A felvétel leáll és/vagy újraindul (lásd a beállítást alább), ha (nagyjából) elérte a maximális fájlméretet. Megjegyezzük, hogy az Androidos eszközökön korlátozott a videofájlok mérete (általában 2GB vagy 4GB körül), de ez a beállítás lehetővé teszi egyedi érték megadását</string>
+	<string name="preference_video_max_filesize_summary">%s\n\nA felvétel leáll és/vagy újraindul (lásd a beállítást alább), ha (nagyjából) elérte a maximális fájlméretet. Megjegyezzük, hogy az Androidos eszközökön korlátozott a videofájlok mérete (általában 2GB vagy 4GB körül), de ez a beállítás lehetővé teszi egyedi érték megadását</string>
 	<string name="preference_video_restart_max_filesize">Újraindítás a maximális méret után</string>
 	<string name="preference_video_restart_max_filesize_summary">Újrainduljon-e a videofelvétel, miután elérte a maximális fájlméretet (az eszközön alapértelmezett, vagy a beállított)</string>
 	<string name="preference_record_audio">Hangrögzítés</string>
@@ -715,13 +746,13 @@
 	<string name="as_default_source">Alapértelmezett hangforrás</string>
 	<string name="as_voice_optimized">Hangra optimalizált</string>
 	<string name="preference_record_audio_channels">Hangcsatornák</string>
-	<string name="preference_record_audio_channels_summary">Monó vagy sztereó hangfelvétel készítése (sztereó felvételre nem minden eszköz képes)</string>
+	<string name="preference_record_audio_channels_summary">%s\n\nMonó vagy sztereó hangfelvétel készítése (sztereó felvételre nem minden eszköz képes)</string>
 	<string name="am_mono">Monó</string>
 	<string name="am_stereo">Sztereó (csak néhány készülék támogatja)</string>
 	<string name="preference_lock_video">Képernyő zárolása videofelvétel alatt</string>
 	<string name="preference_lock_video_summary">Videó készítése alatt a felhasználói felület zárolva lesz, megakadályozva a felvétel véletlen leállítását. Feloldáshoz csúsztad az ujjad a képernyőn. Megjegyzendő, hogy a felvétel le fog állni, ha az alkalmazás háttérbe kerül vagy a képernyő kikapcsol.</string>
 	<string name="preference_video_subtitle">Videó feliratok</string>
-	<string name="preference_video_subtitle_summary">Felirat (.srt) fájl létrehozása dátummal, idővel és GPS szélesség/hosszúság adatokkal</string>
+	<string name="preference_video_subtitle_summary">%s\n\nFelirat (.srt) fájl létrehozása dátummal, idővel és GPS szélesség/hosszúság adatokkal</string>
 	<string name="no_subtitles">Nincs felirat</string>
 	<string name="record_subtitles">Felirat felvétele</string>
 	<string name="preference_force_video_4k">4K UHD videó kényszerítése (csak egyes eszközökön működik)</string>
@@ -752,8 +783,10 @@
 	<string name="nr_minimal">Minimal</string>
 -->
 	<string name="nr_zero_shutter_lag">Zéró zárkésés</string>
-
 <!-- Translate me
+	<string name="preference_zero_shutter_delay">Zero shutter delay</string>
+	<string name="preference_zero_shutter_delay_summary">%s</string>
+
 	<string name="preference_screen_files">Files</string>
 -->
 	<string name="preference_save_location">Mentés helye</string>
@@ -765,7 +798,7 @@
 	<string name="preference_save_video_prefix">Videó fájlnév előtag</string>
 	<string name="preference_save_video_prefix_summary">A videók mentésekor használt fájlnév előtag</string>
 	<string name="preference_save_zulu_time">Fájlnév időformátum</string>
-	<string name="preference_save_zulu_time_summary">A fotók és videók fájlnevében a helyi idő, vagy az UTC (egyezményes koordinált világidő) jelenjen meg</string>
+	<string name="preference_save_zulu_time_summary">%s\n\nA fotók és videók fájlnevében a helyi idő, vagy az UTC (egyezményes koordinált világidő) jelenjen meg</string>
 	<string name="t_local_time">Helyi idő</string>
 	<string name="t_utc_zulu">UTC (Zulu)</string>
 	<string name="preference_screen_location_settings">Helymeghatározás beállítások…</string>

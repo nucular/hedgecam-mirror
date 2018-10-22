@@ -6,6 +6,8 @@
 	<string name="intro_text">Коснитесь экрана для фокусировки и нажмите синюю кнопку, чтобы сделать фото. В настройках вас ждет очень много интересного :)\n\nДанная программа не отправляет персональные данные третьим лицам. Доступ к камере, микрофону и геоданным используется только для сохранения фото и видео.</string>
 	<string name="intro_ok">Ок (Это сообщение больше не появится)</string>
 
+	<string name="charset">windows-1251</string>
+
 	<string name="answer_yes">Да</string>
 	<string name="answer_no">Нет</string>
 
@@ -39,6 +41,7 @@
 	<string name="saf_permission_failed">Unable to save to this folder</string>
 
 	<string name="angle">Угол</string>
+	<string name="rotation">Поворот</string>
 	<string name="direction">Направление</string>
 	<string name="zoom">Масштаб</string>
 	<string name="free_memory">Память</string>
@@ -388,6 +391,8 @@
 	<string name="rotate_180_degrees">Повернуть на 180 градусов</string>
 	<string name="preference_preview_max_expo">Максимальная экспозиция</string>
 	<string name="preference_preview_max_expo_summary">Максимальная экспозиция предпросмотра в ручном режиме (не повлияет на фото/видео)</string>
+	<string name="preference_zoom_when_focusing">Приближать при фокусировке</string>
+	<string name="preference_zoom_when_focusing_summary">Увеличивать центральную зону предпросмотра при выполнении ручной фокусировки</string>
 	<string name="preference_preview_surface">Поверхность предпросмотра</string>
 	<string name="preference_preview_surface_summary">%s\n\nПоверхность, используемая для отображения предпросмотра. Меняйте значение этой опции лишь в том случае, если вы знаете, что делаете</string>
 
@@ -468,16 +473,17 @@
 	<string name="preference_pause_preview">Пауза после съёмки</string>
 	<string name="preference_pause_preview_summary">Пауза после снятия фото, с возможностью поделиться или удалить фотографию</string>
 	<string name="preference_lock_orientation">Блокировка ориентации фото/видео</string>
+	<string name="preference_lock_orientation_summary">Игнорирование системной ориентации экрана устройства</string>
 	<string name="no_lock">Нет</string>
 	<string name="lock_landscape">Альбомная</string>
 	<string name="lock_portrait">Портретная</string>
-	<string name="preference_lock_orientation_summary">Игнорирование системной ориентации экрана устройства</string>
 	<string name="preference_show_when_locked">Камера на экране блокировки</string>
 	<string name="preference_show_when_locked_summary">Если включено, то приложение будет отображаться поверх экрана блокировки (вы можете получить доступ к настройкам, галерее и т.д.)</string>
 	<string name="preference_multitouch_zoom">Увеличение касанием</string>
 	<string name="preference_multitouch_zoom_summary">Регулировка зума при помощи жестов мультитача</string>
 	<string name="preference_focus_range">Диапазон фокусировки</string>
 	<string name="preference_focus_range_summary">%s\n\nОграничение диапазона ручной фокусировки для более точного наведения.</string>
+	<string name="fr_landscape_macro">Пейзаж/Макро</string>
 	<string name="fr_room">Комната</string>
 	<string name="fr_group">Групповое фото</string>
 	<string name="preference_level_angle_calibration">Калибровка уровня</string>
@@ -491,6 +497,8 @@
 	<string name="preference_center_focus">Фокус в центре</string>
 	<string name="preference_center_focus_summary">При запуске устанавливать зону фокусировки в центре кадра</string>
 	<string name="preference_min_focus_distance">Минимальное фокусное расстояние</string>
+	<string name="preference_focus_distance_calibration">Калибровка фокусного расстояния</string>
+	<string name="preference_focus_distance_calibration_summary">Положительные значения соответствуют ближнему расстоянию, отрицательные - дальнему.</string>
 	<string name="preference_update_focus_for_video">Сбрасывать режим фокусировки</string>
 	<string name="preference_update_focus_for_video_summary">Исправляет баг Samsung Galaxy S5, приводящий к замиранию предпросмотра и созданию &quot;битого&quot; видеофайла при записи видео сверхвысокой четкости после выхода из настроек</string>
 	<string name="preference_camera2_fake_flash">Альтернативная вспышка</string>
@@ -499,6 +507,8 @@
 	<string name="preference_use_1920x1088_summary">Использовать разрешение видео 1920x1088 вместо 1920x1080. Данная опция позволяет решить проблему с цветной полосой вверху видео, имеющуюся на некоторых устройствах на платформе MediaTek</string>
 	<string name="preference_speed_up_sensors">Ускорить сенсоры</string>
 	<string name="preference_speed_up_sensors_summary">Увеличить частоту обновления информации, получаемой от акселерометра и датчика магнитного поля</string>
+	<string name="preference_full_size_copy">Полноразмерная копия</string>
+	<string name="preference_full_size_copy_summary">Создавать полноразмерную сжатую копию фото при использовании несжатого вывода. Используйте данную опцию если на вашем устройстве некорректно работает несжатый вывод фото (YUV)</string>
 
 	<string name="preference_category_camera_quality">Настройки фото и видео</string>
 
@@ -512,6 +522,23 @@
 	<string name="jpeg_and_dng">JPEG и DNG (RAW)</string>
 	<string name="preference_flip_front_facing">Отразить фото</string>
 	<string name="preference_flip_front_facing_summary">Перевернуть по горизонтали фото, снятые передней камерой</string>
+	<string name="preference_uncompressed_photo">Несжатый вывод</string>
+	<string name="preference_uncompressed_photo_summary">Использовать YUV 420 вместо сжатого JPEG. Ускоряет сохранение и повышает качество изображения при использовании пост-обработки изображений. Может работать некорректно на некоторых устройствах.</string>
+	<string name="preference_yuv_conversion">Преобразование YUV</string>
+	<string name="yuv_wide_range">Расширенный диапазон</string>
+	<string name="yuv_saturated">Насыщение</string>
+	<string name="preference_category_metadata">Метаданные</string>
+	<string name="preference_category_metadata_summary">Метаданные, сохраняемые внутри файлов JPEG</string>
+	<string name="preference_metadata_author">Автор</string>
+	<string name="preference_metadata_comment">Комментарий</string>
+	<string name="preference_metadata_position_info">Положение</string>
+	<string name="preference_metadata_position_info_summary">Добавлять в комментарий информацию о положении устройства (поворот, наклон, и т.д.)</string>
+	<string name="preference_metadata_mode_info">Режим съемки</string>
+	<string name="preference_metadata_mode_info_summary">Добавлять в комментарий информацию о режиме съемки</string>
+	<string name="preference_metadata_sensor_info">Сенсор</string>
+	<string name="preference_metadata_sensor_info_summary">Добавлять в комментарий информацию о настройках сенсора</string>
+	<string name="preference_metadata_processing_info">Обработка</string>
+	<string name="preference_metadata_processing_info_summary">Добавлять в комментарий информацию об обработке фото</string>
 	<string name="preference_category_expo_bracketing_summary">Настройки экспобрекетинга. Некоторые настройки также используются в режиме HDR</string>
 	<string name="preference_expo_bracketing_n_images">Экспобрекетинг</string>
 	<string name="preference_expo_bracketing_n_images_summary">%s\n\nЧисло изображений в режиме экспобрекетинга</string>
@@ -528,8 +555,13 @@
 	<string name="preference_category_hdr_summary">Настройки режимов HDR и DRO</string>
 	<string name="preference_hdr_save_expo">Сохранять изображения HDR</string>
 	<string name="preference_hdr_save_expo_summary">В режиме HDR сохранять 3 исходных изображения, используемых при создании HDR-снимка. Замедляет процесс сохранения, особенно при включении опции \"Отметки\" или автовыравнивания.</string>
+	<string name="preference_hdr_deghost">Устранение призраков</string>
 	<string name="preference_hdr_tonemapping">Тональное отображение</string>
 	<string name="preference_hdr_tonemapping_summary">%s\n\nАлгоритм тонального отображения, используемый при склейке HDR</string>
+	<string name="preference_hdr_unsharp_mask">Нерезкая маска</string>
+	<string name="preference_hdr_unsharp_mask_summary">%s\n\nУровень воздействия фильтра "Нерезкая маска" при обработке HDR и DRO</string>
+	<string name="preference_hdr_unsharp_mask_radius">Радиус</string>
+	<string name="preference_hdr_unsharp_mask_radius_summary">%s\n\nРадиус размытия нерезкой маски</string>
 	<string name="preference_hdr_local_contrast">Локальный контраст</string>
 	<string name="preference_hdr_local_contrast_summary">%s\n\nУровень повышения локального контраста при обработке HDR и DRO</string>
 	<string name="preference_hdr_n_tiles">Число блоков</string>
@@ -648,6 +680,8 @@
 	<string name="nr_high_quality">Высокое качество</string>
 	<string name="nr_minimal">Минимальное</string>
 	<string name="nr_zero_shutter_lag">Без задержки</string>
+	<string name="preference_zero_shutter_delay">Нулевая задержка затвора</string>
+	<string name="preference_zero_shutter_delay_summary">%s</string>
 
 	<string name="preference_screen_files">Файлы</string>
 	<string name="preference_save_location">Папка сохранения</string>

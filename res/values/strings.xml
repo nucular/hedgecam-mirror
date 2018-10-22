@@ -5,6 +5,8 @@
 	<string name="translation_author">Mark Harman, Caddish Hedgehog</string> <!-- Write your name here. If you don't want to do this, do not remove this element, just stay it empty-->
 	<string name="intro_text">Touch to focus, and press the blue camera button to take photos. For more help, click Online help from Settings.\n\nPrivacy Policy: This application does not send personal data to third parties. Access to the camera, microphone, and location is only used for saving your photos and videos.</string>
 	<string name="intro_ok">OK (This message won\'t show again)</string>
+	
+	<string name="charset">ISO-8859-1</string>
 
 	<string name="answer_yes">Yes</string>
 	<string name="answer_no">No</string>
@@ -39,6 +41,7 @@
 	<string name="saf_permission_failed">Can\'t save to this folder</string>
 
 	<string name="angle">Angle</string>
+	<string name="rotation">Rotation</string>
 	<string name="direction">Direction</string>
 	<string name="zoom">Zoom</string>
 	<string name="free_memory">Free</string>
@@ -387,6 +390,8 @@
 	<string name="dont_rotate">Don\'t rotate</string>
 	<string name="rotate_180_degrees">Rotate 180 degrees</string>
 	<string name="preference_preview_max_expo">Maximum exposure</string>
+	<string name="preference_zoom_when_focusing">Zoom when focusing</string>
+	<string name="preference_zoom_when_focusing_summary">Increase the center of the preview when adjusting manual focus</string>
 	<string name="preference_preview_max_expo_summary">Maximum preview exposure in manual mode (won\'t affect resultant photos/videos)</string>
 	<string name="preference_preview_surface">Preview surface</string>
 	<string name="preference_preview_surface_summary">%s\n\nSurface for displaying preview. Switch this option only if you know what you do</string>
@@ -478,6 +483,7 @@
 	<string name="preference_multitouch_zoom_summary">You must restart the application to apply this option</string>
 	<string name="preference_focus_range">Focus range</string>
 	<string name="preference_focus_range_summary">Manual focus range limit for for more precise control</string>
+	<string name="fr_landscape_macro">Landscape/Macro</string>
 	<string name="fr_room">Room</string>
 	<string name="fr_group">Group photo</string>
 	<string name="preference_level_angle_calibration">Level angle calibration</string>
@@ -491,6 +497,8 @@
 	<string name="preference_center_focus">Center focus</string>
 	<string name="preference_center_focus_summary">Set focus zone in the center of the frame at startup</string>
 	<string name="preference_min_focus_distance">Minimum focus distance</string>
+	<string name="preference_focus_distance_calibration">Focus distance calibration</string>
+	<string name="preference_focus_distance_calibration_summary">Positive values correspond to short distances, negative values to long distances.</string>
 	<string name="preference_update_focus_for_video">Update focus mode</string>
 	<string name="preference_update_focus_for_video_summary">Workaround for bug on Samsung Galaxy S5 with UHD, where if the user switches to another (non-continuous-video) focus mode, then goes to Settings, then returns and records video, the preview freezes and the video is corrupted</string>
 	<string name="preference_camera2_fake_flash">Use alternative flash method</string>
@@ -499,6 +507,8 @@
 	<string name="preference_use_1920x1088_summary">Use 1920x1088 video resolution instead of 1920x1080. This option fix the green stripe bug on some MediaTek devices</string>
 	<string name="preference_speed_up_sensors">Speed up sensors</string>
 	<string name="preference_speed_up_sensors_summary">Increase accelerometer and magnetic sensor update speed</string>
+	<string name="preference_full_size_copy">Full-size copy</string>
+	<string name="preference_full_size_copy_summary">Create full-size compressed copy of photo when capturing an uncompressed photo. Use this option if you have problems with YUV capturing.</string>
 
 	<string name="preference_category_camera_quality">Photo and Video Settings</string>
 
@@ -512,6 +522,23 @@
 	<string name="jpeg_and_dng">JPEG and DNG (RAW)</string>
 	<string name="preference_flip_front_facing">Flip photo</string>
 	<string name="preference_flip_front_facing_summary">Flip horizontally photos from front camera</string>
+	<string name="preference_uncompressed_photo">Uncompressed output</string>
+	<string name="preference_uncompressed_photo_summary">Use YUV 420 output instead of compressed JPEG. Speeds up saving and improves image quality when using image post-processing. Can work incorrectly on some devices.</string>
+	<string name="preference_yuv_conversion">YUV conversion</string>
+	<string name="yuv_wide_range">Wide range</string>
+	<string name="yuv_saturated">Saturated</string>
+	<string name="preference_category_metadata">Metadata</string>
+	<string name="preference_category_metadata_summary">Metadata that is stored inside the JPEG file</string>
+	<string name="preference_metadata_author">Author</string>
+	<string name="preference_metadata_comment">Comment</string>
+	<string name="preference_metadata_position_info">Device position</string>
+	<string name="preference_metadata_position_info_summary">Add to comment information about device position</string>
+	<string name="preference_metadata_mode_info">Mode info</string>
+	<string name="preference_metadata_mode_info_summary">Add to comment information about camera mode</string>
+	<string name="preference_metadata_sensor_info">Sensor info</string>
+	<string name="preference_metadata_sensor_info_summary">Add to comment information about sensor settings</string>
+	<string name="preference_metadata_processing_info">Processing info</string>
+	<string name="preference_metadata_processing_info_summary">Add to comment information about image processing</string>
 	<string name="preference_category_expo_bracketing_summary">Expobracketing settings. Most of the options in this section also apply to HDR.</string>
 	<string name="preference_expo_bracketing_n_images">Exposure Bracketing</string>
 	<string name="preference_expo_bracketing_n_images_summary">%s\n\nNumber of images for exposure bracketing mode</string>
@@ -528,8 +555,13 @@
 	<string name="preference_category_hdr_summary">HDR and DRO settings</string>
 	<string name="preference_hdr_save_expo">Save all images for HDR mode</string>
 	<string name="preference_hdr_save_expo_summary">If enabled, when using HDR photo mode, the three base exposure images will be saved as well as the final HDR photo. Note this will make saving slower, especially if options like \"Stamp photos\" or Auto-level are also used.</string>
+	<string name="preference_hdr_deghost">Deghosting</string>
 	<string name="preference_hdr_tonemapping">Tone mapping</string>
 	<string name="preference_hdr_tonemapping_summary">%s\n\nAlgorithm to use for HDR tonemapping</string>
+	<string name="preference_hdr_unsharp_mask">Unsharp mask</string>
+	<string name="preference_hdr_unsharp_mask_summary">%s\n\nLevel of the unsharp mask filter during processing HDR and DRO</string>
+	<string name="preference_hdr_unsharp_mask_radius">Radius</string>
+	<string name="preference_hdr_unsharp_mask_radius_summary">%s\n\nUnsharp mask blur radius</string>
 	<string name="preference_hdr_local_contrast">Local contrast</string>
 	<string name="preference_hdr_local_contrast_summary">%s\n\nLevel of the local contrast enhancement during processing HDR and DRO</string>
 	<string name="preference_hdr_n_tiles">Number of tiles</string>
@@ -648,6 +680,8 @@
 	<string name="nr_high_quality">High quality</string>
 	<string name="nr_minimal">Minimal</string>
 	<string name="nr_zero_shutter_lag">Zero shutter lag</string>
+	<string name="preference_zero_shutter_delay">Zero shutter delay</string>
+	<string name="preference_zero_shutter_delay_summary">%s</string>
 
 	<string name="preference_screen_files">Files</string>
 	<string name="preference_save_location">Save location</string>

@@ -85,6 +85,8 @@ public class PopupView extends LinearLayout {
 	private int stops_up_index = -1;
 	private int stops_down_index = -1;
 	private int hdr_tonemapping_index = -1;
+	private int hdr_unsharp_mask_index = -1;
+	private int hdr_unsharp_mask_radius_index = -1;
 	private int hdr_local_contrast_index = -1;
 	private int hdr_n_tiles_index = -1;
 	private int photos_count_index = -1;
@@ -947,55 +949,172 @@ public class PopupView extends LinearLayout {
 							});
 						}
 					}
-					if (photo_mode == Prefs.PhotoMode.HDR && sharedPreferences.getBoolean(Prefs.POPUP_HDR_TONEMAPPING, true)) {
-						final String [] hdr_tonemapping_values = getResources().getStringArray(R.array.preference_hdr_tonemapping_values);
-						String [] hdr_tonemapping_entries = getResources().getStringArray(R.array.preference_hdr_tonemapping_entries);
-						String hdr_tonemapping_value = sharedPreferences.getString(Prefs.HDR_TONEMAPPING, "reinhard");
-						hdr_tonemapping_index = Arrays.asList(hdr_tonemapping_values).indexOf(hdr_tonemapping_value);
-						if( hdr_tonemapping_index == -1 ) {
-							if( MyDebug.LOG )
-								Log.d(TAG, "can't find value " + hdr_tonemapping_value + " in hdr_tonemapping_values!");
-							hdr_tonemapping_index = 0;
+					if(photo_mode == Prefs.PhotoMode.HDR) {
+						if(sharedPreferences.getBoolean(Prefs.POPUP_HDR_DEGHOST, true)) {
+							// Костыль
+							View view = new LinearLayout(main_activity);
+							view.setPadding(0, elements_gap, 0, 0);
+							
+							CheckBox checkBox = new CheckBox(main_activity);
+							checkBox.setText(getResources().getString(R.string.preference_hdr_deghost));
+							checkBox.setTextColor(negative ? Color.BLACK : Color.WHITE);
+							checkBox.setTextSize(TypedValue.COMPLEX_UNIT_PX, text_size_main);
+							checkBox.setChecked(sharedPreferences.getBoolean(Prefs.HDR_DEGHOST, true));
+
+							checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+								public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+									final SharedPreferences sharedPreferences = main_activity.getSharedPrefs();
+									SharedPreferences.Editor editor = sharedPreferences.edit();
+									editor.putBoolean(Prefs.HDR_DEGHOST, isChecked);
+									editor.apply();
+
+									main_activity.getMainUI().closePopup(); // don't need to destroy popup
+								}
+							});
+
+							this.addView(view);
+							this.addView(checkBox);
 						}
-						addArrayOptionsToPopup(Arrays.asList(hdr_tonemapping_entries), getResources().getString(R.string.preference_hdr_tonemapping),
-								false, hdr_tonemapping_index, true, false, "HDR_TONEMAPPING", new ArrayOptionsPopupListener() {
-							private void update() {
-								if( hdr_tonemapping_index == -1 )
-									return;
-								String new_hdr_tonemapping_value = hdr_tonemapping_values[hdr_tonemapping_index];
-								SharedPreferences sharedPreferences = main_activity.getSharedPrefs();
-								SharedPreferences.Editor editor = sharedPreferences.edit();
-								editor.putString("preference_hdr_tonemapping", new_hdr_tonemapping_value);
-								editor.apply();
+						if (sharedPreferences.getBoolean(Prefs.POPUP_HDR_TONEMAPPING, true)) {
+							final String [] hdr_tonemapping_values = getResources().getStringArray(R.array.preference_hdr_tonemapping_values);
+							String [] hdr_tonemapping_entries = getResources().getStringArray(R.array.preference_hdr_tonemapping_entries);
+							String hdr_tonemapping_value = sharedPreferences.getString(Prefs.HDR_TONEMAPPING, "reinhard");
+							hdr_tonemapping_index = Arrays.asList(hdr_tonemapping_values).indexOf(hdr_tonemapping_value);
+							if( hdr_tonemapping_index == -1 ) {
+								if( MyDebug.LOG )
+									Log.d(TAG, "can't find value " + hdr_tonemapping_value + " in hdr_tonemapping_values!");
+								hdr_tonemapping_index = 0;
 							}
-							@Override
-							public int onClickPrev() {
-								if( hdr_tonemapping_index != -1 ) {
-									hdr_tonemapping_index--;
-									if( hdr_tonemapping_index < 0 )
-										hdr_tonemapping_index += hdr_tonemapping_values.length;
-									update();
-									return hdr_tonemapping_index;
+							addArrayOptionsToPopup(Arrays.asList(hdr_tonemapping_entries), getResources().getString(R.string.preference_hdr_tonemapping),
+									false, hdr_tonemapping_index, true, false, "HDR_TONEMAPPING", new ArrayOptionsPopupListener() {
+								private void update() {
+									if( hdr_tonemapping_index == -1 )
+										return;
+									String new_hdr_tonemapping_value = hdr_tonemapping_values[hdr_tonemapping_index];
+									SharedPreferences sharedPreferences = main_activity.getSharedPrefs();
+									SharedPreferences.Editor editor = sharedPreferences.edit();
+									editor.putString("preference_hdr_tonemapping", new_hdr_tonemapping_value);
+									editor.apply();
 								}
-								return -1;
-							}
-							@Override
-							public int onClickNext() {
-								if( hdr_tonemapping_index != -1 ) {
-									hdr_tonemapping_index++;
-									if( hdr_tonemapping_index >= hdr_tonemapping_values.length )
-										hdr_tonemapping_index -= hdr_tonemapping_values.length;
-									update();
-									return hdr_tonemapping_index;
+								@Override
+								public int onClickPrev() {
+									if( hdr_tonemapping_index != -1 ) {
+										hdr_tonemapping_index--;
+										if( hdr_tonemapping_index < 0 )
+											hdr_tonemapping_index += hdr_tonemapping_values.length;
+										update();
+										return hdr_tonemapping_index;
+									}
+									return -1;
 								}
-								return -1;
-							}
-						});
+								@Override
+								public int onClickNext() {
+									if( hdr_tonemapping_index != -1 ) {
+										hdr_tonemapping_index++;
+										if( hdr_tonemapping_index >= hdr_tonemapping_values.length )
+											hdr_tonemapping_index -= hdr_tonemapping_values.length;
+										update();
+										return hdr_tonemapping_index;
+									}
+									return -1;
+								}
+							});
+						}
 					}
 
 					if (photo_mode == Prefs.PhotoMode.HDR || photo_mode == Prefs.PhotoMode.DRO) { 
+						if (sharedPreferences.getBoolean(Prefs.POPUP_HDR_UNSHARP_MASK, true)) {
+							final String [] hdr_unsharp_mask_values = getResources().getStringArray(R.array.preference_hdr_local_contrast_values);
+							String [] hdr_unsharp_mask_entries = getResources().getStringArray(R.array.preference_hdr_local_contrast_entries);
+							String hdr_unsharp_mask_value = sharedPreferences.getString(Prefs.HDR_UNSHARP_MASK, "1");
+							hdr_unsharp_mask_index = Arrays.asList(hdr_unsharp_mask_values).indexOf(hdr_unsharp_mask_value);
+							if( hdr_unsharp_mask_index == -1 ) {
+								if( MyDebug.LOG )
+									Log.d(TAG, "can't find value " + hdr_unsharp_mask_value + " in hdr_unsharp_mask_values!");
+								hdr_unsharp_mask_index = 0;
+							}
+							addArrayOptionsToPopup(Arrays.asList(hdr_unsharp_mask_entries), getResources().getString(R.string.preference_hdr_unsharp_mask),
+									false, hdr_unsharp_mask_index, false, false, "HDR_UNSHARP_MASK", new ArrayOptionsPopupListener() {
+								private void update() {
+									if( hdr_unsharp_mask_index == -1 )
+										return;
+									String new_hdr_unsharp_mask_value = hdr_unsharp_mask_values[hdr_unsharp_mask_index];
+									SharedPreferences sharedPreferences = main_activity.getSharedPrefs();
+									SharedPreferences.Editor editor = sharedPreferences.edit();
+									editor.putString("preference_hdr_unsharp_mask", new_hdr_unsharp_mask_value);
+									editor.apply();
+								}
+								@Override
+								public int onClickPrev() {
+									if( hdr_unsharp_mask_index != -1 ) {
+										hdr_unsharp_mask_index--;
+										if( hdr_unsharp_mask_index < 0 )
+											hdr_unsharp_mask_index += hdr_unsharp_mask_values.length;
+										update();
+										return hdr_unsharp_mask_index;
+									}
+									return -1;
+								}
+								@Override
+								public int onClickNext() {
+									if( hdr_unsharp_mask_index != -1 ) {
+										hdr_unsharp_mask_index++;
+										if( hdr_unsharp_mask_index >= hdr_unsharp_mask_values.length )
+											hdr_unsharp_mask_index -= hdr_unsharp_mask_values.length;
+										update();
+										return hdr_unsharp_mask_index;
+									}
+									return -1;
+								}
+							});
+						}
+						if (sharedPreferences.getBoolean(Prefs.POPUP_HDR_UNSHARP_MASK_RADIUS, true)) {
+							final String [] hdr_unsharp_mask_radius_values = getResources().getStringArray(R.array.preference_radius_values);
+							String hdr_unsharp_mask_radius_value = sharedPreferences.getString(Prefs.HDR_UNSHARP_MASK_RADIUS, "5");
+							hdr_unsharp_mask_radius_index = Arrays.asList(hdr_unsharp_mask_radius_values).indexOf(hdr_unsharp_mask_radius_value);
+							if( hdr_unsharp_mask_radius_index == -1 ) {
+								if( MyDebug.LOG )
+									Log.d(TAG, "can't find value " + hdr_unsharp_mask_radius_value + " in hdr_unsharp_mask_radius_values!");
+								hdr_unsharp_mask_radius_index = 0;
+							}
+							addArrayOptionsToPopup(Arrays.asList(hdr_unsharp_mask_radius_values), getResources().getString(R.string.preference_hdr_unsharp_mask_radius),
+									false, hdr_unsharp_mask_radius_index, false, false, "HDR_UNSHARP_MASK_RADIUS", new ArrayOptionsPopupListener() {
+								private void update() {
+									if( hdr_unsharp_mask_radius_index == -1 )
+										return;
+									String new_hdr_unsharp_mask_radius_value = hdr_unsharp_mask_radius_values[hdr_unsharp_mask_radius_index];
+									SharedPreferences sharedPreferences = main_activity.getSharedPrefs();
+									SharedPreferences.Editor editor = sharedPreferences.edit();
+									editor.putString("preference_hdr_unsharp_mask_radius", new_hdr_unsharp_mask_radius_value);
+									editor.apply();
+								}
+								@Override
+								public int onClickPrev() {
+									if( hdr_unsharp_mask_radius_index != -1 ) {
+										hdr_unsharp_mask_radius_index--;
+										if( hdr_unsharp_mask_radius_index < 0 )
+											hdr_unsharp_mask_radius_index += hdr_unsharp_mask_radius_values.length;
+										update();
+										return hdr_unsharp_mask_radius_index;
+									}
+									return -1;
+								}
+								@Override
+								public int onClickNext() {
+									if( hdr_unsharp_mask_radius_index != -1 ) {
+										hdr_unsharp_mask_radius_index++;
+										if( hdr_unsharp_mask_radius_index >= hdr_unsharp_mask_radius_values.length )
+											hdr_unsharp_mask_radius_index -= hdr_unsharp_mask_radius_values.length;
+										update();
+										return hdr_unsharp_mask_radius_index;
+									}
+									return -1;
+								}
+							});
+						}
 						if (sharedPreferences.getBoolean(Prefs.POPUP_HDR_LOCAL_CONTRAST, true)) {
 							final String [] hdr_local_contrast_values = getResources().getStringArray(R.array.preference_hdr_local_contrast_values);
+							String [] hdr_local_contrast_entries = getResources().getStringArray(R.array.preference_hdr_local_contrast_entries);
 							String hdr_local_contrast_value = sharedPreferences.getString(Prefs.HDR_LOCAL_CONTRAST, "5");
 							hdr_local_contrast_index = Arrays.asList(hdr_local_contrast_values).indexOf(hdr_local_contrast_value);
 							if( hdr_local_contrast_index == -1 ) {
@@ -1003,7 +1122,7 @@ public class PopupView extends LinearLayout {
 									Log.d(TAG, "can't find value " + hdr_local_contrast_value + " in hdr_local_contrast_values!");
 								hdr_local_contrast_index = 0;
 							}
-							addArrayOptionsToPopup(Arrays.asList(hdr_local_contrast_values), getResources().getString(R.string.preference_hdr_local_contrast),
+							addArrayOptionsToPopup(Arrays.asList(hdr_local_contrast_entries), getResources().getString(R.string.preference_hdr_local_contrast),
 									false, hdr_local_contrast_index, false, false, "HDR_LOCAL_CONTRAST", new ArrayOptionsPopupListener() {
 								private void update() {
 									if( hdr_local_contrast_index == -1 )

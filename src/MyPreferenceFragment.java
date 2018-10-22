@@ -22,6 +22,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.TwoStatePreference;
+import android.preference.EditTextPreference;
 import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.Preference.OnPreferenceChangeListener;
@@ -258,7 +259,10 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 
 		if( !supports_hdr && !supports_dro) {
 			removePref("preference_screen_photo_settings", "preference_category_hdr");
+			removePref(popupGroup, Prefs.POPUP_HDR_DEGHOST);
 			removePref(popupGroup, Prefs.POPUP_HDR_TONEMAPPING);
+			removePref(popupGroup, Prefs.POPUP_HDR_UNSHARP_MASK);
+			removePref(popupGroup, Prefs.POPUP_HDR_UNSHARP_MASK_RADIUS);
 			removePref(popupGroup, Prefs.POPUP_HDR_LOCAL_CONTRAST);
 			removePref(popupGroup, Prefs.POPUP_HDR_N_TILES);
 			removePref("preference_category_photo_modes", "preference_photo_mode_dro");
@@ -266,7 +270,9 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 		} else if( !supports_hdr ) {
 			removePref("preference_category_hdr", Prefs.HDR_SAVE_EXPO);
 			removePref("preference_category_hdr", Prefs.HDR_TONEMAPPING);
+			removePref(popupGroup, Prefs.HDR_DEGHOST);
 			removePref(popupGroup, Prefs.POPUP_HDR_TONEMAPPING);
+			removePref(popupGroup, Prefs.POPUP_HDR_DEGHOST);
 			removePref("preference_category_photo_modes", "preference_photo_mode_hdr");
 		}
 
@@ -488,7 +494,20 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 		} else {
 			removePref("preference_screen_filtering", Prefs.EDGE);
 		}
-		
+
+		final String zero_shutter_delay_mode = bundle.getString("zero_shutter_delay_mode");
+		final String [] zero_shutter_delay_modes = bundle.getStringArray("zero_shutter_delay_modes");
+		if( zero_shutter_delay_modes != null && zero_shutter_delay_modes.length > 1 ) {
+			ListPreference lp = (ListPreference)findPreference(Prefs.ZERO_SHUTTER_DELAY);
+			String preference_key = Prefs.ZERO_SHUTTER_DELAY + "_" + cameraId;
+			if (zero_shutter_delay_mode != null) {
+				lp.setValue(zero_shutter_delay_mode);
+			}
+			lp.setKey(preference_key);
+		} else {
+			removePref("preference_screen_filtering", Prefs.ZERO_SHUTTER_DELAY);
+		}
+
 		if (
 			hardware_level != null && !hardware_level.equals("legacy") &&
 			noise_reduction_modes != null && noise_reduction_modes.length > 1 &&
@@ -572,18 +591,27 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 
 			removePref("preference_category_expo_bracketing", Prefs.CAMERA2_FAST_BURST);
 			removePref("preference_screen_bug_fix", Prefs.CAMERA2_FAKE_FLASH);
+			removePref("preference_category_camera_quality", Prefs.UNCOMPRESSED_PHOTO);
+			removePref("preference_screen_bug_fix", Prefs.FULL_SIZE_COPY);
 		}
-		
+
 		if (supports_manual_focus) {
 			String preference_key = Prefs.MIN_FOCUS_DISTANCE + "_" + cameraId;
 			ListPreference lp = (ListPreference)findPreference(Prefs.MIN_FOCUS_DISTANCE);
 			lp.setValue(sharedPreferences.getString(preference_key, "default"));
 			lp.setKey(preference_key);
+			
+			preference_key = Prefs.FOCUS_DISTANCE_CALIBRATION + "_" + cameraId;
+			EditTextPreference etp = (EditTextPreference)findPreference(Prefs.FOCUS_DISTANCE_CALIBRATION);
+			etp.setText(sharedPreferences.getString(preference_key, "0"));
+			etp.setKey(preference_key);
 		} else {
 			removePref("preference_screen_sliders", Prefs.FOCUS_RANGE);
 			removePref("preference_screen_bug_fix", Prefs.MIN_FOCUS_DISTANCE);
+			removePref("preference_screen_bug_fix", Prefs.FOCUS_DISTANCE_CALIBRATION);
+			removePref("preference_screen_preview", Prefs.ZOOM_WHEN_FOCUSING);
 		}
-		
+
 		boolean has_modes = false;
 		for(String group_name : mode_groups) {
 			PreferenceGroup group = (PreferenceGroup)this.findPreference(group_name);
