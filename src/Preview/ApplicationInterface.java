@@ -41,8 +41,8 @@ public interface ApplicationInterface {
 	boolean useTextureView();
 	Location getLocation(); // get current location - null if not available (or you don't care about geotagging)
 	int createOutputVideoMethod(); // return a VIDEOMETHOD_* value to specify how to create a video file
-	File createOutputVideoFile() throws IOException; // will be called if createOutputVideoUsingSAF() returns VIDEOMETHOD_FILE
-	Uri createOutputVideoSAF() throws IOException; // will be called if createOutputVideoUsingSAF() returns VIDEOMETHOD_SAF
+	File createOutputVideoFile(String prefix) throws IOException; // will be called if createOutputVideoUsingSAF() returns VIDEOMETHOD_FILE
+	Uri createOutputVideoSAF(String prefix) throws IOException; // will be called if createOutputVideoUsingSAF() returns VIDEOMETHOD_SAF
 	Uri createOutputVideoUri(); // will be called if createOutputVideoUsingSAF() returns VIDEOMETHOD_URI
 	VideoMaxFileSize getVideoMaxFileSizePref() throws NoFreeStorageException; // see VideoMaxFileSize class for details
 	boolean isRawPref(); // whether to enable RAW photos
@@ -65,8 +65,8 @@ public interface ApplicationInterface {
 	void onPhotoError(); // callback for failing to take a photo
 	void onVideoInfo(int what, int extra); // callback for info when recording video (see MediaRecorder.OnInfoListener)
 	void onVideoError(int what, int extra); // callback for errors when recording video (see MediaRecorder.OnErrorListener)
-	void onVideoRecordStartError(CamcorderProfile profile); // callback for video recording failing to start
-	void onVideoRecordStopError(CamcorderProfile profile); // callback for video recording being corrupted
+	void onVideoRecordStartError(VideoProfile profile); // callback for video recording failing to start
+	void onVideoRecordStopError(VideoProfile profile); // callback for video recording being corrupted
 	void onFailedReconnectError(); // failed to reconnect camera after stopping video recording
 	void onFailedCreateVideoFileError(); // callback if unable to create file for recording video
 	void hasPausedPreview(boolean paused); // called when the preview is paused or unpaused (due to getPausePreviewPref())
@@ -87,6 +87,7 @@ public interface ApplicationInterface {
 	
 	// callbacks
 	void onDrawPreview(Canvas canvas);
+	public void onPrefsChanged();
 	boolean onPictureTaken(CameraController.Photo photo, Date current_date);
 	boolean onBurstPictureTaken(List<CameraController.Photo> images, Date current_date);
 	boolean onRawPictureTaken(DngCreator dngCreator, Image image, Date current_date);

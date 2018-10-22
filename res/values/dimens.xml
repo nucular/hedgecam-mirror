@@ -54,6 +54,11 @@
 	<dimen name="ind_line_size_narrow"		>80dp</dimen>
 	<dimen name="ind_line_size_wide"		>100dp</dimen>
 	
+	<dimen name="ind_progress_width"		>150dp</dimen>
+	<dimen name="ind_progress_height"		>20dp</dimen>
+	<dimen name="ind_progress_margin"		>3dp</dimen>
+	<dimen name="ind_progress_peak_width"	>1.5dp</dimen>
+	
 	<dimen name="button_gallery_size"		>68dp</dimen>
 	<dimen name="button_gallery_padding"	>13dp</dimen>
 	
@@ -121,5 +126,7 @@
 	<dimen name="seekbar_hint_margin"		>5dp</dimen>
 	<dimen name="seekbar_hint_padding"		>10dp</dimen>
 	<dimen name="seekbar_hint_pointer"		>12dp</dimen>
+	<dimen name="pref_seekbar_padding"		>10dp</dimen>
+	<dimen name="pref_seekbar_text"			>32dp</dimen>
 
 </resources>

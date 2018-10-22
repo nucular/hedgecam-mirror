@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-	<string name="app_name">HedgeCam 2</string>
+	<string name="app_name">HedgeCam 2</string> <!-- Be sure to remove this line from translated file! -->
 	<string name="translation_author">Mark Harman, Caddish Hedgehog</string> <!-- Write your name here. If you don't want to do this, do not remove this element, just stay it empty-->
+	<string name="about_credits">Based on Open Camera by Mark Harman\n\nReleased under the GPL v3 or later</string>
 	<string name="intro_text">Touch to focus, and press the blue camera button to take photos. For more help, click Online help from Settings.\n\nPrivacy Policy: This application does not send personal data to third parties. Access to the camera, microphone, and location is only used for saving your photos and videos.</string>
 	<string name="intro_ok">OK (This message won\'t show again)</string>
-	
-	<string name="charset">ISO-8859-1</string>
+
+	<string name="charset">ISO-8859-1</string> <!-- for JPEG comment -->
 
 	<string name="answer_yes">Yes</string>
 	<string name="answer_no">No</string>
@@ -19,10 +20,6 @@
 	<string name="unlimited">Unlimited</string>
 	<string name="device_default">Device default</string>
 	<string name="sorry">Sorry</string>
-
-	<string name="about_available">Available</string>
-	<string name="about_not_available">Not available</string>
-	<string name="about_copy_to_clipboard">Copy to clipboard</string>
 
 	<string name="choose_save_location">Choose save location:</string>
 	<string name="clear_folder_history">Clear folder history</string>
@@ -79,6 +76,8 @@
 	<string name="take_photo">Take Photo</string>
 	<string name="take_video">Take Video</string>
 	<string name="trash">Delete Last Picture</string>
+	<string name="high_speed">High Speed</string> <!-- in the sense of high speed video frame rates -->
+	<string name="preference_video_capture_rate">Speed</string>
 
 	<string name="screen_lock_message_1">LOCKED</string>
 	<string name="screen_lock_message_2">Swipe to unlock</string>
@@ -131,6 +130,9 @@
 	<string name="video_no_free_space">Not enough free space to record video</string>
 	<string name="video_power_critical">Video stopped\nBattery level critically low</string>
 	<string name="focus_bracketing_range_not_defined">Focus bracketing range not defined</string>
+	<string name="speech_recognizer_unavailable">Speech recognizer unavailable</string>
+	<string name="open_files_saf_exception_ghost">No file dialog found on this device, ghost image option is not supported</string>
+	<string name="saf_permission_failed_open_image">Unable to open this image</string>
 
 	<string name="no_permission">PERMISSIONS NOT AVAILABLE</string>
 	<!-- the permission names such as Microphone should match what Android calls them in the App permission settings -->
@@ -252,7 +254,8 @@
 	<string name="preference_burst_lock_summary">Lock the screen when timer or burst is running</string>
 	<string name="preference_wait_face">Wait for face</string>
 	<string name="preference_wait_face_summary">Start capture or timer after the face is detected. Don\'n forget to enable face detection before using this mode.</string>
-	<string name="preference_audio_control">Audio control options</string>
+	<string name="preference_audio_control">Audio control</string>
+	<string name="preference_audio_control_type">Audio control type</string>
 	<string name="vc_loud_noise">Loud noise</string>
 	<string name="vc_cheese">Voice command: \"cheese\"</string>
 	<string name="preference_audio_noise_control_sensitivity">Audio control sensitivity</string>
@@ -305,6 +308,8 @@
 	<string name="preference_ctrl_panel_margin_summary">%s\n\nA space between control panel buttons and shutter button for \"Phone 2\", \"Tablet\" and \"Universal\" GUI type</string>
 	<string name="preference_ui_left_handed">Left-handed UI</string>
 	<string name="preference_ui_left_handed_summary">Interface for left-handed users</string>
+	<string name="preference_system_ui_orientation">System UI orientation</string>
+	<string name="preference_system_ui_orientation_summary">%s</string>
 
 	<string name="preference_screen_ctrl_panel">Control panel</string>
 	<string name="preference_screen_ctrl_panel_buttons">Control panel buttons</string>
@@ -332,6 +337,10 @@
 	<string name="preference_show_zoom_slider_controls_summary">Show the slider for zoom control</string>
 	<string name="preference_iso_steps">ISO steps</string>
 	<string name="preference_iso_steps_summary">Use step ISO adjustment</string>
+	<string name="preference_exposure_steps">Exposure time steps</string>
+	<string name="preference_exposure_steps_summary">Use step exposure time adjustment</string>
+	<string name="preference_white_balance_steps">White balance steps</string>
+	<string name="preference_white_balance_steps_summary">Use step white balance adjustment</string>
 
 	<string name="preference_screen_popup">Popup menu</string>
 	<string name="preference_font_size">Font size</string>
@@ -363,6 +372,7 @@
 	<string name="preference_immersive_mode_summary">%s\n\nOptions for \"immersive mode\" behaviour</string>
 	<string name="im_fullscreen">Fullscreen mode</string>
 	<string name="im_sticky">Sticky</string>
+	<string name="im_overlay">Overlay</string>
 	<string name="im_hide_nav_buttons">Only hide on-screen virtual navigation buttons</string>
 	<string name="im_hide_gui">Hide GUI</string>
 	<string name="im_hide_everything">Hide everything</string>
@@ -390,9 +400,14 @@
 	<string name="dont_rotate">Don\'t rotate</string>
 	<string name="rotate_180_degrees">Rotate 180 degrees</string>
 	<string name="preference_preview_max_expo">Maximum exposure</string>
+	<string name="preference_preview_max_expo_summary">Maximum preview exposure in manual mode (won\'t affect resultant photos/videos)</string>
 	<string name="preference_zoom_when_focusing">Zoom when focusing</string>
 	<string name="preference_zoom_when_focusing_summary">Increase the center of the preview when adjusting manual focus</string>
-	<string name="preference_preview_max_expo_summary">Maximum preview exposure in manual mode (won\'t affect resultant photos/videos)</string>
+	<string name="preference_ghost_image">Ghost image</string>
+	<string name="preference_ghost_image_source">Image source</string>
+	<string name="gi_last_photo">Last photo</string>
+	<string name="gi_file">Image file...</string>
+	<string name="preference_ghost_image_alpha">Image alpha</string>
 	<string name="preference_preview_surface">Preview surface</string>
 	<string name="preference_preview_surface_summary">%s\n\nSurface for displaying preview. Switch this option only if you know what you do</string>
 
@@ -421,6 +436,8 @@
 	<string name="preference_show_time_summary">Display the current time on screen</string>
 	<string name="preference_show_battery">Show battery</string>
 	<string name="preference_show_battery_summary">Display the current battery level on screen</string>
+	<string name="preference_show_video_max_amp">Show audio level meter</string>
+	<string name="preference_show_video_max_amp_summary">Whether to show on-screen audio level when recording video</string>
 	<string name="preference_alt_indication">Alternative indication</string>
 	<string name="preference_alt_indication_summary">Alternative focus and metering zone indication</string>
 	<string name="preference_grid">Show a grid</string>
@@ -466,6 +483,10 @@
 	<string name="ba_focus_minus">Focus-</string>
 	<string name="ba_exposure_plus">Exposure+</string>
 	<string name="ba_exposure_minus">Exposure-</string>
+	<string name="ba_iso_plus">ISO+</string>
+	<string name="ba_iso_minus">ISO-</string>
+	<string name="ba_white_balance_plus">White balance+</string>
+	<string name="ba_white_balance_minus">White balance-</string>
 	<string name="ba_capture_only">Capture only</string>
 	<string name="ba_nothing">No action</string>
 
@@ -487,7 +508,7 @@
 	<string name="fr_room">Room</string>
 	<string name="fr_group">Group photo</string>
 	<string name="preference_level_angle_calibration">Level angle calibration</string>
-	<string name="preference_level_angle_calibration_summary">Calibration value of level angle</string>
+	<string name="preference_level_angle_calibration_summary">%s\n\nCalibration value of level angle</string>
 
 	<string name="preference_screen_bug_fix">Bug fixes</string>
 	<string name="preference_startup_focus">Perform auto-focus on startup</string>
@@ -509,6 +530,10 @@
 	<string name="preference_speed_up_sensors_summary">Increase accelerometer and magnetic sensor update speed</string>
 	<string name="preference_full_size_copy">Full-size copy</string>
 	<string name="preference_full_size_copy_summary">Create full-size compressed copy of photo when capturing an uncompressed photo. Use this option if you have problems with YUV capturing.</string>
+	<string name="preference_reset_manual_mode">Reset manual mode</string>
+	<string name="preference_reset_manual_mode_summary">Reset manual ISO mode when connected to the camera. Use this option if autofocus works incorrectly after connecting to the camera and ISO mode is manual</string>
+	<string name="preference_lock_preview_fps">Lock preview FPS</string>
+	<string name="preference_lock_preview_fps_summary">Lock preview FPS to video frame rate. Use this option if video frame rate control does not work on your device.</string>
 
 	<string name="preference_category_camera_quality">Photo and Video Settings</string>
 
@@ -531,6 +556,8 @@
 	<string name="preference_category_metadata_summary">Metadata that is stored inside the JPEG file</string>
 	<string name="preference_metadata_author">Author</string>
 	<string name="preference_metadata_comment">Comment</string>
+	<string name="preference_metadata_comment_as_file">Comment as file</string>
+	<string name="preference_metadata_comment_as_file_summary">Save comment as text file</string>
 	<string name="preference_metadata_position_info">Device position</string>
 	<string name="preference_metadata_position_info_summary">Add to comment information about device position</string>
 	<string name="preference_metadata_mode_info">Mode info</string>
@@ -622,6 +649,13 @@
 	<string name="preference_video_bitrate_summary">%s\n\nSet the approximate bitrate of videos (higher means better quality, but takes up more disk space; may cause video recording to fail if bitrate not supported)</string>
 	<string name="preference_video_fps">Video frame rate (approx)</string>
 	<string name="preference_video_fps_summary">Set the frame rate (FPS) of videos (may be approx, not guaranteed to be achieved, and may cause video recording to fail if frame rate not supported)</string>
+	<string name="preference_video_log">Video flat (log) profile</string>
+	<string name="vl_low">Low</string>
+	<string name="vl_medium">Medium</string>
+	<string name="vl_strong">Strong</string>
+	<string name="vl_extra_strong">Extra strong</string>
+	<string name="preference_video_log_summary">%s\n\nEnable a flat (log) profile for video mode</string>
+	<string name="video_log">Log profile</string>
 	<string name="preference_video_max_duration">Maximum duration of video</string>
 	<string name="preference_video_max_duration_summary">%s\n\nThe video recording will stop after the specified duration</string>
 	<string name="preference_video_restart">Restart video after max duration</string>
@@ -682,6 +716,8 @@
 	<string name="nr_zero_shutter_lag">Zero shutter lag</string>
 	<string name="preference_zero_shutter_delay">Zero shutter delay</string>
 	<string name="preference_zero_shutter_delay_summary">%s</string>
+	<string name="preference_hot_pixel_correction">Hot pixel correction</string>
+	<string name="preference_hot_pixel_correction_summary">%s</string>
 
 	<string name="preference_screen_files">Files</string>
 	<string name="preference_save_location">Save location</string>
@@ -707,12 +743,20 @@
 	<string name="preference_category_online">Misc</string>
 	<string name="preference_online_help">Online help</string>
 	<string name="preference_online_help_summary">Launch program website in your browser</string>
-	<string name="preference_donate">Donate to support development</string>
-	<string name="preference_donate_summary">If you like this app, please consider making a donation to support development. You can do this by purchasing my "donation app" - click this option to open up the page for my donation app. Thanks!</string>
 	<string name="preference_use_camera2">Use Camera2 API</string>
 	<string name="preference_use_camera2_summary">Enables Android 5\'s Camera2 API - offers extra features, but may not work properly on all devices (will cause a restart)</string>
+
+	<string name="preference_donate">Donate to support development</string>
+	<string name="preference_donate_summary">If you like this app, please consider making a donation to support development. Thanks!</string>	
+	<string name="donate">Donate</string>
+	<string name="wallet_was_copied">Wallet number has been copied to clipboard</string>
+	<string name="thank_you">Thank you!</string>
+	<string name="thank_you_summary">Thank you for donation!</string>
+
 	<string name="preference_about">About</string>
+	<string name="preference_about_translation">Translation</string>
 	<string name="preference_info">App and debug information</string>
+	<string name="about_copy_to_clipboard">Copy to clipboard</string>
 	<string name="preference_reset">Reset settings</string>
 	<string name="preference_reset_summary">Reset all settings to default</string>
 	<string name="preference_advanced">Advanced</string>

@@ -73,7 +73,7 @@ public class CameraController1 extends CameraController {
 		if( camera == null ) {
 			// Although the documentation says Camera.open() should throw a RuntimeException, it seems that it some cases it can return null
 			// I've seen this in some crashes reported in Google Play; also see:
-			// http://stackoverflow.com/questions/12054022/camera-open-returns-null			
+			// http://stackoverflow.com/questions/12054022/camera-open-returns-null
 			if( MyDebug.LOG )
 				Log.e(TAG, "camera.open returned null");
 			throw new CameraControllerException();
@@ -1234,8 +1234,7 @@ public class CameraController1 extends CameraController {
 	}
 	
 	@Override
-	public 
-	void reconnect() throws CameraControllerException {
+	public void reconnect() throws CameraControllerException {
 		if( MyDebug.LOG )
 			Log.d(TAG, "reconnect");
 		try {
@@ -1552,7 +1551,7 @@ public class CameraController1 extends CameraController {
 			if( exposure_step == 0.0f ) // just in case?
 				exposure_step = 1.0f/3.0f; // make up a typical example
 			int exposure_current = getExposureCompensation();
-			if( MyDebug.LOG ) 
+			if( MyDebug.LOG )
 				Log.d(TAG, "exposure_current: " + exposure_current);
 
 			List<Integer> requests = new ArrayList<>();
@@ -1658,7 +1657,7 @@ public class CameraController1 extends CameraController {
 	}
 	
 	@Override
-	public void initVideoRecorderPostPrepare(MediaRecorder video_recorder) throws CameraControllerException {
+	public void initVideoRecorderPostPrepare(MediaRecorder video_recorder, boolean want_photo_video_recording) throws CameraControllerException {
 		// no further actions necessary
 	}
 	
@@ -1689,7 +1688,7 @@ public class CameraController1 extends CameraController {
 		setCameraParameters(parameters);
 
 		String current = this.getParameters().getAntibanding();
-		if (current != null) 
+		if (current != null)
 			return current.equals(value);
 		return false;
 	}

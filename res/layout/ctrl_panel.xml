@@ -191,6 +191,19 @@
 		/>
 
 	<ImageButton
+		android:id="@+id/audio_control"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:padding="0px"
+		android:scaleType="center"
+		android:contentDescription="@string/audio_control_start"
+		android:src="@drawable/ctrl_mic"
+		android:onClick="clickedAudioControl"
+		android:visibility="gone"
+		style="?android:attr/borderlessButtonStyle"
+		/>
+
+	<ImageButton
 		android:id="@+id/selfie_mode"
 		android:layout_width="wrap_content"
 		android:layout_height="wrap_content"

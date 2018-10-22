@@ -326,6 +326,7 @@
 		<item>@string/im_hide_nav_buttons</item>
 		<item>@string/im_fullscreen</item>
 		<item>@string/im_sticky</item>
+		<item>@string/im_overlay</item>
 		<item>@string/im_hide_gui</item>
 		<item>@string/im_hide_everything</item>
 	</string-array>
@@ -334,6 +335,19 @@
 		<item>immersive_mode_low_profile</item>
 		<item>immersive_mode_fullscreen</item>
 		<item>immersive_mode_sticky</item>
+		<item>immersive_mode_overlay</item>
+		<item>immersive_mode_gui</item>
+		<item>immersive_mode_everything</item>
+	</string-array>
+	<string-array name="preference_immersive_mode_no_navigation_bar_entries">
+		<item>@string/off</item>
+		<item>@string/im_hide_nav_buttons</item>
+		<item>@string/im_hide_gui</item>
+		<item>@string/im_hide_everything</item>
+	</string-array>
+	<string-array name="preference_immersive_mode_no_navigation_bar_values">
+		<item>immersive_mode_off</item>
+		<item>immersive_mode_low_profile</item>
 		<item>immersive_mode_gui</item>
 		<item>immersive_mode_everything</item>
 	</string-array>
@@ -414,9 +428,9 @@
 	</string-array>
 	<string-array name="preference_grid_alpha_entries">
 		<item>@string/none</item>
-		<item>75 &#x0025;</item>
-		<item>50 &#x0025;</item>
 		<item>25 &#x0025;</item>
+		<item>50 &#x0025;</item>
+		<item>75 &#x0025;</item>
 	</string-array>
 	<string-array name="preference_grid_alpha_values">
 		<item>0</item>
@@ -576,25 +590,35 @@
 	</string-array>
 	<string-array name="preference_video_fps_entries">
 		<item>@string/default_str</item>
+		<item>8</item>
 		<item>15</item>
 		<item>24</item>
 		<item>25</item>
 		<item>30</item>
+		<item>50</item>
 		<item>60</item>
 		<item>96</item>
 		<item>100</item>
 		<item>120</item>
+		<item>150</item>
+		<item>200</item>
+		<item>240</item>
 	</string-array>
 	<string-array name="preference_video_fps_values">
 		<item>default</item>
+		<item>8</item>
 		<item>15</item>
 		<item>24</item>
 		<item>25</item>
 		<item>30</item>
+		<item>50</item>
 		<item>60</item>
 		<item>96</item>
 		<item>100</item>
 		<item>120</item>
+		<item>150</item>
+		<item>200</item>
+		<item>240</item>
 	</string-array>
 	<string-array name="preference_video_restart_entries">
 		<item>@string/dont_restart</item>
@@ -645,12 +669,10 @@
 		<item>audio_stereo</item>
 	</string-array>
 	<string-array name="preference_audio_control_entries">
-		<item>@string/none</item>
 		<item>@string/vc_loud_noise</item>
 		<item>@string/vc_cheese</item>
 	</string-array>
 	<string-array name="preference_audio_control_values">
-		<item>none</item>
 		<item>noise</item>
 		<item>voice</item>
 	</string-array>
@@ -758,6 +780,8 @@
 		<item>3600</item>
 	</string-array>
 	<string-array name="preference_button_action_entries">
+		<item>@string/ba_nothing</item>
+		<item>@string/ba_capture_only</item>
 		<item>@string/ba_shutter</item>
 		<item>@string/ba_pause</item>
 		<item>@string/ba_zoom_plus</item>
@@ -767,10 +791,14 @@
 		<item>@string/ba_focus_minus</item>
 		<item>@string/ba_exposure_plus</item>
 		<item>@string/ba_exposure_minus</item>
-		<item>@string/ba_capture_only</item>
-		<item>@string/ba_nothing</item>
+		<item>@string/ba_iso_plus</item>
+		<item>@string/ba_iso_minus</item>
+		<item>@string/ba_white_balance_plus</item>
+		<item>@string/ba_white_balance_minus</item>
 	</string-array>
 	<string-array name="preference_button_action_values">
+		<item>nothing</item>
+		<item>really_nothing</item>
 		<item>shutter_button</item>
 		<item>pause_video</item>
 		<item>zoom_in</item>
@@ -780,8 +808,10 @@
 		<item>focus_minus</item>
 		<item>exposure_plus</item>
 		<item>exposure_minus</item>
-		<item>really_nothing</item>
-		<item>nothing</item>
+		<item>iso_plus</item>
+		<item>iso_minus</item>
+		<item>wb_plus</item>
+		<item>wb_minus</item>
 	</string-array>
 	<string-array name="preference_shutter_sound_entries">
 		<item>@string/default_str</item>
@@ -838,6 +868,14 @@
 		<item>normal</item>
 		<item>large</item>
 		<item>xlarge</item>
+	</string-array>
+	<string-array name="preference_ghost_image_source_entries">
+		<item>@string/gi_last_photo</item>
+		<item>@string/gi_file</item>
+	</string-array>
+	<string-array name="preference_ghost_image_source_values">
+		<item>last_photo</item>
+		<item>file</item>
 	</string-array>
 	<string-array name="preference_preview_surface_entries">
 		<item>SurfaceView</item>
@@ -932,6 +970,20 @@
 		<item>12</item>
 		<item>15</item>
 		<item>20</item>
+	</string-array>
+	<string-array name="preference_video_log_entries">
+		<item>@string/off</item>
+		<item>@string/vl_low</item>
+		<item>@string/vl_medium</item>
+		<item>@string/vl_strong</item>
+		<item>@string/vl_extra_strong</item>
+	</string-array>
+	<string-array name="preference_video_log_values">
+		<item>off</item>
+		<item>low</item>
+		<item>medium</item>
+		<item>strong</item>
+		<item>extra_strong</item>
 	</string-array>
 	<string-array name="preference_antibanding_entries">
 		<item>@string/auto</item>
@@ -1136,4 +1188,12 @@
 		<item>saturated</item>
 	</string-array>
 	
+	<string-array name="preference_system_ui_orientation_entries">
+		<item>@string/lock_landscape</item>
+		<item>@string/lock_portrait</item>
+	</string-array>
+	<string-array name="preference_system_ui_orientation_values">
+		<item>landscape</item>
+		<item>portrait</item>
+	</string-array>
 </resources>

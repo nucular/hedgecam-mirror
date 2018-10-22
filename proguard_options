@@ -12,3 +12,5 @@
 
 -keep class android.support.media.** {*;}
 -keep class android.support.exifinterface.** {*;}
+
+-keep class com.android.vending.billing.** {*;}

@@ -48,10 +48,19 @@ public class CanvasView extends View {
 		preview.draw(canvas);
 	}
 
-	@Override
+/*	@Override
 	protected void onMeasure(int widthSpec, int heightSpec) {
 		preview.getMeasureSpec(measure_spec, widthSpec, heightSpec);
 		super.onMeasure(measure_spec[0], measure_spec[1]);
+	}*/
+
+	@Override
+	protected void onSizeChanged(int xNew, int yNew, int xOld, int yOld)
+	{
+		super.onSizeChanged(xNew, yNew, xOld, yOld);
+/*		if( MyDebug.LOG )
+			Log.d(TAG, "xNew: "+xNew+", yNew: "+yNew+", xOld: "+xOld+", yOld: "+yOld);*/
+		preview.getApplicationInterface().onPrefsChanged();
 	}
 
 	void onPause() {

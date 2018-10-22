@@ -3,10 +3,11 @@
 
 	
 	<string name="translation_author">Grigorii Chirkov, Dmitry Vahnin, Caddish Hedgehog</string> <!-- Write your name here. If you don't want to do this, do not remove this element, just stay it empty-->
+	<string name="about_credits">Основано на программе Open Camera, написанной Марком Харманом\n\nРаспространяется под лицензией GPL версии 3, или более новой</string>
 	<string name="intro_text">Коснитесь экрана для фокусировки и нажмите синюю кнопку, чтобы сделать фото. В настройках вас ждет очень много интересного :)\n\nДанная программа не отправляет персональные данные третьим лицам. Доступ к камере, микрофону и геоданным используется только для сохранения фото и видео.</string>
 	<string name="intro_ok">Ок (Это сообщение больше не появится)</string>
 
-	<string name="charset">windows-1251</string>
+	<string name="charset">windows-1251</string> <!-- for JPEG comment -->
 
 	<string name="answer_yes">Да</string>
 	<string name="answer_no">Нет</string>
@@ -19,10 +20,6 @@
 	<string name="unlimited">Бесконечно</string>
 	<string name="device_default">По умолчанию (зависит от устройства)</string>
 	<string name="sorry">К сожалению</string>
-
-	<string name="about_available">Доступно</string>
-	<string name="about_not_available">Не доступно</string>
-	<string name="about_copy_to_clipboard">Копировать в буфер</string>
 
 	<string name="choose_save_location">Выберите папку сохранения:</string>
 	<string name="clear_folder_history">Очистить историю папки</string>
@@ -60,7 +57,7 @@
 	<string name="back_camera">Задняя камера</string>
 	<string name="disable_face_detection">Отключить распознавание лиц</string>
 	<string name="enable_face_detection">Включить распознавание лиц</string>
-	<string name="exposure">Экспозиция</string>
+	<string name="exposure">Выдержка</string>
 	<string name="front_camera">Фронтальная камера</string>
 	<string name="gallery">Галерея</string>
 	<string name="pause_video">Приостановить запись видео</string>
@@ -79,6 +76,8 @@
 	<string name="take_photo">Сделать фото</string>
 	<string name="take_video">Записать видео</string>
 	<string name="trash">Удалить последний снимок</string>
+	<string name="high_speed">Высокоскоростной</string> <!-- in the sense of high speed video frame rates -->
+	<string name="preference_video_capture_rate">Скорость</string>
 
 	<string name="screen_lock_message_1">ЗАБЛОКИРОВАНО</string>
 	<string name="screen_lock_message_2">Проведите по экрану для разблокировки</string>
@@ -131,6 +130,9 @@
 	<string name="video_no_free_space">Недостаточно места для записи видео</string>
 	<string name="video_power_critical">Запись остановлена\nНизкий заряд батареи</string>
 	<string name="focus_bracketing_range_not_defined">Диапазон фокус-брекетинга не определен</string>
+	<string name="speech_recognizer_unavailable">Распознавание речи недоступно</string>
+	<string name="open_files_saf_exception_ghost">Диалог открытия файлов не найден, наложение изображения из файла недоступно</string>
+	<string name="saf_permission_failed_open_image">Невозможно открыть изображение</string>
 
 	<string name="no_permission">В ДОСТУПЕ ОТКАЗАНО</string>
 	<!-- the permission names such as Microphone should match what Android calls them in the App permission settings -->
@@ -252,7 +254,8 @@
 	<string name="preference_burst_lock_summary">Блокировать экран при запуске таймера или пакетной съемки. Помогает избежать остановки съемки из-за случайного касания экрана</string>
 	<string name="preference_wait_face">Ожидать распознавания лица</string>
 	<string name="preference_wait_face_summary">Запускать съемку после распознавания лица. Перед использованием этого режима не забудьте включить распознавание лиц!</string>
-	<string name="preference_audio_control">Настройки управления звуком</string>
+	<string name="preference_audio_control">Управление звуком</string>
+	<string name="preference_audio_control_type">Тип управления</string>
 	<string name="vc_loud_noise">Громкий шум</string>
 	<string name="vc_cheese">Голосовая команда: \"cheese\"</string>
 	<string name="preference_audio_noise_control_sensitivity">Чувствительность управления звуком</string>
@@ -305,6 +308,8 @@
 	<string name="preference_ctrl_panel_margin_summary">%s\n\nРасстояние между кнопками управления и кнопкой затвора при использовании типов интерфейса \"Телефонный 2\", \"Планшетный\" и \"Универсальный\"</string>
 	<string name="preference_ui_left_handed">Интерфейс для левши</string>
 	<string name="preference_ui_left_handed_summary">Повернуть интерфейс для более удобного управления левшой</string>
+	<string name="preference_system_ui_orientation">Ориентация системного интерфейса</string>
+	<string name="preference_system_ui_orientation_summary">%s</string>
 
 	<string name="preference_screen_ctrl_panel">Панель управления</string>
 	<string name="preference_screen_ctrl_panel_buttons">Кнопки</string>
@@ -332,6 +337,10 @@
 	<string name="preference_show_zoom_slider_controls_summary">Отображение ползунка для управления масштабированием</string>
 	<string name="preference_iso_steps">Ступенчатая регулировка ISO</string>
 	<string name="preference_iso_steps_summary">Использовать ступенчатую регулировку ISO вместо плавной</string>
+	<string name="preference_exposure_steps">Ступенчатая регулировка выдержки</string>
+	<string name="preference_exposure_steps_summary">Использовать ступенчатую регулировку выдержки вместо плавной</string>
+	<string name="preference_white_balance_steps">Ступенчатая регулировка ББ</string>
+	<string name="preference_white_balance_steps_summary">Использовать ступенчатую регулировку баланса белого вместо плавной</string>
 
 	<string name="preference_screen_popup">Всплывающее меню</string>
 	<string name="preference_font_size">Размер шрифта</string>
@@ -363,6 +372,7 @@
 	<string name="preference_immersive_mode_summary">%s\n\nОпции для \"режима погружения\"</string>
 	<string name="im_fullscreen">Полноэкранный</string>
 	<string name="im_sticky">Полноэкранный, наложение</string>
+	<string name="im_overlay">Наложение</string>
 	<string name="im_hide_nav_buttons">Скрыть кнопки навигации</string>
 	<string name="im_hide_gui">Скрыть интерфейс</string>
 	<string name="im_hide_everything">Скрыть все</string>
@@ -389,10 +399,15 @@
 	<string name="preference_rotate_preview_summary">%s\n\nВозможность поворота предпросмотра (не повлияет на фото/видео)</string>
 	<string name="dont_rotate">Не поворачивать</string>
 	<string name="rotate_180_degrees">Повернуть на 180 градусов</string>
-	<string name="preference_preview_max_expo">Максимальная экспозиция</string>
-	<string name="preference_preview_max_expo_summary">Максимальная экспозиция предпросмотра в ручном режиме (не повлияет на фото/видео)</string>
+	<string name="preference_preview_max_expo">Максимальная выдержка</string>
+	<string name="preference_preview_max_expo_summary">Максимальная выдержка предпросмотра в ручном режиме (не повлияет на фото/видео)</string>
 	<string name="preference_zoom_when_focusing">Приближать при фокусировке</string>
 	<string name="preference_zoom_when_focusing_summary">Увеличивать центральную зону предпросмотра при выполнении ручной фокусировки</string>
+	<string name="preference_ghost_image">Наложение изображения</string>
+	<string name="preference_ghost_image_source">Изображение</string>
+	<string name="gi_last_photo">Последнее фото</string>
+	<string name="gi_file">Файл...</string>
+	<string name="preference_ghost_image_alpha">Непрозрачность</string>
 	<string name="preference_preview_surface">Поверхность предпросмотра</string>
 	<string name="preference_preview_surface_summary">%s\n\nПоверхность, используемая для отображения предпросмотра. Меняйте значение этой опции лишь в том случае, если вы знаете, что делаете</string>
 
@@ -421,6 +436,8 @@
 	<string name="preference_show_time_summary">Отображение текущего времени на экране</string>
 	<string name="preference_show_battery">Показать батарею</string>
 	<string name="preference_show_battery_summary">Отображение текущего уровня заряда батареи</string>
+	<string name="preference_show_video_max_amp">Показать уровень звука</string>
+	<string name="preference_show_video_max_amp_summary">Отображение индикатора уровня звука при записи видео</string>
 	<string name="preference_alt_indication">Альтернативная индикация</string>
 	<string name="preference_alt_indication_summary">Альтернативная индикация зон фокусировки и экспозамера</string>
 	<string name="preference_grid">Показать сетку</string>
@@ -466,6 +483,10 @@
 	<string name="ba_focus_minus">Фокус-</string>
 	<string name="ba_exposure_plus">Экспозиция+</string>
 	<string name="ba_exposure_minus">Экспозиция-</string>
+
+
+	<string name="ba_white_balance_plus">Баланс белого+</string>
+	<string name="ba_white_balance_minus">Баланс белого-</string>
 	<string name="ba_capture_only">Только перехватить</string>
 	<string name="ba_nothing">Нет действия</string>
 
@@ -473,10 +494,10 @@
 	<string name="preference_pause_preview">Пауза после съёмки</string>
 	<string name="preference_pause_preview_summary">Пауза после снятия фото, с возможностью поделиться или удалить фотографию</string>
 	<string name="preference_lock_orientation">Блокировка ориентации фото/видео</string>
-	<string name="preference_lock_orientation_summary">Игнорирование системной ориентации экрана устройства</string>
 	<string name="no_lock">Нет</string>
 	<string name="lock_landscape">Альбомная</string>
 	<string name="lock_portrait">Портретная</string>
+	<string name="preference_lock_orientation_summary">Игнорирование системной ориентации экрана устройства</string>
 	<string name="preference_show_when_locked">Камера на экране блокировки</string>
 	<string name="preference_show_when_locked_summary">Если включено, то приложение будет отображаться поверх экрана блокировки (вы можете получить доступ к настройкам, галерее и т.д.)</string>
 	<string name="preference_multitouch_zoom">Увеличение касанием</string>
@@ -487,7 +508,7 @@
 	<string name="fr_room">Комната</string>
 	<string name="fr_group">Групповое фото</string>
 	<string name="preference_level_angle_calibration">Калибровка уровня</string>
-	<string name="preference_level_angle_calibration_summary">Данная опция позволяет вручную откалибровать уровень наклона. Для калибровки укажите значение в градусах.</string>
+	<string name="preference_level_angle_calibration_summary">%s\n\nДанная опция позволяет вручную откалибровать уровень наклона. Для калибровки укажите значение в градусах.</string>
 
 	<string name="preference_screen_bug_fix">Решение проблем</string>
 	<string name="preference_startup_focus">Автофокус при запуске</string>
@@ -509,6 +530,10 @@
 	<string name="preference_speed_up_sensors_summary">Увеличить частоту обновления информации, получаемой от акселерометра и датчика магнитного поля</string>
 	<string name="preference_full_size_copy">Полноразмерная копия</string>
 	<string name="preference_full_size_copy_summary">Создавать полноразмерную сжатую копию фото при использовании несжатого вывода. Используйте данную опцию если на вашем устройстве некорректно работает несжатый вывод фото (YUV)</string>
+	<string name="preference_reset_manual_mode">Сбрасывать ручной режим</string>
+	<string name="preference_reset_manual_mode_summary">Сбрасывать ручной режим ISO при подключении к камере. Используйте эту опцию если автофокус работает неправильно после подключения к камере при включенном ручном режиме ISO</string>
+	<string name="preference_lock_preview_fps">Привязка FPS предпросмотра</string>
+	<string name="preference_lock_preview_fps_summary">Привязать частоту кадров предпросмотра к частоте кадров видео. Используйте эту опцию, если на вашем устройстве не работает регулировка частоты кадров видео.</string>
 
 	<string name="preference_category_camera_quality">Настройки фото и видео</string>
 
@@ -531,6 +556,8 @@
 	<string name="preference_category_metadata_summary">Метаданные, сохраняемые внутри файлов JPEG</string>
 	<string name="preference_metadata_author">Автор</string>
 	<string name="preference_metadata_comment">Комментарий</string>
+	<string name="preference_metadata_comment_as_file">Комментарий как файл</string>
+	<string name="preference_metadata_comment_as_file_summary">Сохранять комментарий в отдельный текстовый файл</string>
 	<string name="preference_metadata_position_info">Положение</string>
 	<string name="preference_metadata_position_info_summary">Добавлять в комментарий информацию о положении устройства (поворот, наклон, и т.д.)</string>
 	<string name="preference_metadata_mode_info">Режим съемки</string>
@@ -610,7 +637,7 @@
 	<string name="preference_stamp_background">Текст с фоном</string>
 	<string name="preference_stamp_background_summary">Рисовать темный фон под текстом</string>
 	<string name="preference_camera2_fast_burst">Быстрая серия</string>
-	<string name="preference_camera2_fast_burst_summary">Позволяет быстрее захватывать снимки в режиме HDR/экспозиции. Отключите, если у вашего устройства проблемы с фотосъемкой в режиме HDR или экспозиции (прекращение работы камеры или неправильный порядок экспозиции фотографий).</string>
+	<string name="preference_camera2_fast_burst_summary">Позволяет быстрее захватывать снимки в режимах HDR и экспобрекетинга. Отключите, если у вашего устройства проблемы с фотосъемкой в этих режимах (прекращение работы камеры или неправильный порядок экспозиции фотографий).</string>
 	<string name="preference_background_photo_saving">Фоновое сохранение</string>
 	<string name="preference_background_photo_saving_summary">Сохранять фото в фоновом потоке (ускоряет сохранение)</string>
 
@@ -622,6 +649,13 @@
 	<string name="preference_video_bitrate_summary">%s\n\nВыбор битрейта видео. (чем выше, тем лучше качество, но файл будет занимать больше места на диске. Неподдерживаемый битрейт может стать причиной ошибки при записи видео).</string>
 	<string name="preference_video_fps">Частота кадров видео (примерно)</string>
 	<string name="preference_video_fps_summary">Кол-во кадров в секунду (FPS) в видео (примерное). Может привести к записи с ошибкой, если частота кадров не поддерживается</string>
+	<string name="preference_video_log">Логарифмическое тональное отображение</string>
+	<string name="vl_low">Низко</string>
+	<string name="vl_medium">Средне</string>
+	<string name="vl_strong">Сильно</string>
+	<string name="vl_extra_strong">Очень сильно</string>
+	<string name="preference_video_log_summary">%s\n\nИспользовать логарифмическое тональное отображение (Flat profile) при записи видео</string>
+	<string name="video_log">Логарифмическое отображение</string>
 	<string name="preference_video_max_duration">Максимальная длительность видео</string>
 	<string name="preference_video_max_duration_summary">%s\n\nВидеозапись прекратится по истечении указанной продолжительности</string>
 	<string name="preference_video_restart">Записать новое видео после достижения лимита</string>
@@ -682,6 +716,8 @@
 	<string name="nr_zero_shutter_lag">Без задержки</string>
 	<string name="preference_zero_shutter_delay">Нулевая задержка затвора</string>
 	<string name="preference_zero_shutter_delay_summary">%s</string>
+	<string name="preference_hot_pixel_correction">Коррекция горячих пикселей</string>
+	<string name="preference_hot_pixel_correction_summary">%s</string>
 
 	<string name="preference_screen_files">Файлы</string>
 	<string name="preference_save_location">Папка сохранения</string>
@@ -707,12 +743,20 @@
 	<string name="preference_category_online">Разное</string>
 	<string name="preference_online_help">Онлайн помощь</string>
 	<string name="preference_online_help_summary">Запустить веб-сайт приложения в вашем браузере</string>
-	<string name="preference_donate">Пожертвовать</string>
-	<string name="preference_donate_summary">Если вам нравится это приложение, киньте мне копейку. Вы можете сделать это, купив мое приложение. Спасибо!</string>
 	<string name="preference_use_camera2">Использовать Camera2 API</string>
 	<string name="preference_use_camera2_summary">Разрешает использование Camera2 API для Android 5 - дополнительные, но экспериментальные возможности (требуется перезапуск)</string>
+
+	<string name="preference_donate">Сделать пожертвование</string>
+	<string name="preference_donate_summary">Поддержать разработку приложения материально. Заранее спасибо!</string>
+	<string name="donate">Пожертвовать</string>
+	<string name="wallet_was_copied">Номер кошелька был скопирован в буфер</string>
+	<string name="thank_you">Спасибо!</string>
+	<string name="thank_you_summary">Автор выражает вам благодарность за пожертвование!</string>
+
 	<string name="preference_about">О программе</string>
+	<string name="preference_about_translation">Перевод</string>
 	<string name="preference_info">Информация</string>
+	<string name="about_copy_to_clipboard">Копировать в буфер</string>
 	<string name="preference_reset">Сброс настроек</string>
 	<string name="preference_reset_summary">Сброс всех настроек приложения на стандартные значения</string>
 	<string name="preference_advanced">Для экспертов</string>

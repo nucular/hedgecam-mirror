@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<declare-styleable name="idontneedthisshit">
+		<attr name="min" format="integer" />
+		<attr name="step" format="integer" />
+		<attr name="fmin" format="float" />
+		<attr name="fmax" format="float" />
+		<attr name="fstep" format="float" />
+	</declare-styleable>
+</resources>

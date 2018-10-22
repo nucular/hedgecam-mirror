@@ -6,7 +6,6 @@ import java.util.Calendar;
 import java.util.Locale;
 
 import com.caddish_hedgehog.hedgecam2.GyroSensor;
-import com.caddish_hedgehog.hedgecam2.IconView;
 import com.caddish_hedgehog.hedgecam2.MainActivity;
 import com.caddish_hedgehog.hedgecam2.MyApplicationInterface;
 import com.caddish_hedgehog.hedgecam2.MyDebug;
@@ -14,6 +13,8 @@ import com.caddish_hedgehog.hedgecam2.Prefs;
 import com.caddish_hedgehog.hedgecam2.R;
 import com.caddish_hedgehog.hedgecam2.CameraController.CameraController;
 import com.caddish_hedgehog.hedgecam2.Preview.Preview;
+import com.caddish_hedgehog.hedgecam2.Preview.VideoProfile;
+import com.caddish_hedgehog.hedgecam2.UI.IconView;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -28,6 +29,7 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Typeface;
+import android.media.CamcorderProfile;
 import android.os.BatteryManager;
 import android.preference.PreferenceManager;
 import android.util.Log;
@@ -74,6 +76,8 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 	private boolean pref_mode_panel;
 	private boolean pref_face_detection;
 	private boolean pref_raw;
+	private boolean pref_high_speed;
+	private boolean pref_max_amp;
 	
 	private boolean update_prefs = true;
 
@@ -126,7 +130,14 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 	private int text_color_green;
 	private int text_color_blue;
 	private int text_color_yellow;
-	
+
+	int progress_width;
+	int progress_height;
+	int progress_margin;
+	int progress_inner_width;
+	float text_stroke_width;
+	float progress_peak_width;
+
 	private float text_size_default;
 	private float text_size_video;
 	private float text_size_timer;
@@ -141,6 +152,24 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 	private boolean enable_gyro_target_spot;
 	private final float [] gyro_direction = new float[3];
 	private final float [] transformed_gyro_direction = new float[3];
+	private final boolean system_ui_portrait;
+
+	private float grid_canvas_width;
+	private float grid_canvas_height;
+	private float grid_canvas_x = 0;
+	private float grid_canvas_y = 0;
+
+	private int crop_left = 0;
+	private int crop_top = 0;
+	private int crop_right = 0;
+	private int crop_bottom = 0;
+	
+	private boolean has_video_max_amp;
+	private long last_video_max_amp_time;
+	private float video_max_amp;
+	private float video_max_amp_peak;
+	private float video_max_amp_peak_abs;
+
 
 	public DrawPreview(MainActivity main_activity, MyApplicationInterface applicationInterface) {
 		if( MyDebug.LOG )
@@ -162,15 +191,29 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 		text_color_green = resources.getColor(R.color.main_green);
 		text_color_blue = resources.getColor(R.color.main_blue);
 		text_color_yellow = resources.getColor(R.color.main_yellow);
-		
+
+		text_stroke_width = resources.getDimension(R.dimen.ind_text_stroke);
+
+		progress_width = resources.getDimensionPixelSize(R.dimen.ind_progress_width);
+		progress_height = resources.getDimensionPixelSize(R.dimen.ind_progress_height);
+		progress_margin = resources.getDimensionPixelSize(R.dimen.ind_progress_margin);
+		progress_inner_width = progress_width-progress_margin*2;
+		progress_peak_width = resources.getDimension(R.dimen.ind_progress_peak_width)/2;
+
 		default_font = p.getTypeface();
 		icon_font = IconView.getTypeface(main_activity);
-
+		
+		system_ui_portrait = main_activity.getSharedPrefs().getString(Prefs.SYSTEM_UI_ORIENTATION, "landscape").equals("portrait");
 		main_activity.getSharedPrefs().registerOnSharedPreferenceChangeListener(this);
 	}
 
 	public void onSharedPreferenceChanged(SharedPreferences prefs,String key) {
 		if( MyDebug.LOG ) Log.d(TAG, "onSharedPreferenceChanged");
+		update_prefs = true;
+	}
+
+	public void onPrefsChanged() {
+		if( MyDebug.LOG ) Log.d(TAG, "onPrefsChanged");
 		update_prefs = true;
 	}
 
@@ -272,7 +315,7 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 		// exit, to ensure we don't display anything!
 		// though note we still should do the front screen flash (since the user can take photos via volume keys when
 		// in immersive_mode_everything mode)
-		pref_hide_indication = sharedPreferences.getString(Prefs.IMMERSIVE_MODE, "immersive_mode_low_profile")
+		pref_hide_indication = sharedPreferences.getString(Prefs.IMMERSIVE_MODE, "immersive_mode_off")
 			.equals("immersive_mode_everything");
 		
 		pref_battery = sharedPreferences.getBoolean(Prefs.SHOW_BATTERY, true);
@@ -294,6 +337,112 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 		pref_face_detection = !main_activity.getMainUI().isVisible(R.id.face_detection) && Prefs.getFaceDetectionPref();
 		pref_raw = !pref_is_video && applicationInterface.isRawPref() && main_activity.getPreview().supportsRaw() &&
 				pref_photo_mode != Prefs.PhotoMode.HDR && pref_photo_mode != Prefs.PhotoMode.ExpoBracketing && pref_photo_mode != Prefs.PhotoMode.FastBurst;
+		pref_high_speed = applicationInterface.fpsIsHighSpeed();
+		pref_max_amp = sharedPreferences.getBoolean(Prefs.SHOW_VIDEO_MAX_AMP, true) && Prefs.getRecordAudioPref() && Prefs.getVideoCaptureRateFactor() == 1.0f;
+	}
+	
+	private void updateGridPrefs(Canvas canvas) {
+		Preview preview  = main_activity.getPreview();
+		CameraController camera_controller = preview.getCameraController();
+		
+		if (camera_controller == null) return;
+
+		grid_canvas_width = (float)Math.max(canvas.getWidth(), canvas.getHeight());
+		grid_canvas_height = (float)Math.min(canvas.getWidth(), canvas.getHeight());
+
+		final double preview_ratio = (double)grid_canvas_width/(double)grid_canvas_height;
+		final double target_ratio;
+		if( pref_is_video ) {
+			VideoProfile profile = preview.getVideoProfile();
+			target_ratio = ((double)profile.videoFrameWidth) / (double)profile.videoFrameHeight;
+		}
+		else {
+			CameraController.Size picture_size = camera_controller.getPictureSize();
+			target_ratio = ((double)picture_size.width) / (double)picture_size.height;
+		}
+
+		grid_canvas_x = 0;
+		grid_canvas_y = 0;
+
+		if( MyDebug.LOG ) {
+			Log.d(TAG, "grid_canvas_width: " + grid_canvas_width + ", grid_canvas_height: " + grid_canvas_height);
+			Log.d(TAG, "grid_canvas_x: " + grid_canvas_x + ", grid_canvas_y: " + grid_canvas_y);
+			Log.d(TAG, "preview_ratio: " + preview_ratio + ", target_ratio: " + target_ratio);
+		}
+
+		if (preview_ratio > target_ratio) {
+			float new_height = (float)(grid_canvas_width/target_ratio);
+			grid_canvas_y = (grid_canvas_height-new_height)/2;
+			grid_canvas_height = new_height;
+		} else if (preview_ratio < target_ratio) {
+			float new_width = (float)(grid_canvas_height*target_ratio);
+			grid_canvas_x = (grid_canvas_width-new_width)/2;
+			grid_canvas_width = new_width;
+		}
+
+		if( pref_is_video ) {
+			if( camera_controller != null && target_ratio > 0.0 && pref_crop_guide != null ) {
+				double crop_ratio = -1.0;
+				switch(pref_crop_guide) {
+					case "crop_guide_1":
+						crop_ratio = 1.0;
+						break;
+					case "crop_guide_1.25":
+						crop_ratio = 1.25;
+						break;
+					case "crop_guide_1.33":
+						crop_ratio = 1.33333333;
+						break;
+					case "crop_guide_1.4":
+						crop_ratio = 1.4;
+						break;
+					case "crop_guide_1.5":
+						crop_ratio = 1.5;
+						break;
+					case "crop_guide_1.78":
+						crop_ratio = 1.77777778;
+						break;
+					case "crop_guide_1.85":
+						crop_ratio = 1.85;
+						break;
+					case "crop_guide_2.33":
+						crop_ratio = 2.33333333;
+						break;
+					case "crop_guide_2.35":
+						crop_ratio = 2.35006120; // actually 1920:817
+						break;
+					case "crop_guide_2.4":
+						crop_ratio = 2.4;
+						break;
+				}
+				if( crop_ratio > 0.0 && Math.abs(target_ratio - crop_ratio) > 1.0e-5 ) {
+					/*if( MyDebug.LOG ) {
+						Log.d(TAG, "crop_ratio: " + crop_ratio);
+						Log.d(TAG, "preview_targetRatio: " + preview_targetRatio);
+						Log.d(TAG, "canvas width: " + canvas.getWidth());
+						Log.d(TAG, "canvas height: " + canvas.getHeight());
+					}*/
+					crop_left = 1;
+					crop_top = 1;
+					crop_right = (int)grid_canvas_width-1;
+					crop_bottom = (int)grid_canvas_height-1;
+					if( crop_ratio > target_ratio ) {
+						// crop ratio is wider, so we have to crop top/bottom
+						double new_hheight = ((double)grid_canvas_width) / (2.0f*crop_ratio);
+						crop_top = ((int)grid_canvas_height/2 - (int)new_hheight);
+						crop_bottom = ((int)grid_canvas_height/2 + (int)new_hheight);
+					}
+					else {
+						// crop ratio is taller, so we have to crop left/right
+						double new_hwidth = (((double)grid_canvas_height) * crop_ratio) / 2.0f;
+						crop_left = ((int)grid_canvas_width/2 - (int)new_hwidth);
+						crop_right = ((int)grid_canvas_width/2 + (int)new_hwidth);
+					}
+				} else {
+					pref_crop_guide = null;
+				}
+			}
+		}
 	}
 
 	public void updateThumbnail(Bitmap thumbnail) {
@@ -388,252 +537,206 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 	private void drawGrids(Canvas canvas) {
 		Preview preview  = main_activity.getPreview();
 		CameraController camera_controller = preview.getCameraController();
-		if( camera_controller == null || pref_grid == null ) {
+		if( camera_controller == null || (pref_grid == null && !(preview.isVideo() && pref_crop_guide != null)) ) {
 			return;
 		}
 		
-		final float canvas_width = (float)canvas.getWidth();
-		final float canvas_height = (float)canvas.getHeight();
-
-		p.setColor(Color.WHITE);
-		p.setStrokeWidth(resources.getDimension(R.dimen.ind_grid_thickness));
-		p.setAlpha(pref_grid_alpha);
-		p.setStyle(Paint.Style.STROKE);
-		switch( pref_grid ) {
-			case "preference_grid_3x3":
-				canvas.drawLine(canvas_width / 3.0f, 0.0f, canvas_width / 3.0f, canvas_height - 1.0f, p);
-				canvas.drawLine(2.0f * canvas_width / 3.0f, 0.0f, 2.0f * canvas_width / 3.0f, canvas_height - 1.0f, p);
-				canvas.drawLine(0.0f, canvas_height / 3.0f, canvas_width - 1.0f, canvas_height / 3.0f, p);
-				canvas.drawLine(0.0f, 2.0f * canvas_height / 3.0f, canvas_width - 1.0f, 2.0f * canvas_height / 3.0f, p);
-				break;
-			case "preference_grid_phi_3x3":
-				canvas.drawLine(canvas_width / 2.618f, 0.0f, canvas_width / 2.618f, canvas_height - 1.0f, p);
-				canvas.drawLine(1.618f * canvas_width / 2.618f, 0.0f, 1.618f * canvas_width / 2.618f, canvas_height - 1.0f, p);
-				canvas.drawLine(0.0f, canvas_height / 2.618f, canvas_width - 1.0f, canvas_height / 2.618f, p);
-				canvas.drawLine(0.0f, 1.618f * canvas_height / 2.618f, canvas_width - 1.0f, 1.618f * canvas_height / 2.618f, p);
-				break;
-			case "preference_grid_4x2":
-			case "preference_grid_4x4":
-				p.setColor(Color.GRAY);
-				p.setAlpha(pref_grid_alpha);
-				canvas.drawLine(canvas_width / 4.0f, 0.0f, canvas_width / 4.0f, canvas_height - 1.0f, p);
-				canvas.drawLine(canvas_width / 2.0f, 0.0f, canvas_width / 2.0f, canvas_height - 1.0f, p);
-				canvas.drawLine(3.0f * canvas_width / 4.0f, 0.0f, 3.0f * canvas_width / 4.0f, canvas_height - 1.0f, p);
-				canvas.drawLine(0.0f, canvas_height / 2.0f, canvas_width - 1.0f, canvas_height / 2.0f, p);
-				if (pref_grid.equals("preference_grid_4x4")) {
-					canvas.drawLine(0.0f, canvas_height / 4.0f, canvas_width - 1.0f, canvas_height / 4.0f, p);
-					canvas.drawLine(0.0f, 3.0f * canvas_height / 4.0f, canvas_width - 1.0f, 3.0f * canvas_height / 4.0f, p);
-				}
-				p.setColor(Color.WHITE);
-				p.setAlpha(pref_grid_alpha);
-				int crosshairs_radius = resources.getDimensionPixelSize(R.dimen.ind_grid_crosshair);
-
-				canvas.drawLine(canvas_width / 2.0f, canvas_height / 2.0f - crosshairs_radius, canvas_width / 2.0f, canvas_height / 2.0f + crosshairs_radius, p);
-				canvas.drawLine(canvas_width / 2.0f - crosshairs_radius, canvas_height / 2.0f, canvas_width / 2.0f + crosshairs_radius, canvas_height / 2.0f, p);
-				break;
-			case "preference_grid_crosshair":
-				canvas.drawLine(canvas_width / 2.0f, 0.0f, canvas_width / 2.0f, canvas_height - 1.0f, p);
-				canvas.drawLine(0.0f, canvas_height / 2.0f, canvas_width - 1.0f, canvas_height / 2.0f, p);
-				break;
-			case "preference_grid_golden_spiral_right":
-			case "preference_grid_golden_spiral_left":
-			case "preference_grid_golden_spiral_upside_down_right":
-			case "preference_grid_golden_spiral_upside_down_left":
-				canvas.save();
-				switch (pref_grid) {
-					case "preference_grid_golden_spiral_left":
-						canvas.scale(-1.0f, 1.0f, canvas_width * 0.5f, canvas_height * 0.5f);
-						break;
-					case "preference_grid_golden_spiral_right":
-						// no transformation needed
-						break;
-					case "preference_grid_golden_spiral_upside_down_left":
-						canvas.rotate(180.0f, canvas_width * 0.5f, canvas_height * 0.5f);
-						break;
-					case "preference_grid_golden_spiral_upside_down_right":
-						canvas.scale(1.0f, -1.0f, canvas_width * 0.5f, canvas_height * 0.5f);
-						break;
-				}
-				int fibb = 34;
-				int fibb_n = 21;
-				int left = 0, top = 0;
-				int full_width = (int)canvas_width;
-				int full_height = (int)canvas_height;
-				int width = (int) (full_width * ((double) fibb_n) / (double) (fibb));
-				int height = full_height;
-
-				for (int count = 0; count < 2; count++) {
-					canvas.save();
-					draw_rect.set(left, top, left + width, top + height);
-					canvas.clipRect(draw_rect);
-					canvas.drawRect(draw_rect, p);
-					draw_rect.set(left, top, left + 2 * width, top + 2 * height);
-					canvas.drawOval(draw_rect, p);
-					canvas.restore();
-
-					int old_fibb = fibb;
-					fibb = fibb_n;
-					fibb_n = old_fibb - fibb;
-
-					left += width;
-					full_width = full_width - width;
-					width = full_width;
-					height = (int) (height * ((double) fibb_n) / (double) (fibb));
-
-					canvas.save();
-					draw_rect.set(left, top, left + width, top + height);
-					canvas.clipRect(draw_rect);
-					canvas.drawRect(draw_rect, p);
-					draw_rect.set(left - width, top, left + width, top + 2 * height);
-					canvas.drawOval(draw_rect, p);
-					canvas.restore();
-
-					old_fibb = fibb;
-					fibb = fibb_n;
-					fibb_n = old_fibb - fibb;
-
-					top += height;
-					full_height = full_height - height;
-					height = full_height;
-					width = (int) (width * ((double) fibb_n) / (double) (fibb));
-					left += full_width - width;
-
-					canvas.save();
-					draw_rect.set(left, top, left + width, top + height);
-					canvas.clipRect(draw_rect);
-					canvas.drawRect(draw_rect, p);
-					draw_rect.set(left - width, top - height, left + width, top + height);
-					canvas.drawOval(draw_rect, p);
-					canvas.restore();
-
-					old_fibb = fibb;
-					fibb = fibb_n;
-					fibb_n = old_fibb - fibb;
-
-					full_width = full_width - width;
-					width = full_width;
-					left -= width;
-					height = (int) (height * ((double) fibb_n) / (double) (fibb));
-					top += full_height - height;
-
-					canvas.save();
-					draw_rect.set(left, top, left + width, top + height);
-					canvas.clipRect(draw_rect);
-					canvas.drawRect(draw_rect, p);
-					draw_rect.set(left, top - height, left + 2 * width, top + height);
-					canvas.drawOval(draw_rect, p);
-					canvas.restore();
-
-					old_fibb = fibb;
-					fibb = fibb_n;
-					fibb_n = old_fibb - fibb;
-
-					full_height = full_height - height;
-					height = full_height;
-					top -= height;
-					width = (int) (width * ((double) fibb_n) / (double) (fibb));
-				}
-
-				canvas.restore();
-
-				break;
-			case "preference_grid_golden_triangle_1":
-			case "preference_grid_golden_triangle_2":
-				double theta = Math.atan2(canvas_width, canvas_height);
-				double dist = canvas_height * Math.cos(theta);
-				float dist_x = (float) (dist * Math.sin(theta));
-				float dist_y = (float) (dist * Math.cos(theta));
-				if( pref_grid.equals("preference_grid_golden_triangle_1") ) {
-					canvas.drawLine(0.0f, canvas_height - 1.0f, canvas_width - 1.0f, 0.0f, p);
-					canvas.drawLine(0.0f, 0.0f, dist_x, canvas_height - dist_y, p);
-					canvas.drawLine(canvas_width - 1.0f - dist_x, dist_y - 1.0f, canvas_width - 1.0f, canvas_height - 1.0f, p);
-				}
-				else {
-					canvas.drawLine(0.0f, 0.0f, canvas_width - 1.0f, canvas_height - 1.0f, p);
-					canvas.drawLine(canvas_width - 1.0f, 0.0f, canvas_width - 1.0f - dist_x, canvas_height - dist_y, p);
-					canvas.drawLine(dist_x, dist_y - 1.0f, 0.0f, canvas_height - 1.0f, p);
-				}
-				break;
-			case "preference_grid_diagonals":
-				canvas.drawLine(0.0f, 0.0f, canvas_height - 1.0f, canvas_height - 1.0f, p);
-				canvas.drawLine(canvas_height - 1.0f, 0.0f, 0.0f, canvas_height - 1.0f, p);
-				int diff = (int)canvas_width - (int)canvas_height;
-				if (diff > 0) {
-					canvas.drawLine(diff, 0.0f, diff + canvas_height - 1.0f, canvas_height - 1.0f, p);
-					canvas.drawLine(diff + canvas_height - 1.0f, 0.0f, diff, canvas_height - 1.0f, p);
-				}
-				break;
+		boolean need_restore = false;
+		if (system_ui_portrait) {
+			canvas.save();
+			final float rotation_point = canvas.getWidth()/2.0f;
+			canvas.rotate(90.0f, rotation_point, rotation_point);
+			need_restore = true;
 		}
-		p.setAlpha(255);
-		p.setStyle(Paint.Style.FILL); // reset
-	}
 
-	private void drawCropGuides(Canvas canvas) {
-		Preview preview  = main_activity.getPreview();
-		CameraController camera_controller = preview.getCameraController();
-		if( preview.isVideo() ) {
-			if( camera_controller != null && preview.getTargetRatio() > 0.0 && pref_crop_guide != null ) {
-				p.setStyle(Paint.Style.STROKE);
-				p.setStrokeWidth(resources.getDimension(R.dimen.ind_grid_thickness));
-				p.setColor(text_color_yellow);
-				double crop_ratio = -1.0;
-				switch(pref_crop_guide) {
-					case "crop_guide_1":
-						crop_ratio = 1.0;
-						break;
-					case "crop_guide_1.25":
-						crop_ratio = 1.25;
-						break;
-					case "crop_guide_1.33":
-						crop_ratio = 1.33333333;
-						break;
-					case "crop_guide_1.4":
-						crop_ratio = 1.4;
-						break;
-					case "crop_guide_1.5":
-						crop_ratio = 1.5;
-						break;
-					case "crop_guide_1.78":
-						crop_ratio = 1.77777778;
-						break;
-					case "crop_guide_1.85":
-						crop_ratio = 1.85;
-						break;
-					case "crop_guide_2.33":
-						crop_ratio = 2.33333333;
-						break;
-					case "crop_guide_2.35":
-						crop_ratio = 2.35006120; // actually 1920:817
-						break;
-					case "crop_guide_2.4":
-						crop_ratio = 2.4;
-						break;
-				}
-				if( crop_ratio > 0.0 && Math.abs(preview.getTargetRatio() - crop_ratio) > 1.0e-5 ) {
-					/*if( MyDebug.LOG ) {
-						Log.d(TAG, "crop_ratio: " + crop_ratio);
-						Log.d(TAG, "preview_targetRatio: " + preview_targetRatio);
-						Log.d(TAG, "canvas width: " + canvas.getWidth());
-						Log.d(TAG, "canvas height: " + canvas.getHeight());
-					}*/
-					int left = 1, top = 1, right = canvas.getWidth()-1, bottom = canvas.getHeight()-1;
-					if( crop_ratio > preview.getTargetRatio() ) {
-						// crop ratio is wider, so we have to crop top/bottom
-						double new_hheight = ((double)canvas.getWidth()) / (2.0f*crop_ratio);
-						top = (canvas.getHeight()/2 - (int)new_hheight);
-						bottom = (canvas.getHeight()/2 + (int)new_hheight);
+		if (grid_canvas_x != 0 || grid_canvas_y != 0) {
+			if (!system_ui_portrait)
+				canvas.save();
+			canvas.translate(grid_canvas_x, grid_canvas_y);
+			need_restore = true;
+		}
+
+		if (pref_grid != null) {
+			p.setColor(Color.WHITE);
+			p.setStrokeWidth(resources.getDimension(R.dimen.ind_grid_thickness));
+			p.setAlpha(pref_grid_alpha);
+			p.setStyle(Paint.Style.STROKE);
+			switch( pref_grid ) {
+				case "preference_grid_3x3":
+					canvas.drawLine(grid_canvas_width / 3.0f, 0.0f, grid_canvas_width / 3.0f, grid_canvas_height - 1.0f, p);
+					canvas.drawLine(2.0f * grid_canvas_width / 3.0f, 0.0f, 2.0f * grid_canvas_width / 3.0f, grid_canvas_height - 1.0f, p);
+					canvas.drawLine(0.0f, grid_canvas_height / 3.0f, grid_canvas_width - 1.0f, grid_canvas_height / 3.0f, p);
+					canvas.drawLine(0.0f, 2.0f * grid_canvas_height / 3.0f, grid_canvas_width - 1.0f, 2.0f * grid_canvas_height / 3.0f, p);
+					break;
+				case "preference_grid_phi_3x3":
+					canvas.drawLine(grid_canvas_width / 2.618f, 0.0f, grid_canvas_width / 2.618f, grid_canvas_height - 1.0f, p);
+					canvas.drawLine(1.618f * grid_canvas_width / 2.618f, 0.0f, 1.618f * grid_canvas_width / 2.618f, grid_canvas_height - 1.0f, p);
+					canvas.drawLine(0.0f, grid_canvas_height / 2.618f, grid_canvas_width - 1.0f, grid_canvas_height / 2.618f, p);
+					canvas.drawLine(0.0f, 1.618f * grid_canvas_height / 2.618f, grid_canvas_width - 1.0f, 1.618f * grid_canvas_height / 2.618f, p);
+					break;
+				case "preference_grid_4x2":
+				case "preference_grid_4x4":
+					p.setColor(Color.GRAY);
+					p.setAlpha(pref_grid_alpha);
+					canvas.drawLine(grid_canvas_width / 4.0f, 0.0f, grid_canvas_width / 4.0f, grid_canvas_height - 1.0f, p);
+					canvas.drawLine(grid_canvas_width / 2.0f, 0.0f, grid_canvas_width / 2.0f, grid_canvas_height - 1.0f, p);
+					canvas.drawLine(3.0f * grid_canvas_width / 4.0f, 0.0f, 3.0f * grid_canvas_width / 4.0f, grid_canvas_height - 1.0f, p);
+					canvas.drawLine(0.0f, grid_canvas_height / 2.0f, grid_canvas_width - 1.0f, grid_canvas_height / 2.0f, p);
+					if (pref_grid.equals("preference_grid_4x4")) {
+						canvas.drawLine(0.0f, grid_canvas_height / 4.0f, grid_canvas_width - 1.0f, grid_canvas_height / 4.0f, p);
+						canvas.drawLine(0.0f, 3.0f * grid_canvas_height / 4.0f, grid_canvas_width - 1.0f, 3.0f * grid_canvas_height / 4.0f, p);
+					}
+					p.setColor(Color.WHITE);
+					p.setAlpha(pref_grid_alpha);
+					int crosshairs_radius = resources.getDimensionPixelSize(R.dimen.ind_grid_crosshair);
+
+					canvas.drawLine(grid_canvas_width / 2.0f, grid_canvas_height / 2.0f - crosshairs_radius, grid_canvas_width / 2.0f, grid_canvas_height / 2.0f + crosshairs_radius, p);
+					canvas.drawLine(grid_canvas_width / 2.0f - crosshairs_radius, grid_canvas_height / 2.0f, grid_canvas_width / 2.0f + crosshairs_radius, grid_canvas_height / 2.0f, p);
+					break;
+				case "preference_grid_crosshair":
+					canvas.drawLine(grid_canvas_width / 2.0f, 0.0f, grid_canvas_width / 2.0f, grid_canvas_height - 1.0f, p);
+					canvas.drawLine(0.0f, grid_canvas_height / 2.0f, grid_canvas_width - 1.0f, grid_canvas_height / 2.0f, p);
+					break;
+				case "preference_grid_golden_spiral_right":
+				case "preference_grid_golden_spiral_left":
+				case "preference_grid_golden_spiral_upside_down_right":
+				case "preference_grid_golden_spiral_upside_down_left":
+					canvas.save();
+					switch (pref_grid) {
+						case "preference_grid_golden_spiral_left":
+							canvas.scale(-1.0f, 1.0f, grid_canvas_width * 0.5f, grid_canvas_height * 0.5f);
+							break;
+						case "preference_grid_golden_spiral_right":
+							// no transformation needed
+							break;
+						case "preference_grid_golden_spiral_upside_down_left":
+							canvas.rotate(180.0f, grid_canvas_width * 0.5f, grid_canvas_height * 0.5f);
+							break;
+						case "preference_grid_golden_spiral_upside_down_right":
+							canvas.scale(1.0f, -1.0f, grid_canvas_width * 0.5f, grid_canvas_height * 0.5f);
+							break;
+					}
+					int fibb = 34;
+					int fibb_n = 21;
+					int left = 0, top = 0;
+					int full_width = (int)grid_canvas_width;
+					int full_height = (int)grid_canvas_height;
+					int width = (int) (full_width * ((double) fibb_n) / (double) (fibb));
+					int height = full_height;
+
+					for (int count = 0; count < 2; count++) {
+						canvas.save();
+						draw_rect.set(left, top, left + width, top + height);
+						canvas.clipRect(draw_rect);
+						canvas.drawRect(draw_rect, p);
+						draw_rect.set(left, top, left + 2 * width, top + 2 * height);
+						canvas.drawOval(draw_rect, p);
+						canvas.restore();
+
+						int old_fibb = fibb;
+						fibb = fibb_n;
+						fibb_n = old_fibb - fibb;
+
+						left += width;
+						full_width = full_width - width;
+						width = full_width;
+						height = (int) (height * ((double) fibb_n) / (double) (fibb));
+
+						canvas.save();
+						draw_rect.set(left, top, left + width, top + height);
+						canvas.clipRect(draw_rect);
+						canvas.drawRect(draw_rect, p);
+						draw_rect.set(left - width, top, left + width, top + 2 * height);
+						canvas.drawOval(draw_rect, p);
+						canvas.restore();
+
+						old_fibb = fibb;
+						fibb = fibb_n;
+						fibb_n = old_fibb - fibb;
+
+						top += height;
+						full_height = full_height - height;
+						height = full_height;
+						width = (int) (width * ((double) fibb_n) / (double) (fibb));
+						left += full_width - width;
+
+						canvas.save();
+						draw_rect.set(left, top, left + width, top + height);
+						canvas.clipRect(draw_rect);
+						canvas.drawRect(draw_rect, p);
+						draw_rect.set(left - width, top - height, left + width, top + height);
+						canvas.drawOval(draw_rect, p);
+						canvas.restore();
+
+						old_fibb = fibb;
+						fibb = fibb_n;
+						fibb_n = old_fibb - fibb;
+
+						full_width = full_width - width;
+						width = full_width;
+						left -= width;
+						height = (int) (height * ((double) fibb_n) / (double) (fibb));
+						top += full_height - height;
+
+						canvas.save();
+						draw_rect.set(left, top, left + width, top + height);
+						canvas.clipRect(draw_rect);
+						canvas.drawRect(draw_rect, p);
+						draw_rect.set(left, top - height, left + 2 * width, top + height);
+						canvas.drawOval(draw_rect, p);
+						canvas.restore();
+
+						old_fibb = fibb;
+						fibb = fibb_n;
+						fibb_n = old_fibb - fibb;
+
+						full_height = full_height - height;
+						height = full_height;
+						top -= height;
+						width = (int) (width * ((double) fibb_n) / (double) (fibb));
+					}
+
+					canvas.restore();
+
+					break;
+				case "preference_grid_golden_triangle_1":
+				case "preference_grid_golden_triangle_2":
+					double theta = Math.atan2(grid_canvas_width, grid_canvas_height);
+					double dist = grid_canvas_height * Math.cos(theta);
+					float dist_x = (float) (dist * Math.sin(theta));
+					float dist_y = (float) (dist * Math.cos(theta));
+					if( pref_grid.equals("preference_grid_golden_triangle_1") ) {
+						canvas.drawLine(0.0f, grid_canvas_height - 1.0f, grid_canvas_width - 1.0f, 0.0f, p);
+						canvas.drawLine(0.0f, 0.0f, dist_x, grid_canvas_height - dist_y, p);
+						canvas.drawLine(grid_canvas_width - 1.0f - dist_x, dist_y - 1.0f, grid_canvas_width - 1.0f, grid_canvas_height - 1.0f, p);
 					}
 					else {
-						// crop ratio is taller, so we have to crop left/right
-						double new_hwidth = (((double)canvas.getHeight()) * crop_ratio) / 2.0f;
-						left = (canvas.getWidth()/2 - (int)new_hwidth);
-						right = (canvas.getWidth()/2 + (int)new_hwidth);
+						canvas.drawLine(0.0f, 0.0f, grid_canvas_width - 1.0f, grid_canvas_height - 1.0f, p);
+						canvas.drawLine(grid_canvas_width - 1.0f, 0.0f, grid_canvas_width - 1.0f - dist_x, grid_canvas_height - dist_y, p);
+						canvas.drawLine(dist_x, dist_y - 1.0f, 0.0f, grid_canvas_height - 1.0f, p);
 					}
-					canvas.drawRect(left, top, right, bottom, p);
-				}
-				p.setStyle(Paint.Style.FILL); // reset
+					break;
+				case "preference_grid_diagonals":
+					canvas.drawLine(0.0f, 0.0f, grid_canvas_height - 1.0f, grid_canvas_height - 1.0f, p);
+					canvas.drawLine(grid_canvas_height - 1.0f, 0.0f, 0.0f, grid_canvas_height - 1.0f, p);
+					int diff = (int)grid_canvas_width - (int)grid_canvas_height;
+					if (diff > 0) {
+						canvas.drawLine(diff, 0.0f, diff + grid_canvas_height - 1.0f, grid_canvas_height - 1.0f, p);
+						canvas.drawLine(diff + grid_canvas_height - 1.0f, 0.0f, diff, grid_canvas_height - 1.0f, p);
+					}
+					break;
 			}
 		}
+		if( pref_is_video && pref_crop_guide != null) {
+			p.setStyle(Paint.Style.STROKE);
+			p.setStrokeWidth(resources.getDimension(R.dimen.ind_grid_thickness));
+			p.setColor(text_color_yellow);
+			canvas.drawRect(crop_left, crop_top, crop_right, crop_bottom, p);
+		}
+		if (need_restore)
+			canvas.restore();
+		p.setAlpha(255);
+		p.setStyle(Paint.Style.FILL); // reset
 	}
 
 	/** Formats the level_angle double into a string.
@@ -655,17 +758,18 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 		CameraController camera_controller = preview.getCameraController();
 		boolean has_level_angle = preview.hasLevelAngle();
 		if( camera_controller != null && !preview.isPreviewPaused() && has_level_angle && ( pref_angle_line || pref_pitch_lines || pref_direction_lines ) ) {
-			int ui_rotation = preview.getUIRotation();
-			double level_angle = preview.getLevelAngle();
-			boolean has_pitch_angle = preview.hasPitchAngle();
-			double pitch_angle = preview.getPitchAngle();
-			boolean has_geo_direction = preview.hasGeoDirection();
-			double geo_direction = preview.getGeoDirection();
+			final int ui_rotation = main_activity.getMainUI().getUIRotation();
+			final int ui_rotation_relative = main_activity.getMainUI().getUIRotationRelative();
+			final double level_angle = preview.getLevelAngle();
+			final boolean has_pitch_angle = preview.hasPitchAngle();
+			final double pitch_angle = preview.getPitchAngle();
+			final boolean has_geo_direction = preview.hasGeoDirection();
+			final double geo_direction = preview.getGeoDirection();
 			// n.b., must draw this without the standard canvas rotation
 			int radius = resources.getDimensionPixelSize(R.dimen.ind_angle_line_size);
 			double angle = - preview.getOrigLevelAngle();
 			// see http://android-developers.blogspot.co.uk/2010/09/one-screen-turn-deserves-another.html
-			int rotation = main_activity.getWindowManager().getDefaultDisplay().getRotation();
+			final int rotation = main_activity.getWindowManager().getDefaultDisplay().getRotation();
 			switch (rotation) {
 			case Surface.ROTATION_90:
 			case Surface.ROTATION_270:
@@ -725,7 +829,7 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 
 			p.setTextSize(text_size_default);
 			if( has_pitch_angle && pref_pitch_lines ) {
-				int pitch_radius = resources.getDimensionPixelSize((ui_rotation == 90 || ui_rotation == 270) ? R.dimen.ind_line_size_narrow : R.dimen.ind_line_size_wide);
+				int pitch_radius = resources.getDimensionPixelSize((ui_rotation_relative == 90 || ui_rotation_relative == 270) ? R.dimen.ind_line_size_narrow : R.dimen.ind_line_size_wide);
 				int angle_step = 10;
 				if( preview.getZoomRatio() >= 2.0f )
 					angle_step = 5;
@@ -760,7 +864,7 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 				}
 			}
 			if( has_geo_direction && has_pitch_angle && pref_direction_lines ) {
-				int geo_radius = resources.getDimensionPixelSize((ui_rotation == 90 || ui_rotation == 270) ? R.dimen.ind_line_size_wide : R.dimen.ind_line_size_narrow);
+				int geo_radius = resources.getDimensionPixelSize((ui_rotation_relative == 90 || ui_rotation_relative == 270) ? R.dimen.ind_line_size_wide : R.dimen.ind_line_size_narrow);
 				float geo_angle = (float)Math.toDegrees(geo_direction);
 				int angle_step = 10;
 				if( preview.getZoomRatio() >= 2.0f )
@@ -813,10 +917,13 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 
 	public void onDrawPreview(Canvas canvas) {
 		Preview preview = main_activity.getPreview();
-		int ui_rotation = preview.getUIRotation();
+		int ui_rotation = main_activity.getMainUI().getUIRotation();
+		int ui_rotation_relative = main_activity.getMainUI().getUIRotationRelative();
 
 		final int canvas_width = canvas.getWidth();
 		final int canvas_height = canvas.getHeight();
+		
+		final long time_ms = System.currentTimeMillis();
 
 		if( show_last_image && last_thumbnail != null ) {
 			// If changing this code, ensure that pause preview still works when:
@@ -856,6 +963,7 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 		
 		if (update_prefs) {
 			updatePrefs();
+			updateGridPrefs(canvas);
 			update_prefs = false;
 		}
 
@@ -896,12 +1004,11 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 		
 		if (!draw_multitouch_zoom) {
 			drawGrids(canvas);
-			drawCropGuides(canvas);
 		}
 		
 		// note, no need to check preferences here, as we do that when setting thumbnail_anim
 		if( camera_controller != null && this.thumbnail_anim && !(pref_photo_mode != Prefs.PhotoMode.FocusBracketing && preview.isBurst()) && last_thumbnail != null ) {
-			long time = System.currentTimeMillis() - this.thumbnail_anim_start_ms;
+			long time = time_ms - this.thumbnail_anim_start_ms;
 			// FIXME!!!!!!
 			final long duration = 500;
 			if( time > duration ) {
@@ -965,7 +1072,7 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 		if( camera_controller != null && continuous_focus_moving && !taking_picture ) {
 			// we don't display the continuous focusing animation when taking a photo - and can also ive the impression of having
 			// frozen if we pause because the image saver queue is full
-			if( System.currentTimeMillis() - continuous_focus_moving_ms <= 1000 ) {
+			if( time_ms - continuous_focus_moving_ms <= 1000 ) {
 				showFocus = true;
 			}
 			else {
@@ -976,7 +1083,7 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 		if( showFocus ) {
 			long time_since_focus_started;
 			if (continuous_focus_moving && continuous_focus_moving_ms > 0)
-				time_since_focus_started = System.currentTimeMillis() - continuous_focus_moving_ms;
+				time_since_focus_started = time_ms - continuous_focus_moving_ms;
 			else time_since_focus_started = preview.timeSinceStartedAutoFocus();
 			float min_radius = resources.getDimension(R.dimen.ind_focus_min_radius);
 			float max_radius = resources.getDimension(R.dimen.ind_focus_max_radius);
@@ -1140,29 +1247,30 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 		int margin = resources.getDimensionPixelSize(R.dimen.ind_padding);
 		int [] ind_margins = main_activity.getMainUI().getIndicationMargins();
 
+		final int shift_direction_x = ui_rotation_relative == 180 ? -1 : 1;
+		final int shift_direction_y = ui_rotation_relative == 90 ? -1 : 1;
 
-		final int shift_direction_x = ui_rotation == 180 ? -1 : 1;
-		final int shift_direction_y = ui_rotation == 90 ? -1 : 1;
-
-		int text_base_y = canvas_height - margin;
-		if( ui_rotation == ( ui_placement_right ? 0 : 180 ) ) {
-			text_base_y -= ind_margins[3]-gui_location[1];
-		} else if ( ui_rotation == ( ui_placement_right ? 180 : 0 ) ) {
-			text_base_y -= ind_margins[1]-gui_location[1];
-		} else if (ui_rotation == 90 || ui_rotation == 270) {
-			int max_x = canvas_height/2+canvas_width/2;
-			int min_x = (int)(max_x-canvas_width+text_size_default/(half_line_div/2));
-			int this_left = gui_location[0];
-			int this_right = main_activity.getMainUI().getRootWidth()-canvas_width-this_left;
-			text_base_y = ui_rotation == 90 ? min_x+margin-this_right : max_x+this_right-margin;
+		int bottom_y = (system_ui_portrait ? (canvas_height+canvas_width)/2 : canvas_height) - margin;
+		if(ui_rotation_relative == 0 || ui_rotation_relative == 180) {
+			bottom_y -= ind_margins[3]-(system_ui_portrait ? gui_location[0] : gui_location[1]);
+		} else if (ui_rotation_relative == 90 || ui_rotation_relative == 270) {
+			int max_x = system_ui_portrait ? canvas_height : (canvas_height+canvas_width)/2;
+			int min_x = system_ui_portrait ? 0 : (int)(max_x-canvas_width+text_size_default/(half_line_div/2));
+			int this_left = system_ui_portrait ? gui_location[1] : gui_location[0];
+			int this_right = main_activity.getMainUI().getRootWidth()-(system_ui_portrait ? canvas_height : canvas_width)-this_left;
+			bottom_y = ui_rotation_relative == 90 ? min_x+margin-this_right : max_x+this_right-margin;
 			if (ind_margins[2] > 0) {
-				text_base_y -= ind_margins[2]*shift_direction_y;
+				bottom_y -= ind_margins[2]*shift_direction_y;
 			}
-			if (text_base_y > max_x) text_base_y = max_x;
-			else if (text_base_y < min_x) text_base_y = min_x;
+			if (bottom_y > max_x) bottom_y = max_x;
+			else if (bottom_y < min_x) bottom_y = min_x;
 		}
-		if (ui_rotation == 0 || ui_rotation == 180 ) {
-			if (text_base_y > canvas_height) text_base_y = canvas_height;
+		if (ui_rotation_relative == 0 || ui_rotation_relative == 180 ) {
+			if (system_ui_portrait) {
+				if (bottom_y > (canvas_height+canvas_width)/2) bottom_y = (canvas_height+canvas_width)/2;
+			} else {
+				if (bottom_y > canvas_height) bottom_y = canvas_height;
+			}
 		}
 
 		int margin_left = Math.max(margin+ind_margins[0]-gui_location[0], 0);
@@ -1172,52 +1280,99 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 		boolean gui_classic = main_activity.getMainUI().getGUIType() == MainUI.GUIType.Classic;
 
 		int top_y = 0;
-		switch(ui_rotation) {
-			case 0:
-			case 180:
-				top_y = (int)(text_size_default/(half_line_div/2)*shift_direction_y + margin_top);
-				break;
-			case 270:
-				top_y = (int)((canvas_height-canvas_width)/2 + text_size_default/(half_line_div/2)*shift_direction_y + margin_left);
-				break;
-			case 90:
-				top_y = (canvas_width+canvas_height)/2 - margin_left;
-				break;
-		}
-		
 		int left_x = 0;
-		switch(ui_rotation) {
-			case 0:
-				left_x = margin_left;
-				break;
-			case 180:
-				left_x = canvas_width - margin_left;
-				break;
-			case 270:
-			case 90:
-				left_x = (canvas_width-canvas_height)/2 + margin_top;
-				break;
-		}
-		
 		int right_x = 0;
-		if (!gui_classic) {
+		if (system_ui_portrait) {
+			margin_left = Math.max(margin+ind_margins[0]-gui_location[1], 0);
+			margin_top = Math.max(margin-gui_location[0], 0);
+
 			switch(ui_rotation) {
-				case 0:
-					right_x = Math.min(main_activity.getMainUI().getRootWidth()-gui_location[0]-ind_margins[2], canvas_width-margin);
+				case 0:	// portrait
+					top_y = (int)(text_size_default/(half_line_div/2)*shift_direction_y + margin_left);
 					break;
-				case 90:
-				case 270:
-					right_x = canvas_width/2+canvas_height/2;
+				case 180:	// reverse portrait
+					top_y = (int)(canvas_height + text_size_default/(half_line_div/2)*shift_direction_y + margin_left);
 					break;
-				case 180:
-					right_x = Math.max(canvas_width-main_activity.getMainUI().getRootWidth()+gui_location[0]+ind_margins[2], margin);
+				case 90:	// landscape
+				case 270:	// reverse landscape
+					top_y = (int)(text_size_default/(half_line_div/2)*shift_direction_y + margin_top + (canvas_height-canvas_width)/2);
 					break;
 			}
-			right_x -= margin*shift_direction_x;
+			
+			switch(ui_rotation) {
+				case 0:	// portrait
+				case 180:	// reverse portrait
+					left_x = margin_top;
+					break;
+				case 90:	// landscape
+					left_x = margin_left - (canvas_height-canvas_width)/2;
+					break;
+				case 270:	// reverse landscape
+					left_x = canvas_width + (canvas_height-canvas_width)/2 - margin_left;
+					break;
+			}
+			
+			if (!gui_classic) {
+				switch(ui_rotation) {
+					case 0:	// portrait
+					case 180:	// reverse portrait
+						right_x = canvas_width;
+						break;
+					case 90:	// landscape
+						right_x = Math.min(main_activity.getMainUI().getRootWidth()-(canvas_height-canvas_width)/2-gui_location[1]-ind_margins[2], canvas_width + (canvas_height-canvas_width)/2 - margin);
+						break;
+					case 270:	// reverse landscape
+						right_x = Math.max(canvas_width-main_activity.getMainUI().getRootWidth()+(canvas_height-canvas_width)/2+gui_location[0]+ind_margins[2], margin - (canvas_height-canvas_width)/2);
+						break;
+				}
+				right_x -= margin*shift_direction_x;
+			}
+		} else {
+			switch(ui_rotation) {
+				case 0:	// landscape
+				case 180:	// reverse landscape
+					top_y = (int)(text_size_default/(half_line_div/2)*shift_direction_y + margin_top);
+					break;
+				case 270:	// portrait
+					top_y = (int)((canvas_height-canvas_width)/2 + text_size_default/(half_line_div/2)*shift_direction_y + margin_left);
+					break;
+				case 90:	// reverse portrait
+					top_y = (canvas_width+canvas_height)/2 - margin_left;
+					break;
+			}
+			
+			switch(ui_rotation) {
+				case 0:	// landscape
+					left_x = margin_left;
+					break;
+				case 180:	// reverse landscape
+					left_x = canvas_width - margin_left;
+					break;
+				case 270:	// portrait
+				case 90:	// reverse portrait
+					left_x = (canvas_width-canvas_height)/2 + margin_top;
+					break;
+			}
+			
+			if (!gui_classic) {
+				switch(ui_rotation) {
+					case 0:	// landscape
+						right_x = Math.min(main_activity.getMainUI().getRootWidth()-gui_location[0]-ind_margins[2], canvas_width-margin);
+						break;
+					case 90:	// reverse portrait
+					case 270:	// portrait
+						right_x = canvas_width/2+canvas_height/2;
+						break;
+					case 180:	// reverse landscape
+						right_x = Math.max(canvas_width-main_activity.getMainUI().getRootWidth()+gui_location[0]+ind_margins[2], margin);
+						break;
+				}
+				right_x -= margin*shift_direction_x;
+			}
 		}
 
 		if( pref_battery ) {
-			if( !this.has_battery_frac || System.currentTimeMillis() > this.last_battery_time + 10000 ) {
+			if( !this.has_battery_frac || time_ms > this.last_battery_time + 10000 ) {
 				// only check periodically - unclear if checking is costly in any way
 				// note that it's fine to call registerReceiver repeatedly - we pass a null receiver, so this is fine as a "one shot" use
 				Intent batteryStatus = main_activity.registerReceiver(null, battery_ifilter);
@@ -1225,7 +1380,7 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 				int battery_scale = batteryStatus.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
 				has_battery_frac = true;
 				battery_frac = battery_level/(float)battery_scale;
-				last_battery_time = System.currentTimeMillis();
+				last_battery_time = time_ms;
 				if( MyDebug.LOG )
 					Log.d(TAG, "Battery status is " + battery_level + " / " + battery_scale + " : " + battery_frac);
 			}
@@ -1236,29 +1391,39 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 			int battery_width = (int)(battery_height/2.2f);
 			int battery_border = (int) (scale + 0.5f); // convert dps to pixels
 			
-			if( ui_rotation == 90 ) battery_y -= battery_height;
+			if( ui_rotation_relative == 90 ) battery_y -= battery_height;
 			else battery_y -= text_size_default/(half_line_div/2);
 			
-			if( ui_rotation == 180 ) battery_x -= battery_width;
+			if( ui_rotation_relative == 180 ) battery_x -= battery_width;
 
 			// flash icon at this low level
-			if( battery_frac > 0.05f || (((long)( System.currentTimeMillis() / 1000 )) % 2) == 0) {
+			if( battery_frac > 0.05f || (((long)( time_ms / 1000 )) % 2) == 0) {
 				float this_stroke_width = scale + 0.5f;
 				p.setColor(Color.rgb(63,63,63));
 				p.setStyle(Paint.Style.FILL);
 				p.setAlpha(127);
 				canvas.drawRect(battery_x+battery_width/4-this_stroke_width, battery_y-this_stroke_width, battery_x+battery_width-battery_width/4+this_stroke_width, battery_y+battery_width/4-this_stroke_width, p);
-				canvas.drawRect(battery_x-this_stroke_width, battery_y+battery_width/4-this_stroke_width, battery_x+battery_width+this_stroke_width, battery_y+battery_height+this_stroke_width, p);
+				float radius = (battery_width+this_stroke_width*2)/6;
+				draw_rect.set(battery_x-this_stroke_width, battery_y+battery_width/4-this_stroke_width, battery_x+battery_width+this_stroke_width, battery_y+battery_height+this_stroke_width);
+				canvas.drawRoundRect(draw_rect, radius, radius,  p);
 
 				p.setColor(Color.WHITE);
 				p.setAlpha(255);
 				canvas.drawRect(battery_x+battery_width/4, battery_y, battery_x+battery_width-battery_width/4, battery_y+battery_width/4, p);
-				canvas.drawRect(battery_x, battery_y+battery_width/4, battery_x+battery_width, battery_y+battery_height, p);
+				radius = battery_width/6;
+				draw_rect.set(battery_x, battery_y+battery_width/4, battery_x+battery_width, battery_y+battery_height);
+				canvas.drawRoundRect(draw_rect, radius, radius, p);
 
 				p.setColor(Color.BLACK);
-				canvas.drawRect(battery_x+battery_border, battery_y+battery_border+battery_width/4, battery_x+battery_width-battery_border, battery_y+battery_height-battery_border, p);
+				radius = (battery_width-this_stroke_width*2)/6;
+				draw_rect.set(battery_x+battery_border, battery_y+battery_border+battery_width/4, battery_x+battery_width-battery_border, battery_y+battery_height-battery_border);
+				canvas.drawRoundRect(draw_rect, radius, radius, p);
 				p.setColor(battery_frac > 0.15f ? text_color_green : text_color_red);
-				canvas.drawRect(battery_x+battery_border, (battery_y+battery_border+battery_width/4)+(1.0f-battery_frac)*(battery_height-battery_border*2-battery_width/4), battery_x+battery_width-battery_border, battery_y+battery_height-battery_border, p);
+				canvas.save();
+				canvas.clipRect(battery_x+battery_border, (battery_y+battery_border+battery_width/4)+(1.0f-battery_frac)*(battery_height-battery_border*2-battery_width/4), battery_x+battery_width-battery_border, battery_y+battery_height-battery_border);
+				canvas.drawRoundRect(draw_rect, radius, radius, p);
+				canvas.restore();
+//				canvas.drawRect(battery_x+battery_border, (battery_y+battery_border+battery_width/4)+(1.0f-battery_frac)*(battery_height-battery_border*2-battery_width/4), battery_x+battery_width-battery_border, battery_y+battery_height-battery_border, p);
 			}
 			left_x += text_size_default*1.5f*shift_direction_x;
 		}
@@ -1266,7 +1431,7 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 		// set up text etc for the multiple lines of "info" (time, free mem, etc)
 		p.setTextSize(text_size_default);
 		p.setAlpha(255);
-		if( ui_rotation == 180 ) p.setTextAlign(Paint.Align.RIGHT);
+		if( ui_rotation_relative == 180 ) p.setTextAlign(Paint.Align.RIGHT);
 		else p.setTextAlign(Paint.Align.LEFT);
 		int location_x = (int) left_x;
 		int location_y = top_y;
@@ -1277,7 +1442,7 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 			if( calendar == null )
 				calendar = Calendar.getInstance();
 			else
-				calendar.setTimeInMillis(System.currentTimeMillis());
+				calendar.setTimeInMillis(time_ms);
 			// n.b., DateFormat.getTimeInstance() ignores user preferences such as 12/24 hour or date format, but this is an Android bug.
 			// Whilst DateUtils.formatDateTime doesn't have that problem, it doesn't print out seconds! See:
 			// http://stackoverflow.com/questions/15981516/simpledateformat-gettimeinstance-ignores-24-hour-format
@@ -1293,7 +1458,7 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 		}
 
 		if( pref_free_memory ) {
-			long time_now = System.currentTimeMillis();
+			long time_now = time_ms;
 			if( last_free_memory_time == 0 || time_now > last_free_memory_time + 5000 ) {
 				// don't call this too often, for UI performance
 				long free_mb = main_activity.freeMemory();
@@ -1305,7 +1470,7 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 			if (icon_font != null) {
 				boolean low_memory = free_memory_gb < (pref_is_video ? 200 : 20) / 1024.0f;
 				p.setTypeface(icon_font);
-				if (free_memory_gb >= (pref_is_video ? 50 : 5) / 1024.0f || ((int)(System.currentTimeMillis() / 500)) % 2 == 0)
+				if (free_memory_gb >= (pref_is_video ? 50 : 5) / 1024.0f || ((int)(time_ms / 500)) % 2 == 0)
 					drawText(canvas, p, low_memory ? "S" : "M", low_memory ? text_color_red : text_color_default, location_x, (int)(location_y+text_size_default/7), true);
 				p.setTypeface(default_font);
 				drawText(canvas, p, decimalFormat.format(free_memory_gb) + resources.getString(R.string.gb_abbreviation),
@@ -1355,9 +1520,9 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 				if( is_scanning ) {
 					// we only change the color if ae scanning is at least a certain time, otherwise we get a lot of flickering of the color
 					if( ae_started_scanning_ms == -1 ) {
-						ae_started_scanning_ms = System.currentTimeMillis();
+						ae_started_scanning_ms = time_ms;
 					}
-					else if( System.currentTimeMillis() - ae_started_scanning_ms > 500 ) {
+					else if( time_ms - ae_started_scanning_ms > 500 ) {
 						text_color = text_color_red;
 					}
 				}
@@ -1416,17 +1581,24 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 				location_x += icon_step*shift_direction_x;
 			}
 
-			if( pref_photo_mode != Prefs.PhotoMode.Standard && !pref_ctrl_panel_photo_mode && !pref_is_video ) {
-				String icon = null;
-				if (pref_photo_mode == Prefs.PhotoMode.DRO) icon = IconView.DRO;
-				else if (pref_photo_mode == Prefs.PhotoMode.HDR) icon = IconView.HDR;
-				else if (pref_photo_mode == Prefs.PhotoMode.ExpoBracketing) icon = IconView.EXPO_BRACKETING;
-				else if (pref_photo_mode == Prefs.PhotoMode.FocusBracketing) icon = IconView.FOCUS_BRACKETING;
-				else if (pref_photo_mode == Prefs.PhotoMode.FastBurst) icon = IconView.BURST;
-				else if (pref_photo_mode == Prefs.PhotoMode.NoiseReduction) icon = IconView.NOISE_REDUCTION;
-				if (icon != null) {
-					drawText(canvas, p, icon, text_color_default, location_x, location_y, true);
+			if (pref_is_video) {
+				if (pref_high_speed) {
+					drawText(canvas, p, IconView.FAST_FORWARD, text_color_default, location_x, location_y, true);
 					location_x += icon_step*shift_direction_x;
+				}
+			} else {
+				if( pref_photo_mode != Prefs.PhotoMode.Standard && !pref_ctrl_panel_photo_mode) {
+					String icon = null;
+					if (pref_photo_mode == Prefs.PhotoMode.DRO) icon = IconView.DRO;
+					else if (pref_photo_mode == Prefs.PhotoMode.HDR) icon = IconView.HDR;
+					else if (pref_photo_mode == Prefs.PhotoMode.ExpoBracketing) icon = IconView.EXPO_BRACKETING;
+					else if (pref_photo_mode == Prefs.PhotoMode.FocusBracketing) icon = IconView.FOCUS_BRACKETING;
+					else if (pref_photo_mode == Prefs.PhotoMode.FastBurst) icon = IconView.BURST;
+					else if (pref_photo_mode == Prefs.PhotoMode.NoiseReduction) icon = IconView.NOISE_REDUCTION;
+					if (icon != null) {
+						drawText(canvas, p, icon, text_color_default, location_x, location_y, true);
+						location_x += icon_step*shift_direction_x;
+					}
 				}
 			}
 
@@ -1492,27 +1664,25 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 				drawText(canvas, p, (float)(Math.round(preview.getZoomRatio()*10))/10 +"x", text_color_default, (int)pos_x, (int)(pos_y+size / half_line_div), false);
 			}
 			if (!preview.isPreviewPaused()) {
-				/*canvas.drawText("PREVIEW", canvas_width / 2,
-						canvas_height / 2, p);*/
 				boolean draw_angle = has_level_angle && pref_angle;
 				boolean draw_geo_direction = has_geo_direction && pref_direction;
 				int x = right_x;
 				int y;
 				int shift_y;
 				if (gui_classic) {
-					y = text_base_y;
+					y = bottom_y;
 					shift_y = - (int)(text_size_default*line_height)*shift_direction_y;
 				} else if (
 					pref_mode_panel &&
-					(ui_rotation == 0 || ui_rotation == 180) && 
+					(ui_rotation_relative == 0 || ui_rotation_relative == 180) &&
 					(main_activity.getMainUI().getGUIType() == MainUI.GUIType.Phone2 || main_activity.getMainUI().getGUIType() == MainUI.GUIType.Universal)
 				) {
-					p.setTextAlign(ui_rotation == 0 ? Paint.Align.LEFT : Paint.Align.RIGHT);
-					x = ui_rotation == 0 ? margin_left : canvas_width - margin_left;
+					p.setTextAlign(ui_rotation_relative == 0 ? Paint.Align.LEFT : Paint.Align.RIGHT);
+					x = ui_rotation_relative == 0 ? margin_left : canvas_width - margin_left;
 					y = canvas_height-margin_top;
 					shift_y = -(diff_y*shift_direction_y);
 				} else {
-					p.setTextAlign(ui_rotation == 180 ? Paint.Align.LEFT : Paint.Align.RIGHT);
+					p.setTextAlign(ui_rotation_relative == 180 ? Paint.Align.LEFT : Paint.Align.RIGHT);
 					y = top_y;
 					shift_y = diff_y*shift_direction_y;
 				}
@@ -1590,9 +1760,9 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 						if (!gui_classic) line_count++;
 					}
 				}
-				if( preview.isWaitingFace() && ((int)(System.currentTimeMillis() / 500)) % 2 == 0 ) {
+				if( preview.isWaitingFace() && ((int)(time_ms / 500)) % 2 == 0 ) {
 					p.setTextAlign(Paint.Align.CENTER);
-					float text_size = (ui_rotation == 0 || ui_rotation == 180) ? (float)(text_size_default*1.2) : text_size_default;
+					float text_size = (ui_rotation_relative == 0 || ui_rotation_relative == 180) ? (float)(text_size_default*1.2) : text_size_default;
 					p.setTextSize(text_size);
 					drawText(canvas, p, resources.getString(R.string.waiting_for_face), text_color_red, canvas_width / 2, (int)(canvas_height / 2 + text_size / half_line_div), false);
 				}
@@ -1600,7 +1770,7 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 					float half_line = text_size_timer / half_line_div;
 					p.setTextAlign(Paint.Align.CENTER);
 					if (preview.showTimer()) {
-						long remaining_time = (preview.getTimerEndTime() - System.currentTimeMillis() + 999)/1000;
+						long remaining_time = (preview.getTimerEndTime() - time_ms + 999)/1000;
 						if( MyDebug.LOG )
 							Log.d(TAG, "remaining_time: " + remaining_time);
 						p.setTextSize(text_size_timer);
@@ -1622,7 +1792,8 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 						drawText(canvas, p, resources.getString(R.string.screen_lock_message_2), text_color_red, canvas_width / 2, (int)(canvas_height / 2 + half_line + (text_size_default*line_height*2)), false);
 					}
 				}
-				else if( preview.isVideoRecording() ) {
+
+				if( preview.isVideoRecording() ) {
 					long video_time = preview.getVideoTime();
 					String time_s = getTimeStringFromSeconds(video_time/1000);
 					/*if( MyDebug.LOG )
@@ -1630,31 +1801,86 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 					p.setTextSize(text_size_default);
 					p.setTextAlign(Paint.Align.CENTER);
 					int pixels_offset_y = gui_classic ? (int)(2*text_size_default*line_height)*shift_direction_y : 0; // avoid overwriting the zoom, and also allow a bit extra space
-					if( ui_rotation == 90 ) pixels_offset_y -= (text_size_video-text_size_default)/(half_line_div/2);
+					if( ui_rotation_relative == 90 ) pixels_offset_y -= (text_size_video-text_size_default)/(half_line_div/2);
 					if( main_activity.isScreenLocked() ) {
 						// writing in reverse order, bottom to top
-						drawText(canvas, p, resources.getString(R.string.screen_lock_message_2), text_color_red, canvas_width / 2, text_base_y - pixels_offset_y, false);
+						drawText(canvas, p, resources.getString(R.string.screen_lock_message_2), text_color_red, canvas_width / 2, bottom_y - pixels_offset_y, false);
 						pixels_offset_y += text_size_default*line_height;
-						drawText(canvas, p, resources.getString(R.string.screen_lock_message_1), text_color_red, canvas_width / 2, text_base_y - pixels_offset_y, false);
+						drawText(canvas, p, resources.getString(R.string.screen_lock_message_1), text_color_red, canvas_width / 2, bottom_y - pixels_offset_y, false);
 						pixels_offset_y += text_size_default*line_height;
 					}
-					if( !preview.isVideoRecordingPaused() || ((int)(System.currentTimeMillis() / 500)) % 2 == 0 ) { // if video is paused, then flash the video time
+					if( !preview.isVideoRecordingPaused() || ((int)(time_ms / 500)) % 2 == 0 ) { // if video is paused, then flash the video time
 						p.setTextSize(text_size_video);
-						drawText(canvas, p, time_s, text_color_red, canvas_width / 2, text_base_y - pixels_offset_y, false);
+						drawText(canvas, p, time_s, text_color_red, canvas_width / 2, bottom_y - pixels_offset_y, false);
 					}
+					if( pref_max_amp && !preview.isVideoRecordingPaused() ) {
+						if( !this.has_video_max_amp || time_ms > this.last_video_max_amp_time + 50 ) {
+							has_video_max_amp = true;
+
+							video_max_amp = Math.max(0.0f, Math.min(1.0f, (float)preview.getMaxAmplitude()/32767.0f));
+							video_max_amp_peak = Math.max(video_max_amp_peak-(time_ms-last_video_max_amp_time)*0.0002f, video_max_amp);
+							video_max_amp_peak_abs = Math.max(video_max_amp_peak_abs, video_max_amp);
+
+							last_video_max_amp_time = time_ms;
+						}
+						x = canvas_width / 2 - progress_width / 2;
+						y = bottom_y-pixels_offset_y+(ui_rotation_relative == 90 ? progress_height : (int)(-text_size_video*line_height-progress_height));
+
+						drawProgress(canvas, p, video_max_amp, x, y, text_color_default);
+
+						p.setStyle(Paint.Style.FILL);
+
+						float peak_x = x+progress_margin+progress_inner_width*video_max_amp_peak;
+						p.setColor(text_color_yellow);
+						canvas.drawRect(peak_x-progress_peak_width, (float)y+progress_margin, peak_x+progress_peak_width, (float)y+progress_height-progress_margin, p);
+
+						peak_x = x+progress_margin+progress_inner_width*video_max_amp_peak_abs;
+						p.setColor(text_color_red);
+						canvas.drawRect(peak_x-progress_peak_width, (float)y+progress_margin, peak_x+progress_peak_width, (float)y+progress_height-progress_margin, p);
+
+						p.setStrokeWidth(stroke_width); // reset
+					}
+				} else if (has_video_max_amp) {
+					has_video_max_amp = false;
+					video_max_amp = 0.0f;
+					video_max_amp_peak = 0.0f;
+					video_max_amp_peak_abs = 0.0f;
 				}
-				else if( taking_picture && capture_started ) {
-					if( camera_controller.isManualExposure() ) {
+
+				if( taking_picture && capture_started ) {
+//					if( camera_controller.isManualExposure() ) {
 						// only show "capturing" text with time for manual exposure time >= 0.5s
-						if (exposure_time == 0) exposure_time = camera_controller.getExposureTime();
-						if( exposure_time >= 500000000L ) {
-							if( ((int)(System.currentTimeMillis() / 500)) % 2 == 0 ) {
+						exposure_time = camera_controller.getExpectedCaptureTime();
+						long capture_start_time = camera_controller.getCaptureStartTime();
+						if( capture_start_time > 0 && exposure_time >= 500L ) {
+							if( ((int)(time_ms / 500)) % 2 == 0 ) {
 								p.setTextSize(text_size_video);
 								p.setTextAlign(Paint.Align.CENTER);
 								drawText(canvas, p, resources.getString(R.string.capturing), text_color_red, canvas_width / 2, (int)(canvas_height / 2 + text_size_video / half_line_div), false);
 							}
+							
+							float progress = Math.min(1.0f, (float)(((double)time_ms-(double)capture_start_time)/(double)exposure_time));
+
+							x = canvas_width / 2 - progress_width / 2;
+							y = canvas_height / 2 + (int)text_size_video;
+							
+							drawProgress(canvas, p, progress, x, y, text_color_red);
+
+							p.setStrokeWidth(stroke_width); // reset
 						}
-					}
+//					}
+				}
+				if (preview.isBurst()) {
+					int count = preview.getBurstCount();
+					String text;
+					if (count > 1)
+						text = preview.getBurstCaptured() + " / " + count;
+					else
+						text = String.valueOf(preview.getBurstCaptured());
+
+					int pixels_offset_y = gui_classic ? (int)(2*text_size_default*line_height)*shift_direction_y : 0; // avoid overwriting the zoom, and also allow a bit extra space
+					p.setTextSize(text_size_video);
+					drawText(canvas, p, text, text_color_red, canvas_width / 2, bottom_y - pixels_offset_y, false);
 				}
 			}
 		} else {
@@ -1717,12 +1943,30 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 		paint.setColor(Color.rgb(Color.red(foreground)/4, Color.green(foreground)/4, Color.blue(foreground)/4));
 		paint.setAlpha(alpha/2);
 		paint.setStyle(Paint.Style.FILL_AND_STROKE);
-		paint.setStrokeWidth(resources.getDimension(R.dimen.ind_text_stroke));
+		paint.setStrokeWidth(text_stroke_width);
 		canvas.drawText(text, location_x, location_y, paint);
 		paint.setStyle(Paint.Style.FILL);
 		paint.setStrokeWidth(0);
 		paint.setColor(foreground);
 		paint.setAlpha(alpha);
 		canvas.drawText(text, location_x, location_y, paint);
+	}
+
+	private void drawProgress(final Canvas canvas, final Paint p, final float progress, final int x, final int y, final int color) {
+		p.setColor(Color.rgb(Color.red(color)/4, Color.green(color)/4, Color.blue(color)/4));
+		p.setStyle(Paint.Style.FILL);
+		p.setAlpha(127);
+		draw_rect.set(x-text_stroke_width, y-text_stroke_width, x+progress_width+text_stroke_width, y+progress_height+text_stroke_width);
+		canvas.drawRoundRect(draw_rect, progress_margin+text_stroke_width, progress_margin+text_stroke_width, p);
+
+		p.setColor(color);
+		p.setStyle(Paint.Style.STROKE);
+		p.setStrokeWidth(text_stroke_width);
+		p.setAlpha(255);
+		draw_rect.set(x, y, x+progress_width, y+progress_height);
+		canvas.drawRoundRect(draw_rect, progress_margin, progress_margin, p);
+		
+		p.setStyle(Paint.Style.FILL);
+		canvas.drawRect((float)x+progress_margin, (float)y+progress_margin, x+progress_margin+progress_inner_width*progress, (float)y+progress_height-progress_margin, p);
 	}
 }

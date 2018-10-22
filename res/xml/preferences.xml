@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" >
 
 	<PreferenceCategory
 		android:key="preference_category_camera_controls"
@@ -94,15 +94,21 @@
 				android:dependency="selfie_mode"
 				/>
 
-			<ListPreference
-				android:key="preference_audio_control"
+			<SwitchPreference
+				android:key="audio_control"
 				android:title="@string/preference_audio_control"
+				android:defaultValue="false"
+				/>
+
+			<ListPreference
+				android:key="preference_audio_control_type"
+				android:title="@string/preference_audio_control_type"
 				android:summary="%s"
 				android:icon="@drawable/ic_mic"
 				android:entries="@array/preference_audio_control_entries"
 				android:entryValues="@array/preference_audio_control_values"
-				android:defaultValue="none"
-				android:dependency="selfie_mode"
+				android:defaultValue="noise"
+				android:dependency="audio_control"
 				/>
 
 			<ListPreference 
@@ -112,7 +118,7 @@
 				android:entries="@array/preference_audio_noise_control_sensitivity_entries"
 				android:entryValues="@array/preference_audio_noise_control_sensitivity_values"
 				android:defaultValue="0"
-				android:dependency="selfie_mode"
+				android:dependency="audio_control"
 				/>
 		</PreferenceScreen>
 
@@ -247,6 +253,13 @@
 						android:defaultValue="true"
 						/>
 
+					<CheckBoxPreference
+						android:key="preference_ctrl_panel_audio_control"
+						android:title="@string/preference_audio_control"
+						android:icon="@drawable/ctrl_mic"
+						android:defaultValue="false"
+						/>
+
 					<!--  if we move this to another PreferenceGroup, we should update code to remove this Preference -->
 					<CheckBoxPreference
 						android:key="preference_ctrl_panel_face_detection"
@@ -375,6 +388,14 @@
 						android:key="preference_mode_panel_selfie_mode"
 						android:title="@string/preference_screen_selfie_mode"
 						android:icon="@drawable/ctrl_selfie"
+						android:dependency="preference_show_mode_panel"
+						android:defaultValue="false"
+						/>
+
+					<CheckBoxPreference
+						android:key="preference_mode_panel_audio_control"
+						android:title="@string/preference_audio_control"
+						android:icon="@drawable/ctrl_mic"
 						android:dependency="preference_show_mode_panel"
 						android:defaultValue="false"
 						/>
@@ -567,6 +588,20 @@
 					android:defaultValue="false"
 					/>
 
+				<CheckBoxPreference
+					android:key="preference_expo_steps"
+					android:title="@string/preference_exposure_steps"
+					android:summary="@string/preference_exposure_steps_summary"
+					android:defaultValue="false"
+					/>
+
+				<CheckBoxPreference
+					android:key="preference_wb_steps"
+					android:title="@string/preference_white_balance_steps"
+					android:summary="@string/preference_white_balance_steps_summary"
+					android:defaultValue="false"
+					/>
+
 				<!--  if we move this to another PreferenceGroup, we should update code to remove this Preference -->
 				<ListPreference 
 					android:key="preference_focus_range"
@@ -659,9 +694,22 @@
 						android:defaultValue="true"
 						/>
 
+					<!--  if we move this to another PreferenceGroup, we should update code to remove this Preference -->
+					<CheckBoxPreference
+						android:key="preference_popup_optical_stabilization"
+						android:title="@string/preference_optical_stabilization"
+						android:defaultValue="false"
+						/>
+
 					<CheckBoxPreference
 						android:key="preference_popup_resolution"
 						android:title="@string/preference_resolution"
+						android:defaultValue="true"
+						/>
+
+					<CheckBoxPreference
+						android:key="preference_popup_capture_rate"
+						android:title="@string/preference_video_capture_rate"
 						android:defaultValue="true"
 						/>
 
@@ -687,6 +735,12 @@
 						android:key="preference_popup_grid"
 						android:title="@string/grid"
 						android:defaultValue="true"
+						/>
+
+					<CheckBoxPreference
+						android:key="preference_popup_ghost_image"
+						android:title="@string/preference_ghost_image"
+						android:defaultValue="false"
 						/>
 
 					<CheckBoxPreference
@@ -967,6 +1021,15 @@
 				android:defaultValue="auto"
 				/>
 
+			<ListPreference
+				android:key="preference_system_ui_orientation"
+				android:title="@string/preference_system_ui_orientation"
+				android:summary="%s"
+				android:entries="@array/preference_system_ui_orientation_entries"
+				android:entryValues="@array/preference_system_ui_orientation_values"
+				android:defaultValue="landscape"
+				/>
+
 			<CheckBoxPreference
 				android:key="preference_keep_display_on"
 				android:title="@string/preference_keep_display_on"
@@ -1030,6 +1093,42 @@
 				android:summary="@string/preference_zoom_when_focusing_summary"
 				android:defaultValue="false"
 				/>
+
+			<PreferenceCategory
+				android:key="preference_category_ghost_image"
+				android:title="@string/preference_ghost_image"
+				>
+
+				<CheckBoxPreference
+					android:key="preference_ghost_image"
+					android:title="@string/preference_ghost_image"
+					android:defaultValue="false"
+					/>
+
+				<!--  if we move this to another PreferenceGroup, we should update code for the findPreference() call -->
+				<ListPreference 
+					android:key="preference_ghost_image_source"
+					android:title="@string/preference_ghost_image_source"
+					android:summary="%s"
+					android:entries="@array/preference_ghost_image_source_entries"
+					android:entryValues="@array/preference_ghost_image_source_values"
+					android:defaultValue="last_photo"
+					android:dependency="preference_ghost_image"
+					/>
+
+				<com.caddish_hedgehog.hedgecam2.UI.SeekBarPreference
+					android:key="preference_ghost_image_alpha"
+					android:title="@string/preference_ghost_image_alpha"
+					android:summary="%s"
+					android:text="%"
+					app:min="10"
+					android:max="100"
+					app:step="5"
+					android:defaultValue="50"
+					android:dependency="preference_ghost_image"
+					/>
+
+			</PreferenceCategory>
 
 			<PreferenceCategory
 				android:key="preference_category_preview_advanced"
@@ -1149,6 +1248,13 @@
 				android:title="@string/preference_show_geo_direction_lines"
 				android:summary="@string/preference_show_geo_direction_lines_summary"
 				android:defaultValue="false"
+				/>
+
+			<CheckBoxPreference
+				android:key="preference_show_video_max_amp"
+				android:title="@string/preference_show_video_max_amp"
+				android:summary="@string/preference_show_video_max_amp_summary"
+				android:defaultValue="true"
 				/>
 
 			<CheckBoxPreference
@@ -1368,7 +1474,7 @@
 				android:summary="@string/preference_multitouch_zoom_summary"
 				android:defaultValue="true"
 				/>
-
+<!--
 			<EditTextPreference
 				android:key="preference_calibrated_level_angle"
 				android:title="@string/preference_level_angle_calibration"
@@ -1376,7 +1482,17 @@
 				android:defaultValue="0"
 				android:inputType="numberDecimal|numberSigned"
 				/>
-
+-->
+			<com.caddish_hedgehog.hedgecam2.UI.SeekBarFloatPreference
+				android:key="preference_calibrated_level_angle"
+				android:title="@string/preference_level_angle_calibration"
+				android:summary="@string/preference_level_angle_calibration_summary"
+				android:text="&#x00b0;"
+				app:fmin="-5.0"
+				app:fmax="5.0"
+				app:fstep="0.1"
+				android:defaultValue="0.0"
+				/>
 		</PreferenceScreen>
 		<PreferenceScreen
 			android:key="preference_screen_bug_fix"
@@ -1416,13 +1532,23 @@
 				android:entryValues="@array/preference_min_focus_distance_values"
 				android:defaultValue="default"
 				/>
-
+<!--
 			<EditTextPreference
 				android:key="preference_focus_distance_calibration"
 				android:title="@string/preference_focus_distance_calibration"
 				android:summary="@string/preference_focus_distance_calibration_summary"
 				android:defaultValue="0"
 				android:inputType="numberDecimal|numberSigned"
+				/>
+-->
+			<com.caddish_hedgehog.hedgecam2.UI.SeekBarFloatPreference
+				android:key="preference_focus_distance_calibration"
+				android:title="@string/preference_focus_distance_calibration"
+				android:summary="@string/preference_focus_distance_calibration_summary"
+				app:fmin="-1.0"
+				app:fmax="1.0"
+				app:fstep="0.01"
+				android:defaultValue="0.0"
 				/>
 
 			<!--  if we move this to another PreferenceGroup, we should update code to remove this Preference -->
@@ -1469,6 +1595,19 @@
 				android:defaultValue="false"
 				/>
 -->
+			<CheckBoxPreference
+				android:key="preference_reset_manual_mode"
+				android:title="@string/preference_reset_manual_mode"
+				android:summary="@string/preference_reset_manual_mode_summary"
+				android:defaultValue="false"
+				/>
+
+			<CheckBoxPreference
+				android:key="preference_lock_preview_fps"
+				android:title="@string/preference_lock_preview_fps"
+				android:summary="@string/preference_lock_preview_fps_summary"
+				android:defaultValue="false"
+				/>
 		</PreferenceScreen>
 	</PreferenceCategory>
 
@@ -1489,14 +1628,24 @@
 				android:summary="%s"
 				android:icon="@drawable/ic_photo_size_select_large"
 				/>
-		
-			<ListPreference 
+
+			<com.caddish_hedgehog.hedgecam2.UI.SeekBarPreference
+				android:key="preference_quality"
+				android:title="@string/preference_quality"
+				android:summary="%s"
+				android:text="%"
+				app:min="40"
+				android:max="100"
+				android:defaultValue="90"
+				/>
+				
+<!--			<ListPreference 
 				android:key="preference_quality"
 				android:title="@string/preference_quality"
 				android:summary="%s"
 				android:defaultValue="90"
 				/>
-
+-->
 			<SwitchPreference
 				android:key="preference_auto_stabilise"
 				android:title="@string/preference_auto_stabilise"
@@ -1567,6 +1716,13 @@
 					android:dialogTitle="@string/preference_metadata_comment"
 					android:inputType="textMultiLine"
 					android:defaultValue=""
+					/>
+
+				<CheckBoxPreference
+					android:key="preference_metadata_comment_as_file"
+					android:title="@string/preference_metadata_comment_as_file"
+					android:summary="@string/preference_metadata_comment_as_file_summary"
+					android:defaultValue="false"
 					/>
 
 				<CheckBoxPreference
@@ -2009,6 +2165,16 @@
 				android:defaultValue="default"
 				/>
 
+			<!--  if we move this to another PreferenceGroup, we should update code for the findPreference() call -->
+			<ListPreference
+				android:key="preference_video_log"
+				android:title="@string/preference_video_log"
+				android:summary="@string/preference_video_log_summary"
+				android:entries="@array/preference_video_log_entries"
+				android:entryValues="@array/preference_video_log_values"
+				android:defaultValue="off"
+				/>
+
 			<ListPreference 
 				android:key="preference_video_max_duration"
 				android:title="@string/preference_video_max_duration"
@@ -2165,6 +2331,12 @@
 				android:entryValues="@array/preference_optical_stabilization_values"
 				/>
 
+			<ListPreference 
+				android:key="preference_hot_pixel_correction"
+				android:title="@string/preference_hot_pixel_correction"
+				android:summary="@string/preference_hot_pixel_correction_summary"
+				/>
+
 		</PreferenceScreen>
 
 		<PreferenceScreen
@@ -2264,13 +2436,7 @@
 			android:title="@string/preference_online_help"
 			android:summary="@string/preference_online_help_summary"  
 			android:icon="@drawable/ic_help_outline"
-			/>  
-
-		<Preference
-			android:key="preference_donate"  
-			android:title="@string/preference_donate"
-			android:summary="@string/preference_donate_summary"  
-			/>   -->
+			/>  -->
 
 		<!--  if we move this to another PreferenceGroup, we should update code for the findPreference() call -->
 		<SwitchPreference
@@ -2279,6 +2445,15 @@
 			android:summary="@string/preference_use_camera2_summary"  
 			android:defaultValue="false"
 			/>
+
+		<PreferenceScreen
+			android:key="preference_screen_donate"  
+			android:title="@string/preference_donate"
+			android:summary="@string/preference_donate_summary"  
+			android:icon="@drawable/ic_money"
+			>
+			
+		</PreferenceScreen>
 
 		<Preference
 			android:key="preference_info"  

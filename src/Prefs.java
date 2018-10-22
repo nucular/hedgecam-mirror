@@ -1,6 +1,7 @@
 package com.caddish_hedgehog.hedgecam2;
 
 import java.io.File;
+import java.util.List;
 
 import android.content.SharedPreferences;
 import android.util.Log;
@@ -38,7 +39,7 @@ public class Prefs {
 	public static final String EXPO_BRACKETING_USE_ISO = "preference_expo_bracketing_use_iso";
 	public static final String EXPO_BRACKETING_DELAY = "preference_expo_bracketing_delay";
 	public static final String VOLUME_KEYS = "preference_volume_keys";
-	public static final String AUDIO_CONTROL = "preference_audio_control";
+	public static final String AUDIO_CONTROL_TYPE = "preference_audio_control_type";
 	public static final String AUDIO_NOISE_CONTROL_SENSITIVITY = "preference_audio_noise_control_sensitivity";
 	public static final String QUALITY = "preference_quality";
 	public static final String AUTO_STABILISE = "preference_auto_stabilise";
@@ -72,6 +73,7 @@ public class Prefs {
 	public static final String KEEP_DISPLAY_ON = "preference_keep_display_on";
 	public static final String MAX_BRIGHTNESS = "preference_max_brightness";
 	public static final String GUI_ORIENTATION = "preference_gui_orientation";
+	public static final String SYSTEM_UI_ORIENTATION = "preference_system_ui_orientation";
 	public static final String USING_SAF = "preference_using_saf";
 	public static final String SAVE_LOCATION = "preference_save_location";
 	public static final String SAVE_LOCATION_SAF = "preference_save_location_saf";
@@ -89,6 +91,7 @@ public class Prefs {
 	public static final String SHOW_ANGLE_LINE = "preference_show_angle_line";
 	public static final String SHOW_PITCH_LINES = "preference_show_pitch_lines";
 	public static final String SHOW_GEO_DIRECTION_LINES = "preference_show_geo_direction_lines";
+	public static final String SHOW_VIDEO_MAX_AMP = "preference_show_video_max_amp";
 	public static final String ANGLE_HIGHLIGHT_COLOR = "preference_angle_highlight_color";
 	public static final String CALIBRATED_LEVEL_ANGLE = "preference_calibrated_level_angle";
 	public static final String SHOW_GEO_DIRECTION = "preference_show_geo_direction";
@@ -109,6 +112,8 @@ public class Prefs {
 	public static final String VIDEO_RESTART_MAX_FILESIZE = "preference_video_restart_max_filesize";
 	public static final String VIDEO_FLASH = "preference_video_flash";
 	public static final String VIDEO_LOW_POWER_CHECK = "preference_video_low_power_check";
+	public static final String VIDEO_LOG_PROFILE = "preference_video_log";
+	public static final String CAPTURE_RATE = "preference_capture_rate";
 	public static final String LOCK_VIDEO = "preference_lock_video";
 	public static final String RECORD_AUDIO = "preference_record_audio";
 	public static final String RECORD_AUDIO_CHANNELS = "preference_record_audio_channels";
@@ -117,6 +122,7 @@ public class Prefs {
 	public static final String ROTATE_PREVIEW = "preference_rotate_preview";
 	public static final String LOCK_ORIENTATION = "preference_lock_orientation";
 	public static final String SELFIE_MODE = "selfie_mode";
+	public static final String AUDIO_CONTROL = "audio_control";
 	public static final String TIMER = "preference_timer";
 	public static final String TIMER_BEEP = "preference_timer_beep";
 	public static final String TIMER_SPEAK = "preference_timer_speak";
@@ -151,7 +157,12 @@ public class Prefs {
 
 	public static final String PREVIEW_LOCATION = "preference_preview_location";
 	public static final String PREVIEW_MAX_EXPO = "preference_preview_max_expo";
+	public static final String GHOST_IMAGE = "preference_ghost_image";
+	public static final String GHOST_IMAGE_SOURCE = "preference_ghost_image_source";
+	public static final String GHOST_IMAGE_ALPHA = "preference_ghost_image_alpha";
+	public static final String GHOST_IMAGE_FILE_SAF = "preference_ghost_image_file_saf";
 	public static final String CTRL_PANEL_SELFIE_MODE = "preference_ctrl_panel_selfie_mode";
+	public static final String CTRL_PANEL_AUDIO_CONTROL = "preference_ctrl_panel_audio_control";
 	public static final String CTRL_PANEL_FACE_DETECTION = "preference_ctrl_panel_face_detection";
 	public static final String CTRL_PANEL_PHOTO_MODE = "preference_ctrl_panel_photo_mode";
 	public static final String CTRL_PANEL_SWITCH_CAMERA = "preference_ctrl_panel_switch_camera";
@@ -168,6 +179,7 @@ public class Prefs {
 	
 	public static final String SHOW_MODE_PANEL = "preference_show_mode_panel";
 	public static final String MODE_PANEL_SELFIE_MODE = "preference_mode_panel_selfie_mode";
+	public static final String MODE_PANEL_AUDIO_CONTROL = "preference_mode_panel_audio_control";
 	public static final String MODE_PANEL_FACE_DETECTION = "preference_mode_panel_face_detection";
 	public static final String MODE_PANEL_PHOTO_MODE = "preference_mode_panel_photo_mode";
 	public static final String MODE_PANEL_SWITCH_CAMERA = "preference_mode_panel_switch_camera";
@@ -189,6 +201,7 @@ public class Prefs {
 	public static final String UPDATE_FOCUS_FOR_VIDEO = "preference_update_focus_for_video";
 	public static final String ALT_INDICATION = "preference_alt_indication";
 	public static final String POPUP_SIZE = "preference_popup_size";
+	public static final String POPUP_CAPTURE_RATE = "preference_popup_capture_rate";
 	public static final String POPUP_FONT_SIZE = "preference_popup_font_size";
 	public static final String POPUP_COLOR = "preference_popup_color";
 	public static final String POPUP_EXPANDED_LISTS = "preference_popup_expanded_lists";
@@ -198,11 +211,13 @@ public class Prefs {
 	public static final String POPUP_SCENE_MODE = "preference_popup_scene_mode";
 	public static final String POPUP_COLOR_EFFECT = "preference_popup_color_effect";
 	public static final String POPUP_AUTO_STABILISE = "preference_popup_auto_stabilise";
+	public static final String POPUP_OPTICAL_STABILIZATION = "preference_popup_optical_stabilization";
 	public static final String POPUP_RESOLUTION = "preference_popup_resolution";
 	public static final String POPUP_TIMER = "preference_popup_timer";
 	public static final String POPUP_BURST_MODE = "preference_popup_burst_mode";
 	public static final String POPUP_BURST_INTERVAL = "preference_popup_burst_interval";
 	public static final String POPUP_GRID = "preference_popup_grid";
+	public static final String POPUP_GHOST_IMAGE = "preference_popup_ghost_image";
 	public static final String POPUP_EXPO_BRACKETING_STOPS = "preference_popup_stops";
 	public static final String POPUP_HDR_TONEMAPPING = "preference_popup_hdr_tonemapping";
 	public static final String POPUP_HDR_UNSHARP_MASK = "preference_popup_hdr_unsharp_mask";
@@ -211,6 +226,7 @@ public class Prefs {
 	public static final String POPUP_HDR_N_TILES = "preference_popup_hdr_n_tiles";
 	public static final String POPUP_HDR_DEGHOST = "preference_popup_hdr_deghost";
 	public static final String POPUP_PHOTOS_COUNT = "preference_popup_photos_count";
+	public static final String POPUP_VIDEO_LOG_PROFILE = "preference_popup_video_log";
 	public static final String FORCE_FACE_FOCUS = "preference_force_face_focus";
 	public static final String CENTER_FOCUS = "preference_center_focus";
 	public static final String USE_1920X1088 = "preference_use_1920x1088";
@@ -224,11 +240,14 @@ public class Prefs {
 	public static final String EDGE = "preference_edge";
 	public static final String SMART_FILTER = "preference_smart_filter";
 	public static final String OPTICAL_STABILIZATION = "preference_optical_stabilization";
+	public static final String HOT_PIXEL_CORRECTION = "preference_hot_pixel_correction";
 	public static final String ZERO_SHUTTER_DELAY = "preference_zero_shutter_delay";
 	public static final String FOCUS_DISTANCE = "preference_focus_distance";
 	public static final String FOCUS_BRACKETING_DISTANCE = "preference_focus_bracketing_distance";
 	public static final String FOCUS_RANGE = "preference_focus_range";
 	public static final String ISO_STEPS = "preference_iso_steps";
+	public static final String WHITE_BALANCE_STEPS = "preference_wb_steps";
+	public static final String EXPOSURE_STEPS = "preference_expo_steps";
 	public static final String SPEED_UP_SENSORS = "preference_speed_up_sensors";
 	public static final String SLIDERS_LOCATION = "preference_sliders_location";
 	public static final String SLIDERS_SIZE = "preference_sliders_size";
@@ -252,10 +271,14 @@ public class Prefs {
 	public static final String METADATA_MODE_INFO = "preference_metadata_mode_info";
 	public static final String METADATA_SENSOR_INFO = "preference_metadata_sensor_info";
 	public static final String METADATA_PROCESSING_INFO = "preference_metadata_processing_info";
+	public static final String METADATA_COMMENT_AS_FILE = "preference_metadata_comment_as_file";
 
 	public static final String ADJUST_LEVELS = "preference_adjust_levels";
 
 	public static final String ZOOM_WHEN_FOCUSING = "preference_zoom_when_focusing";
+	
+	public static final String RESET_MANUAL_MODE = "preference_reset_manual_mode";
+	public static final String LOCK_PREVIEW_FPS_TO_VIDEO_FPS = "preference_lock_preview_fps";
 
 	// note, okay to change the order of enums in future versions, as getPhotoMode() does not rely on the order for the saved photo mode
 	public enum PhotoMode {
@@ -271,6 +294,9 @@ public class Prefs {
 	private static int pref_camera_id = -1;
 	private static String pref_photo_mode = null;
 	private static PhotoMode photo_mode = PhotoMode.Standard;
+	
+	private static boolean is_video = false;
+	private static boolean is_video_cached = false;
 	
 	public static void setSharedPreferences(SharedPreferences prefs) {
 		sharedPreferences = prefs;
@@ -549,12 +575,17 @@ public class Prefs {
 	}
 
 	public static boolean isVideoPref() {
-		return sharedPreferences.getBoolean(IS_VIDEO, false);
+		if (!is_video_cached) {
+			is_video = sharedPreferences.getBoolean(IS_VIDEO, false);
+			is_video_cached = true;
+		}
+		return is_video;
 	}
 
-	public static void setVideoPref(boolean is_video) {
+	public static void setVideoPref(boolean state) {
+		is_video = state;
 		SharedPreferences.Editor editor = sharedPreferences.edit();
-		editor.putBoolean(IS_VIDEO, is_video);
+		editor.putBoolean(IS_VIDEO, state);
 		editor.apply();
 	}
 
@@ -766,7 +797,76 @@ public class Prefs {
 	}
 
 	public static String getVideoFPSPref() {
+		float capture_rate_factor = getVideoCaptureRateFactor();
+		if( capture_rate_factor < 1.0f-1.0e-5f ) {
+			if( MyDebug.LOG )
+				Log.d(TAG, "set fps for slow motion, capture rate: " + capture_rate_factor);
+			int preferred_fps = (int)(30.0/capture_rate_factor+0.5);
+			if( MyDebug.LOG )
+				Log.d(TAG, "preferred_fps: " + preferred_fps);
+			if( main_activity.getPreview().getVideoQualityHander().videoSupportsFrameRateHighSpeed(preferred_fps) ||
+					main_activity.getPreview().getVideoQualityHander().videoSupportsFrameRate(preferred_fps) )
+				return "" + preferred_fps;
+			// just in case say we support 120fps but NOT 60fps, getSupportedSlowMotionRates() will have returned that 2x slow
+			// motion is supported, but we need to set 120fps instead of 60fps
+			while( preferred_fps < 240 ) {
+				preferred_fps *= 2;
+				if( MyDebug.LOG )
+					Log.d(TAG, "preferred_fps not supported, try: " + preferred_fps);
+				if( main_activity.getPreview().getVideoQualityHander().videoSupportsFrameRateHighSpeed(preferred_fps) ||
+						main_activity.getPreview().getVideoQualityHander().videoSupportsFrameRate(preferred_fps) )
+					return "" + preferred_fps;
+			}
+			// shouln't happen based on getSupportedSlowMotionRates()
+			Log.e(TAG, "can't find valid fps for slow motion");
+			return "default";
+		}
 		return sharedPreferences.getString(VIDEO_FPS, "default");
+	}
+
+	public static float getVideoCaptureRateFactor() {
+		// fixme
+		float capture_rate_factor = sharedPreferences.getFloat(CAPTURE_RATE, 1.0f);
+		if( MyDebug.LOG )
+			Log.d(TAG, "capture_rate_factor: " + capture_rate_factor);
+		if( Math.abs(capture_rate_factor - 1.0f) > 1.0e-5 ) {
+			// check stored capture rate is valid
+			if( MyDebug.LOG )
+				Log.d(TAG, "check stored capture rate is valid");
+			List<Float> supported_capture_rates = main_activity.getPreview().getSupportedVideoCaptureRates();
+			if( MyDebug.LOG )
+				Log.d(TAG, "supported_capture_rates: " + supported_capture_rates);
+			boolean found = false;
+			for(float this_capture_rate : supported_capture_rates) {
+				if( Math.abs(capture_rate_factor - this_capture_rate) < 1.0e-5 ) {
+					found = true;
+					break;
+				}
+			}
+			if( !found ) {
+				Log.e(TAG, "stored capture_rate_factor: " + capture_rate_factor + " not supported");
+				capture_rate_factor = 1.0f;
+			}
+		}
+		return capture_rate_factor;
+	}
+
+	public static float getVideoLogProfile() {
+		String video_log = sharedPreferences.getString(VIDEO_LOG_PROFILE, "off");
+		// remember to update useVideoLogProfile() if adding/changing modes
+		switch( video_log ) {
+			case "off":
+				return 0.0f;
+			case "low":
+				return 5.0f;
+			case "medium":
+				return 10.0f;
+			case "strong":
+				return 100.0f;
+			case "extra_strong":
+				return 500.0f;
+		}
+		return 0.0f;
 	}
 
 	public static long getVideoMaxDurationPref() {
@@ -832,8 +932,7 @@ public class Prefs {
 	}
 
 	public static boolean getPreviewMaxSizePref() {
-		return (sharedPreferences.getBoolean(PREVIEW_MAX_SIZE, true) && 
-			(!sharedPreferences.getBoolean(IS_VIDEO, false) || sharedPreferences.getString(CROP_GUIDE, "crop_guide_none").equals("crop_guide_none")));
+		return sharedPreferences.getBoolean(PREVIEW_MAX_SIZE, true);
 	}
 
 	public static String getPreviewRotationPref() {
@@ -999,4 +1098,5 @@ public class Prefs {
 		editor.putBoolean(SHOW_SEEKBARS, value);
 		editor.apply();
 	}
+
 }

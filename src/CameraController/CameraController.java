@@ -2,7 +2,10 @@ package com.caddish_hedgehog.hedgecam2.CameraController;
 
 import com.caddish_hedgehog.hedgecam2.MyDebug;
 
+import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import android.graphics.Rect;
@@ -48,7 +51,7 @@ public abstract class CameraController {
 		public boolean supports_face_detection;
 		public List<CameraController.Size> picture_sizes;
 		public List<CameraController.Size> video_sizes;
-		public List<CameraController.Size> video_sizes_high_speed;
+		public List<CameraController.Size> video_sizes_high_speed; // may be null if high speed not supported
 		public List<CameraController.Size> preview_sizes;
 		public List<String> supported_flash_values;
 		public List<String> supported_focus_values;
@@ -71,20 +74,97 @@ public abstract class CameraController {
 		public int max_exposure;
 		public float exposure_step;
 		public boolean can_disable_shutter_sound;
+		public int tonemap_max_curve_points;
+		public boolean supports_tonemap_curve;
 		public boolean supports_expo_bracketing;
 		public int max_expo_bracketing_n_images;
 		public boolean supports_raw;
 		public float view_angle_x; // horizontal angle of view in degrees (when unzoomed)
 		public float view_angle_y; // vertical angle of view in degrees (when unzoomed)
+
+		/** Returns whether any of the supplied sizes support the requested fps.
+		 */
+		public static boolean supportsFrameRate(List<Size> sizes, int fps) {
+			if( MyDebug.LOG )
+				Log.d(TAG, "supportsFrameRate: " + fps);
+			if( sizes == null )
+				return false;
+			for(Size size : sizes) {
+				if( size.supportsFrameRate(fps) ) {
+					if( MyDebug.LOG )
+						Log.d(TAG, "fps is supported");
+					return true;
+				}
+			}
+			if( MyDebug.LOG )
+				Log.d(TAG, "fps is NOT supported");
+			return false;
+		}
+
+		public static Size findSize(List<Size> sizes, Size size, double fps, boolean return_closest) {
+			Size last_s = null;
+			for(Size s : sizes) {
+				if (size.equals(s)) {
+					last_s = s;
+					if (fps > 0) {
+						if (s.supportsFrameRate(fps)) {
+							return s;
+						}
+					} else {
+						return s;
+					}
+				}
+			}
+			return return_closest ? last_s : null;
+		}
+	}
+
+	// Android docs and FindBugs recommend that Comparators also be Serializable
+	public static class RangeSorter implements Comparator<int[]>, Serializable {
+		private static final long serialVersionUID = 5802214721073728212L;
+		@Override
+		public int compare(int[] o1, int[] o2) {
+			if (o1[0] == o2[0]) return o1[1] - o2[1];
+			return o1[0] - o2[0];
+		}
+	}
+
+	// Android docs and FindBugs recommend that Comparators also be Serializable
+	public static class SizeSorter implements Comparator<Size>, Serializable {
+		private static final long serialVersionUID = 5802214721073718212L;
+
+		@Override
+		public int compare(final CameraController.Size a, final CameraController.Size b) {
+			return b.width * b.height - a.width * a.height;
+		}
 	}
 
 	public static class Size {
 		public final int width;
 		public final int height;
+		public boolean supports_burst; // for photo
+		final List<int[]> fps_ranges; // for video
+		public final boolean high_speed; // for video
 		
-		public Size(int width, int height) {
+		Size(int width, int height, List<int[]> fps_ranges, boolean high_speed) {
 			this.width = width;
 			this.height = height;
+			this.supports_burst = true;
+			this.fps_ranges = fps_ranges;
+			this.high_speed = high_speed;
+			Collections.sort(this.fps_ranges, new RangeSorter());
+		}
+
+		public Size(int width, int height) {
+			this(width, height, new ArrayList<int[]>(), false);
+		}
+
+		boolean supportsFrameRate(double fps) {
+			for (int[] f : this.fps_ranges) {
+				if (f[0] <= fps && fps <= f[1])
+					return true;
+			}
+			return false;
 		}
 
 		@Override
@@ -201,7 +281,7 @@ public abstract class CameraController {
 		this.cameraId = cameraId;
 	}
 	public abstract String getAPI();
-	public abstract CameraFeatures getCameraFeatures();
+	public abstract CameraFeatures getCameraFeatures() throws CameraControllerException;
 	public int getCameraId() {
 		return cameraId;
 	}
@@ -272,6 +352,7 @@ public abstract class CameraController {
 	 */
 	public abstract void setOptimiseAEForDRO(boolean optimise_ae_for_dro);
 	public abstract void setRaw(boolean want_raw);
+	public void setVideoHighSpeed(boolean setVideoHighSpeed) {};
 	/**
 	 * setUseCamera2FakeFlash() should be called after creating the CameraController, and before calling getCameraFeatures() or
 	 * starting the preview (as it changes the available flash modes).
@@ -279,7 +360,7 @@ public abstract class CameraController {
 	 * include precapture never starting, flash not firing, photos being over or under exposed.
 	 * Instead, we fake the precapture and flash simply by turning on the torch. After turning on torch, we wait for ae to stop
 	 * scanning (and af too, as it can start scanning in continuous mode) - this is effectively the equivalent of precapture -
-	 * before taking the photo. 
+	 * before taking the photo.
 	 * In auto-focus mode, we make the decision ourselves based on the current ISO.
 	 * We also handle the flash firing for autofocus by turning the torch on and off too. Advantages are:
 	 *   - The flash tends to be brighter, and the photo can end up overexposed as a result if capture follows the autofocus.
@@ -302,11 +383,16 @@ public abstract class CameraController {
 	public boolean setOpticalStabilizationMode(String value) {return false;}
 	public String getOpticalStabilizationMode() {return null;}
 	public List<String> getAvailableOpticalStabilizationModes() {return new ArrayList<>();}
+	public boolean setHotPixelCorrectionMode(String value) {return false;}
+	public String getHotPixelCorrectionMode() {return null;}
+	public List<String> getAvailableHotPixelCorrectionModes() {return new ArrayList<>();}
 	public boolean setZeroShutterDelayMode(String value) {return false;}
 	public String getZeroShutterDelayMode() {return null;}
 	public List<String> getAvailableZeroShutterDelayModes() {return new ArrayList<>();}
 	public abstract void setVideoStabilization(boolean enabled);
 	public abstract boolean getVideoStabilization();
+	public void setLogProfile(float log_profile_strength) {};
+	public boolean isLogProfile() {return false;};
 	public abstract int getJpegQuality();
 	public abstract void setJpegQuality(int quality);
 	public abstract int getZoom();
@@ -314,6 +400,7 @@ public abstract class CameraController {
 	public abstract int getExposureCompensation();
 	public abstract boolean setExposureCompensation(int new_exposure);
 	public abstract void setPreviewFpsRange(int min, int max);
+	public void clearPreviewFpsRange() {};
 	public abstract List<int []> getSupportedPreviewFpsRange();
 
 	public String getDefaultSceneMode() {
@@ -382,8 +469,15 @@ public abstract class CameraController {
 	public abstract int getCameraOrientation();
 	public abstract boolean isFrontFacing();
 	public abstract void unlock();
+	/** Call to initialise video recording, should call before MediaRecorder.prepare().
+	 * @param video_recorder The media recorder object.
+	 */
 	public abstract void initVideoRecorderPrePrepare(MediaRecorder video_recorder);
-	public abstract void initVideoRecorderPostPrepare(MediaRecorder video_recorder) throws CameraControllerException;
+	/** Call to initialise video recording, should call after MediaRecorder.prepare(), but before MediaRecorder.start().
+	 * @param video_recorder The media recorder object.
+	 * @param want_photo_video_recording Whether support for taking photos whilst video recording is required. If this feature isn't supported, the option has no effect.
+	 */
+	public abstract void initVideoRecorderPostPrepare(MediaRecorder video_recorder, boolean want_photo_video_recording) throws CameraControllerException;
 	public abstract String getParametersString();
 	public boolean captureResultIsAEScanning() {
 		return false;
@@ -417,6 +511,8 @@ public abstract class CameraController {
 	}
 	public int getIso() { return -1; }
 	public long getExposureTime() { return -1; }
+	public long getExpectedCaptureTime() { return 0; }
+	public long getCaptureStartTime() { return 0; }
 	public boolean isExposureOverRange() {return false;}
 	public void setSmartFilterISO(int iso) {}
 	public boolean isFilteringBlocked() {return false;}

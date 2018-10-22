@@ -1,7 +1,9 @@
 package com.caddish_hedgehog.hedgecam2;
 
+import com.caddish_hedgehog.hedgecam2.Donations;
 import com.caddish_hedgehog.hedgecam2.Preview.Preview;
 import com.caddish_hedgehog.hedgecam2.UI.FolderChooserDialog;
+import com.caddish_hedgehog.hedgecam2.UI.SeekBarFloatPreference;
 
 import android.app.Activity;
 import android.app.ActivityManager;
@@ -11,6 +13,7 @@ import android.content.ClipboardManager;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.pm.PackageInfo;
@@ -25,6 +28,7 @@ import android.preference.TwoStatePreference;
 import android.preference.EditTextPreference;
 import android.preference.ListPreference;
 import android.preference.Preference;
+import android.preference.PreferenceCategory;
 import android.preference.Preference.OnPreferenceChangeListener;
 import android.preference.Preference.OnPreferenceClickListener;
 import android.preference.PreferenceFragment;
@@ -55,11 +59,20 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 		"preference_category_focus_modes",
 	};
 	
+	private final Donations donations;
+	private boolean was_donations;
+
+	MyPreferenceFragment(Activity activity) {
+		donations = new Donations(activity);
+	}
+	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		if( MyDebug.LOG )
 			Log.d(TAG, "onCreate");
 		super.onCreate(savedInstanceState);
+		
+		final Resources resources = getActivity().getResources();
 
 		final SharedPreferences sharedPreferences = ((MainActivity)this.getActivity()).getSharedPrefs();
 		if (sharedPreferences == null) return;
@@ -196,7 +209,7 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 			removePref("preference_screen_photo_settings", "preference_resolution");
 		}
 
-		{
+/*		{
 			final int n_quality = 13;
 			CharSequence [] entries = new CharSequence[n_quality];
 			CharSequence [] values = new CharSequence[n_quality];
@@ -207,7 +220,7 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 			ListPreference lp = (ListPreference)findPreference(Prefs.QUALITY);
 			lp.setEntries(entries);
 			lp.setEntryValues(values);
-		}
+		}*/
 		
 		final boolean supports_raw = bundle.getBoolean("supports_raw");
 		if( MyDebug.LOG )
@@ -246,7 +259,7 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 					}
 					return true;
 				}
-			});			
+			});
 		}
 
 		final boolean supports_dro = bundle.getBoolean("supports_dro");
@@ -324,8 +337,17 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 			Log.d(TAG, "iso_range_max: " + iso_range_max);
 		}
 		
-		if (!supports_iso_range ) {
+		if (supports_iso_range ) {
+			TwoStatePreference p = (TwoStatePreference)findPreference(Prefs.RESET_MANUAL_MODE);
+			if (p != null) {
+				String preference_key = Prefs.RESET_MANUAL_MODE + "_" + cameraId;
+				p.setKey(preference_key);
+				p.setChecked(sharedPreferences.getBoolean(preference_key, false));
+			}
+		} else {
 			removePref("preference_screen_sliders", Prefs.ISO_STEPS);
+			removePref("preference_screen_sliders", Prefs.EXPOSURE_STEPS);
+			removePref("preference_screen_bug_fix", Prefs.RESET_MANUAL_MODE);
 		}
 
 		if( !supports_iso && !supports_iso_range ) {
@@ -355,6 +377,8 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 			Log.d(TAG, "white_balance_temperature_min: " + white_balance_temperature_min);
 			Log.d(TAG, "white_balance_temperature_max: " + white_balance_temperature_max);
 		}
+		if (!supports_white_balance_temperature)
+			removePref("preference_screen_sliders", Prefs.WHITE_BALANCE_STEPS);
 
 		if( !supports_expo_bracketing || max_expo_bracketing_n_images <= 3 ) {
 			removePref("preference_category_expo_bracketing", Prefs.EXPO_BRACKETING_N_IMAGES);
@@ -450,8 +474,8 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 		final String noise_reduction_mode = bundle.getString("noise_reduction_mode");
 		final String [] noise_reduction_modes = bundle.getStringArray("noise_reduction_modes");
 		if( noise_reduction_modes != null && noise_reduction_modes.length > 1 ) {
-			List<String> arr_entries = Arrays.asList(getActivity().getResources().getStringArray(R.array.preference_noise_reduction_entries));
-			List<String> arr_values = Arrays.asList(getActivity().getResources().getStringArray(R.array.preference_noise_reduction_values));
+			List<String> arr_entries = Arrays.asList(resources.getStringArray(R.array.preference_noise_reduction_entries));
+			List<String> arr_values = Arrays.asList(resources.getStringArray(R.array.preference_noise_reduction_values));
 			CharSequence [] entries = new CharSequence[noise_reduction_modes.length];
 			CharSequence [] values = new CharSequence[noise_reduction_modes.length];
 			for(int i=0; i<noise_reduction_modes.length; i++) {
@@ -474,8 +498,8 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 		final String edge_mode = bundle.getString("edge_mode");
 		final String [] edge_modes = bundle.getStringArray("edge_modes");
 		if( edge_modes != null && edge_modes.length > 1 ) {
-			List<String> arr_entries = Arrays.asList(getActivity().getResources().getStringArray(R.array.preference_edge_entries));
-			List<String> arr_values = Arrays.asList(getActivity().getResources().getStringArray(R.array.preference_edge_values));
+			List<String> arr_entries = Arrays.asList(resources.getStringArray(R.array.preference_edge_entries));
+			List<String> arr_values = Arrays.asList(resources.getStringArray(R.array.preference_edge_values));
 			CharSequence [] entries = new CharSequence[edge_modes.length];
 			CharSequence [] values = new CharSequence[edge_modes.length];
 			for(int i=0; i<edge_modes.length; i++) {
@@ -525,8 +549,8 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 		final String optical_stabilization_mode = bundle.getString("optical_stabilization_mode");
 		final String [] optical_stabilization_modes = bundle.getStringArray("optical_stabilization_modes");
 		if( optical_stabilization_modes != null && optical_stabilization_modes.length > 1 ) {
-			List<String> arr_entries = Arrays.asList(getActivity().getResources().getStringArray(R.array.preference_optical_stabilization_entries));
-			List<String> arr_values = Arrays.asList(getActivity().getResources().getStringArray(R.array.preference_optical_stabilization_values));
+			List<String> arr_entries = Arrays.asList(resources.getStringArray(R.array.preference_optical_stabilization_entries));
+			List<String> arr_values = Arrays.asList(resources.getStringArray(R.array.preference_optical_stabilization_values));
 			CharSequence [] entries = new CharSequence[optical_stabilization_modes.length];
 			CharSequence [] values = new CharSequence[optical_stabilization_modes.length];
 			for(int i=0; i<optical_stabilization_modes.length; i++) {
@@ -544,6 +568,31 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 			lp.setKey(preference_key);
 		} else {
 			removePref("preference_screen_filtering", Prefs.OPTICAL_STABILIZATION);
+			removePref("preference_category_popup_elements", Prefs.POPUP_OPTICAL_STABILIZATION);
+		}
+
+		final String hot_pixel_correction_mode = bundle.getString("hot_pixel_correction_mode");
+		final String [] hot_pixel_correction_modes = bundle.getStringArray("hot_pixel_correction_modes");
+		if( hot_pixel_correction_modes != null && hot_pixel_correction_modes.length > 1 ) {
+			List<String> arr_entries = Arrays.asList(resources.getStringArray(R.array.preference_edge_entries));
+			List<String> arr_values = Arrays.asList(resources.getStringArray(R.array.preference_edge_values));
+			CharSequence [] entries = new CharSequence[hot_pixel_correction_modes.length];
+			CharSequence [] values = new CharSequence[hot_pixel_correction_modes.length];
+			for(int i=0; i<hot_pixel_correction_modes.length; i++) {
+				int index = arr_values.indexOf(hot_pixel_correction_modes[i]);
+				entries[i] = index == -1 ? hot_pixel_correction_modes[i] : arr_entries.get(index);
+				values[i] = hot_pixel_correction_modes[i];
+			}
+			ListPreference lp = (ListPreference)findPreference(Prefs.HOT_PIXEL_CORRECTION);
+			lp.setEntries(entries);
+			lp.setEntryValues(values);
+			String preference_key = Prefs.HOT_PIXEL_CORRECTION + "_" + cameraId;
+			if (hot_pixel_correction_mode != null) {
+				lp.setValue(hot_pixel_correction_mode);
+			}
+			lp.setKey(preference_key);
+		} else {
+			removePref("preference_screen_filtering", Prefs.HOT_PIXEL_CORRECTION);
 		}
 
 		final boolean can_disable_shutter_sound = bundle.getBoolean("can_disable_shutter_sound");
@@ -552,10 +601,21 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 		if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.JELLY_BEAN_MR1 || !can_disable_shutter_sound){
 			removePref("preference_screen_sounds", Prefs.SHUTTER_SOUND_SELECT);
 		}
+		
+		final boolean has_navigation_bar;
+		int id = resources.getIdentifier("config_showNavigationBar", "bool", "android");
+		if (id > 0)
+			has_navigation_bar = resources.getBoolean(id);
+		else
+			has_navigation_bar = false;
 
 		if( Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT ) {
 			// Some immersive modes require KITKAT - simpler to require Kitkat for any of the menu options
 			removePref("preference_screen_gui", Prefs.IMMERSIVE_MODE);
+		} else if (!has_navigation_bar) {
+			ListPreference lp = (ListPreference)findPreference(Prefs.IMMERSIVE_MODE);
+			lp.setEntries(R.array.preference_immersive_mode_no_navigation_bar_entries);
+			lp.setEntryValues(R.array.preference_immersive_mode_no_navigation_bar_values);
 		}
 
 		if( !bundle.getBoolean("supports_lock") ) {
@@ -589,10 +649,12 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 				removePref("preference_screen_osd", Prefs.SHOW_ISO);
 			}
 
-			removePref("preference_category_expo_bracketing", Prefs.CAMERA2_FAST_BURST);
 			removePref("preference_screen_bug_fix", Prefs.CAMERA2_FAKE_FLASH);
-			removePref("preference_category_camera_quality", Prefs.UNCOMPRESSED_PHOTO);
 			removePref("preference_screen_bug_fix", Prefs.FULL_SIZE_COPY);
+			removePref("preference_screen_photo_settings", Prefs.UNCOMPRESSED_PHOTO);
+			removePref("preference_screen_photo_settings", Prefs.YUV_CONVERSION);
+			removePref("preference_category_expo_bracketing", Prefs.CAMERA2_FAST_BURST);
+			removePref("preference_screen_video_settings", Prefs.VIDEO_LOG_PROFILE);
 		}
 
 		if (supports_manual_focus) {
@@ -602,9 +664,13 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 			lp.setKey(preference_key);
 			
 			preference_key = Prefs.FOCUS_DISTANCE_CALIBRATION + "_" + cameraId;
-			EditTextPreference etp = (EditTextPreference)findPreference(Prefs.FOCUS_DISTANCE_CALIBRATION);
+/*			EditTextPreference etp = (EditTextPreference)findPreference(Prefs.FOCUS_DISTANCE_CALIBRATION);
 			etp.setText(sharedPreferences.getString(preference_key, "0"));
-			etp.setKey(preference_key);
+			etp.setKey(preference_key);*/
+			
+			SeekBarFloatPreference p = (SeekBarFloatPreference)findPreference(Prefs.FOCUS_DISTANCE_CALIBRATION);
+			p.setValue(Float.parseFloat(sharedPreferences.getString(preference_key, "0")));
+			p.setKey(preference_key);
 		} else {
 			removePref("preference_screen_sliders", Prefs.FOCUS_RANGE);
 			removePref("preference_screen_bug_fix", Prefs.MIN_FOCUS_DISTANCE);
@@ -653,7 +719,26 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 		else {
 			removePref("preference_category_mics", Prefs.USE_CAMERA2);
 		}
-		
+
+		if( Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP ) {
+			// require Storage Access Framework to select a ghost image
+			removePref("preference_category_ghost_image", Prefs.GHOST_IMAGE_SOURCE);
+		} else {
+
+			((ListPreference)findPreference(Prefs.GHOST_IMAGE_SOURCE)).setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
+				@Override
+				public boolean onPreferenceChange(Preference arg0, Object newValue) {
+					if( MyDebug.LOG )
+						Log.d(TAG, "clicked ghost image: " + newValue);
+					if( newValue.equals("file") ) {
+						MainActivity main_activity = (MainActivity) MyPreferenceFragment.this.getActivity();
+						main_activity.openGhostImageChooserDialogSAF(true);
+					}
+					return true;
+				}
+			});
+		}
+
 /*		{
 			final Preference pref = findPreference("preference_online_help");
 			pref.setOnPreferenceClickListener(new OnPreferenceClickListener() {
@@ -671,22 +756,6 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 			});
 		}*/
 
-		/*{
-			EditTextPreference edit = (EditTextPreference)findPreference(Prefs.SAVE_LOCATION);
-			InputFilter filter = new InputFilter() { 
-				// whilst Android seems to allow any characters on internal memory, SD cards are typically formatted with FAT32
-				String disallowed = "|\\?*<\":>";
-				public CharSequence filter(CharSequence source, int start, int end, Spanned dest, int dstart, int dend) { 
-					for(int i=start;i<end;i++) { 
-						if( disallowed.indexOf( source.charAt(i) ) != -1 ) {
-							return ""; 
-						}
-					} 
-					return null; 
-				}
-			}; 
-			edit.getEditText().setFilters(new InputFilter[]{filter});		 	
-		}*/
 		{
 			Preference pref = findPreference(Prefs.SAVE_LOCATION);
 			pref.setOnPreferenceClickListener(new OnPreferenceClickListener() {
@@ -705,7 +774,7 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 						return true;
 					}
 				}
-			});			
+			});
 		}
 
 		if( Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP ) {
@@ -741,23 +810,6 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 			});
 		}
 
-/*		{
-			final Preference pref = findPreference("preference_donate");
-			pref.setOnPreferenceClickListener(new OnPreferenceClickListener() {
-				@Override
-				public boolean onPreferenceClick(Preference arg0) {
-					if( pref.getKey().equals("preference_donate") ) {
-						if( MyDebug.LOG )
-							Log.d(TAG, "user clicked to donate");
-						Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(MainActivity.getDonateLink()));
-						startActivity(browserIntent);
-						return false;
-					}
-					return false;
-				}
-			});
-		}*/
-
 		{
 			final Preference pref = findPreference("preference_about");
 			pref.setOnPreferenceClickListener(new OnPreferenceClickListener() {
@@ -767,7 +819,7 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 						if( MyDebug.LOG )
 							Log.d(TAG, "user clicked about");
 						AlertDialog.Builder alertDialog = new AlertDialog.Builder(MyPreferenceFragment.this.getActivity());
-						alertDialog.setTitle(getActivity().getResources().getString(R.string.preference_about));
+						alertDialog.setTitle(resources.getString(R.string.preference_about));
 						final StringBuilder about_string = new StringBuilder();
 						String version = "UNKNOWN_VERSION";
 						int version_code = -1;
@@ -784,12 +836,17 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 						about_string.append("HedgeCam v");
 						about_string.append(version);
 						about_string.append("\n\n(c) 2016-2017 alex82 aka Caddish Hedgehog");
-						about_string.append("\nBased on Open Camera by Mark Harman");
-						about_string.append("\nReleased under the GPL v3 or later");
-						final String translation = getActivity().getResources().getString(R.string.translation_author);
+						about_string.append("\n\n");
+						about_string.append(resources.getString(R.string.about_credits));
+						final String translation = resources.getString(R.string.translation_author);
 						if (translation.length() > 0) {
-							about_string.append("\n\nTranslation: ");
+							about_string.append("\n\n");
+							about_string.append(resources.getString(R.string.preference_about_translation));
+							about_string.append(": ");
 							about_string.append(translation);
+						}
+						if (was_donations) {
+							about_string.append("\n\n" + resources.getString(R.string.thank_you_summary));
 						}
 						alertDialog.setMessage(about_string);
 						alertDialog.setPositiveButton(android.R.string.ok, null);
@@ -809,7 +866,7 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 						if( MyDebug.LOG )
 							Log.d(TAG, "user clicked info");
 						AlertDialog.Builder alertDialog = new AlertDialog.Builder(MyPreferenceFragment.this.getActivity());
-						alertDialog.setTitle(getActivity().getResources().getString(R.string.preference_info));
+						alertDialog.setTitle(resources.getString(R.string.preference_info));
 						final StringBuilder about_string = new StringBuilder();
 						String version = "UNKNOWN_VERSION";
 						int version_code = -1;
@@ -859,6 +916,8 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 							about_string.append("x");
 							about_string.append(display_size.y);
 						}
+						about_string.append("\nHas navigation bar?: ");
+						about_string.append(has_navigation_bar ? "yes" : "no");
 						about_string.append("\nCurrent camera ID: ");
 						about_string.append(cameraId);
 						about_string.append("\nNo. of cameras: ");
@@ -937,19 +996,19 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 						about_string.append("\nVideo frame rate: ");
 						about_string.append(video_frame_rate);
 						about_string.append("\nAuto-stabilise?: ");
-						about_string.append(getString(supports_auto_stabilise ? R.string.about_available : R.string.about_not_available));
+						about_string.append(supports_auto_stabilise ? "available" : "not available");
 						about_string.append("\nAuto-stabilise enabled?: ");
 						about_string.append(sharedPreferences.getBoolean(Prefs.AUTO_STABILISE, false));
 						about_string.append("\nFace detection?: ");
-						about_string.append(getString(supports_face_detection ? R.string.about_available : R.string.about_not_available));
+						about_string.append(supports_face_detection ? "available" : "not available");
 						about_string.append("\nRAW?: ");
-						about_string.append(getString(supports_raw ? R.string.about_available : R.string.about_not_available));
+						about_string.append(supports_raw ? "available" : "not available");
 						about_string.append("\nHDR?: ");
-						about_string.append(getString(supports_hdr ? R.string.about_available : R.string.about_not_available));
+						about_string.append(supports_hdr ? "available" : "not available");
 						about_string.append("\nExpo?: ");
-						about_string.append(getString(supports_expo_bracketing ? R.string.about_available : R.string.about_not_available));
+						about_string.append(supports_expo_bracketing ? "available" : "not available");
 						about_string.append("\nExpo compensation?: ");
-						about_string.append(getString(supports_exposure_compensation ? R.string.about_available : R.string.about_not_available));
+						about_string.append(supports_exposure_compensation ? "available" : "not available");
 						if( supports_exposure_compensation ) {
 							about_string.append("\nExposure compensation range: ");
 							about_string.append(exposure_compensation_min);
@@ -957,7 +1016,7 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 							about_string.append(exposure_compensation_max);
 						}
 						about_string.append("\nManual ISO?: ");
-						about_string.append(getString(supports_iso_range ? R.string.about_available : R.string.about_not_available));
+						about_string.append(supports_iso_range ? "available" : "not available");
 						if( supports_iso_range ) {
 							about_string.append("\nISO range: ");
 							about_string.append(iso_range_min);
@@ -965,7 +1024,7 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 							about_string.append(iso_range_max);
 						}
 						about_string.append("\nManual exposure?: ");
-						about_string.append(getString(supports_exposure_time ? R.string.about_available : R.string.about_not_available));
+						about_string.append(supports_exposure_time ? "available" : "not available");
 						if( supports_exposure_time ) {
 							about_string.append("\nExposure range: ");
 							about_string.append(exposure_time_min);
@@ -973,7 +1032,7 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 							about_string.append(exposure_time_max);
 						}
 						about_string.append("\nManual WB?: ");
-						about_string.append(getString(supports_white_balance_temperature ? R.string.about_available : R.string.about_not_available));
+						about_string.append(supports_white_balance_temperature ? "available" : "not available");
 						if( supports_white_balance_temperature ) {
 							about_string.append("\nWB temperature: ");
 							about_string.append(white_balance_temperature_min);
@@ -981,9 +1040,9 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 							about_string.append(white_balance_temperature_max);
 						}
 						about_string.append("\nVideo stabilization?: ");
-						about_string.append(getString(supports_video_stabilization ? R.string.about_available : R.string.about_not_available));
+						about_string.append(supports_video_stabilization ? "available" : "not available");
 						about_string.append("\nCan disable shutter sound?: ");
-						about_string.append(getString(can_disable_shutter_sound ? R.string.answer_yes : R.string.answer_no));
+						about_string.append(can_disable_shutter_sound ? "yes" : "no");
 						about_string.append("\nFlash modes: ");
 						String [] flash_values = bundle.getStringArray("flash_values");
 						if( flash_values != null && flash_values.length > 0 ) {
@@ -1103,9 +1162,22 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 							else about_string.append(optical_stabilization_mode);
 						}
 
+						if (hot_pixel_correction_modes != null && hot_pixel_correction_modes.length > 0) {
+							about_string.append("\nHot pixel modes: ");
+							for (int i = 0; i < hot_pixel_correction_modes.length; i++) {
+								if (i > 0) {
+									about_string.append(", ");
+								}
+								about_string.append(hot_pixel_correction_modes[i]);
+							}
+							about_string.append("\nHot pixel mode: ");
+							if (hot_pixel_correction_mode == null) about_string.append("None");
+							else about_string.append(hot_pixel_correction_mode);
+						}
+
 						about_string.append("\nUsing SAF?: ");
 						about_string.append(sharedPreferences.getBoolean(Prefs.USING_SAF, false));
-						String save_location = sharedPreferences.getString(Prefs.SAVE_LOCATION, "OpenCamera");
+						String save_location = sharedPreferences.getString(Prefs.SAVE_LOCATION, "HedgeCam");
 						about_string.append("\nSave Location: ");
 						about_string.append(save_location);
 						String save_location_saf = sharedPreferences.getString(Prefs.SAVE_LOCATION_SAF, "");
@@ -1127,9 +1199,9 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 							public void onClick(DialogInterface dialog, int id) {
 								if( MyDebug.LOG )
 									Log.d(TAG, "user clicked copy to clipboard");
-							 	ClipboardManager clipboard = (ClipboardManager) getActivity().getSystemService(Activity.CLIPBOARD_SERVICE); 
-							 	ClipData clip = ClipData.newPlainText("About", about_string);
-							 	clipboard.setPrimaryClip(clip);
+								ClipboardManager clipboard = (ClipboardManager) getActivity().getSystemService(Activity.CLIPBOARD_SERVICE);
+								ClipData clip = ClipData.newPlainText("About", about_string);
+								clipboard.setPrimaryClip(clip);
 							}
 						});
 						alertDialog.show();
@@ -1178,6 +1250,98 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 				}
 			});
 		}
+		
+		{
+			was_donations = sharedPreferences.getBoolean("was_donations", false);
+
+			if (!MyDebug.GOOGLE_PLAY) {
+				
+				
+				PreferenceCategory cat = new PreferenceCategory(getActivity());
+				cat.setKey("preference_category_webmoney_donations");
+				cat.setTitle("WebMoney");
+				((PreferenceGroup)findPreference("preference_screen_donate")).addPreference(cat);
+				OnPreferenceClickListener listener = new OnPreferenceClickListener() {
+					@Override
+					public boolean onPreferenceClick(Preference pref) {
+						ClipboardManager clipboard = (ClipboardManager) getActivity().getSystemService(Activity.CLIPBOARD_SERVICE);
+						ClipData clip = ClipData.newPlainText("WebMoney wallet", pref.getSummary());
+						clipboard.setPrimaryClip(clip);
+						((MainActivity)getActivity()).getPreview().showToast(null, R.string.wallet_was_copied);
+						return true;
+					}
+				};
+				Preference pref = new Preference(getActivity());
+				pref.setKey("wmu");
+				pref.setTitle("WMU");
+				pref.setSummary("Z843102502936");
+				pref.setOnPreferenceClickListener(listener);
+				cat.addPreference(pref);
+				
+				pref = new Preference(getActivity());
+				pref.setKey("wmr");
+				pref.setTitle("WMR");
+				pref.setSummary("R420923406561");
+				pref.setOnPreferenceClickListener(listener);
+				cat.addPreference(pref);
+			}
+
+			donations.init(new Donations.DonationsListener() {
+				@Override
+				public void onReady() {
+					if (!was_donations && donations.wasThereDonations()) {
+						was_donations = true;
+						SharedPreferences.Editor editor = sharedPreferences.edit();
+						editor.putBoolean("was_donations", true);
+						editor.apply();
+					}
+					
+					List<Donations.PlayDonation> list = donations.getPlayDonations();
+					if (list.size() > 0) {
+						PreferenceCategory cat = new PreferenceCategory(getActivity());
+						cat.setKey("preference_category_play_donations");
+						cat.setTitle("Google Play");
+						((PreferenceGroup)findPreference("preference_screen_donate")).addPreference(cat);
+						
+						String donate = resources.getString(R.string.donate);
+						OnPreferenceClickListener listener = new OnPreferenceClickListener() {
+							@Override
+							public boolean onPreferenceClick(Preference pref) {
+								donations.donate(pref.getKey());
+								return true;
+							}
+						};
+						for (Donations.PlayDonation item : list) {
+							Preference pref = new Preference(getActivity());
+							pref.setKey(item.id);
+							pref.setTitle(donate + " " + item.amount);
+							pref.setOnPreferenceClickListener(listener);
+							
+							cat.addPreference(pref);
+						}
+					} else if (MyDebug.GOOGLE_PLAY) {
+						removePref("preference_category_mics", "preference_screen_donate");
+					}
+				}
+
+				@Override
+				public void onDonationMade(String id) {
+					if (!was_donations) {
+						was_donations = true;
+						SharedPreferences.Editor editor = sharedPreferences.edit();
+						editor.putBoolean("was_donations", true);
+						editor.apply();
+					}
+
+					AlertDialog.Builder alertDialog = new AlertDialog.Builder(MyPreferenceFragment.this.getActivity());
+					alertDialog.setTitle(resources.getString(R.string.thank_you));
+					alertDialog.setMessage(resources.getString(R.string.thank_you_summary));
+					alertDialog.setPositiveButton(android.R.string.ok, null);
+					alertDialog.show();
+				}
+			});
+
+		}
 	}
 	
 	public static class SaveFolderChooserDialog extends FolderChooserDialog {
@@ -1200,7 +1364,7 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 		// note, setting color here only seems to affect the "main" preference fragment screen, and not sub-screens
 		// note, on Galaxy Nexus Android 4.3 this sets to black rather than the dark grey that the background theme should be (and what the sub-screens use); works okay on Nexus 7 Android 5
 		// we used to use a light theme for the PreferenceFragment, but mixing themes in same activity seems to cause problems (e.g., for EditTextPreference colors)
-		TypedArray array = getActivity().getTheme().obtainStyledAttributes(new int[] {  
+		TypedArray array = getActivity().getTheme().obtainStyledAttributes(new int[] {
 				android.R.attr.colorBackground
 		});
 		int backgroundColor = array.getColor(0, Color.BLACK);
@@ -1224,15 +1388,27 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 	/* So that manual changes to the checkbox/switch preferences, while the preferences are showing, show up;
 	 * in particular, needed for preference_using_saf, when the user cancels the SAF dialog (see
 	 * MainActivity.onActivityResult).
+	 * Also programmatically sets summary (see setSummary).
 	 */
 	public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
 		if( MyDebug.LOG )
 			Log.d(TAG, "onSharedPreferenceChanged");
 		Preference pref = findPreference(key);
-		if( pref instanceof TwoStatePreference ){
+		if( pref instanceof TwoStatePreference ) {
 			TwoStatePreference twoStatePref = (TwoStatePreference)pref;
 			twoStatePref.setChecked(prefs.getBoolean(key, true));
 		}
+		else if( pref instanceof  ListPreference ) {
+			ListPreference listPref = (ListPreference)pref;
+			listPref.setValue(prefs.getString(key, ""));
+		}
+	}
+	
+	public void onActivityResult(int requestCode, int resultCode, Intent resultData) {
+		if( MyDebug.LOG )
+			Log.d(TAG, "onActivityResult");
+		if (donations != null)
+			donations.handleActivityResult(requestCode, resultCode, resultData);
 	}
 	
 	private void removePref(final String pref_group_name, final String pref_name) {
@@ -1245,5 +1421,13 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 			Preference pref = findPreference(pref_name);
 			if (pref != null) pg.removePreference(pref);
 		}
+	}
+	
+	@Override
+	public void onDestroy() {
+		if (donations != null)
+			donations.onDestroy();
+
+		super.onDestroy();
 	}
 }

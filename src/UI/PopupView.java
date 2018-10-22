@@ -1,6 +1,5 @@
 package com.caddish_hedgehog.hedgecam2.UI;
 
-import com.caddish_hedgehog.hedgecam2.IconView;
 import com.caddish_hedgehog.hedgecam2.MainActivity;
 import com.caddish_hedgehog.hedgecam2.MyApplicationInterface;
 import com.caddish_hedgehog.hedgecam2.MyDebug;
@@ -8,6 +7,7 @@ import com.caddish_hedgehog.hedgecam2.Prefs;
 import com.caddish_hedgehog.hedgecam2.R;
 import com.caddish_hedgehog.hedgecam2.CameraController.CameraController;
 import com.caddish_hedgehog.hedgecam2.Preview.Preview;
+import com.caddish_hedgehog.hedgecam2.UI.IconView;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -78,6 +78,7 @@ public class PopupView extends LinearLayout {
 
 	private int picture_size_index = -1;
 	private int video_size_index = -1;
+	private int video_capture_rate_index = -1;
 	private int timer_index = -1;
 	private int burst_mode_index = -1;
 	private int burst_interval_index = -1;
@@ -364,53 +365,53 @@ public class PopupView extends LinearLayout {
 				});
 			}
 
-			if (!main_activity.getPreview().isVideoRecording()) {
-				if (!main_activity.getMainUI().isVisible(R.id.focus_mode) && Prefs.getPhotoMode() != Prefs.PhotoMode.FocusBracketing) {
-					// make a copy of getSupportedFocusValues() so we can modify it
-					List<String> supported_focus_values = preview.getSupportedFocusValues();
-					if( supported_focus_values != null ) {
-						supported_focus_values = new ArrayList<>(supported_focus_values);
-						// only show appropriate continuous focus mode
-						if( preview.isVideo() ) {
-							supported_focus_values.remove("focus_mode_continuous_picture");
-						}
-						else {
-							supported_focus_values.remove("focus_mode_continuous_video");
-						}
+			if (!main_activity.getMainUI().isVisible(R.id.focus_mode) && (preview.isVideo() || Prefs.getPhotoMode() != Prefs.PhotoMode.FocusBracketing)) {
+				// make a copy of getSupportedFocusValues() so we can modify it
+				List<String> supported_focus_values = preview.getSupportedFocusValues();
+				if( supported_focus_values != null ) {
+					supported_focus_values = new ArrayList<>(supported_focus_values);
+					// only show appropriate continuous focus mode
+					if( preview.isVideo() ) {
+						supported_focus_values.remove("focus_mode_continuous_picture");
 					}
-					addButtonOptionsToPopup(supported_focus_values, R.array.focus_mode_icons, R.array.focus_mode_values, R.array.focus_mode_keys,
-							getResources().getString(R.string.focus_mode), preview.getCurrentFocusValue(), "TEST_FOCUS",
-							new ButtonOptionsPopupListener() {
-						@Override
-						public void onClick(String option) {
-							if( MyDebug.LOG )
-								Log.d(TAG, "clicked focus: " + option);
-							final String old_value = preview.getCurrentFocusValue();
-							preview.updateFocus(option, false, true);
-							if (!preview.isTakingPhotoOrOnTimer() && 
-									!(preview.isVideo() && main_activity.getSharedPrefs()
-									.getBoolean(Prefs.UPDATE_FOCUS_FOR_VIDEO, false))) {
-								if (!preview.usingCamera2API() && (option.equals("focus_mode_infinity") || option.equals("focus_mode_edof"))) {
-									preview.reopenCamera();
-								}
+					else {
+						supported_focus_values.remove("focus_mode_continuous_video");
+					}
+				}
+				addButtonOptionsToPopup(supported_focus_values, R.array.focus_mode_icons, R.array.focus_mode_values, R.array.focus_mode_keys,
+						getResources().getString(R.string.focus_mode), preview.getCurrentFocusValue(), "TEST_FOCUS",
+						new ButtonOptionsPopupListener() {
+					@Override
+					public void onClick(String option) {
+						if( MyDebug.LOG )
+							Log.d(TAG, "clicked focus: " + option);
+						final String old_value = preview.getCurrentFocusValue();
+						preview.updateFocus(option, false, true);
+						if (!preview.isTakingPhotoOrOnTimer() && 
+								!(preview.isVideo() && main_activity.getSharedPrefs()
+								.getBoolean(Prefs.UPDATE_FOCUS_FOR_VIDEO, false))) {
+							if (!preview.usingCamera2API() && (option.equals("focus_mode_infinity") || option.equals("focus_mode_edof"))) {
+								preview.reopenCamera();
+							}
 
-								if (option.equals("focus_mode_manual2")) {
+							if (option.equals("focus_mode_manual2")) {
+								main_activity.getMainUI().setManualFocusSeekbars();
+								main_activity.getMainUI().layoutSeekbars();
+							} else {
+								if (old_value != null && old_value.equals("focus_mode_manual2")) {
 									main_activity.getMainUI().setManualFocusSeekbars();
 									main_activity.getMainUI().layoutSeekbars();
-								} else {
-									if (old_value != null && old_value.equals("focus_mode_manual2")) {
-										main_activity.getMainUI().setManualFocusSeekbars();
-										main_activity.getMainUI().layoutSeekbars();
-									}
-									if (old_value != null && (old_value.equals("focus_mode_infinity") || old_value.equals("focus_mode_edof")))
-										preview.setCenterFocus();
 								}
+								if (old_value != null && (old_value.equals("focus_mode_infinity") || old_value.equals("focus_mode_edof")))
+									preview.setCenterFocus();
 							}
-							main_activity.getMainUI().destroyPopup(); // need to recreate popup for new selection
 						}
-					});
-				}
+						main_activity.getMainUI().destroyPopup(); // need to recreate popup for new selection
+					}
+				});
+			}
 
+			if (!main_activity.getPreview().isVideoRecording()) {
 				if (!main_activity.getMainUI().isVisible(R.id.iso) && sharedPreferences.getBoolean(Prefs.POPUP_ISO, true)) {
 					List<String> supported_isos = getSupportedISOs(main_activity);
 					final String current_iso = Prefs.getISOPref();
@@ -452,45 +453,52 @@ public class PopupView extends LinearLayout {
 				}
 
 				if( sharedPreferences.getBoolean(Prefs.POPUP_AUTO_STABILISE, true) && (preview.isVideo() ? preview.supportsVideoStabilization() : main_activity.supportsAutoStabilise()) ) {
-					// Костыль
-					View view = new LinearLayout(main_activity);
-					view.setPadding(0, elements_gap, 0, 0);
-					
-					CheckBox checkBox = new CheckBox(main_activity);
-					checkBox.setText(getResources().getString(preview.isVideo() ? R.string.preference_video_stabilization : R.string.preference_auto_stabilise));
-					checkBox.setTextColor(negative ? Color.BLACK : Color.WHITE);
-					checkBox.setTextSize(TypedValue.COMPLEX_UNIT_PX, text_size_main);
+					addCheckBoxToPopup(
+						getResources().getString(preview.isVideo() ? R.string.preference_video_stabilization : R.string.preference_auto_stabilise),
+						preview.isVideo() ? Prefs.VIDEO_STABILIZATION : Prefs.AUTO_STABILISE, false,
+						new CheckBoxPopupListener() {
+							@Override
+							public void onCheckedChanged(boolean isChecked) {
+								boolean done_dialog = false;
+								if( isChecked ) {
+									boolean done_auto_stabilise_info = sharedPreferences.contains(preview.isVideo() ? Prefs.DONE_VIDEO_STABILIZATION_INFO : Prefs.DONE_AUTO_STABILISE_INFO);
+									if( !done_auto_stabilise_info ) {
+										if (preview.isVideo()) showInfoDialog(R.string.preference_video_stabilization, R.string.preference_video_stabilization_summary, Prefs.DONE_VIDEO_STABILIZATION_INFO);
+										else showInfoDialog(R.string.preference_auto_stabilise, R.string.auto_stabilise_info, Prefs.DONE_AUTO_STABILISE_INFO);
+										done_dialog = true;
+									}
+								}
 
-					boolean auto_stabilise = sharedPreferences.getBoolean(preview.isVideo() ? Prefs.VIDEO_STABILIZATION : Prefs.AUTO_STABILISE, false);
-					if( auto_stabilise )
-						checkBox.setChecked(auto_stabilise);
-					checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-						public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-							final SharedPreferences sharedPreferences = main_activity.getSharedPrefs();
-							SharedPreferences.Editor editor = sharedPreferences.edit();
-							editor.putBoolean(preview.isVideo() ? Prefs.VIDEO_STABILIZATION : Prefs.AUTO_STABILISE, isChecked);
-							editor.apply();
-
-							boolean done_dialog = false;
-							if( isChecked ) {
-								boolean done_auto_stabilise_info = sharedPreferences.contains(preview.isVideo() ? Prefs.DONE_VIDEO_STABILIZATION_INFO : Prefs.DONE_AUTO_STABILISE_INFO);
-								if( !done_auto_stabilise_info ) {
-									if (preview.isVideo()) showInfoDialog(R.string.preference_video_stabilization, R.string.preference_video_stabilization_summary, Prefs.DONE_VIDEO_STABILIZATION_INFO);
-									else showInfoDialog(R.string.preference_auto_stabilise, R.string.auto_stabilise_info, Prefs.DONE_AUTO_STABILISE_INFO);
-									done_dialog = true;
+								if( !done_dialog ) {
+									String message = getResources().getString(preview.isVideo() ? R.string.preference_video_stabilization : R.string.preference_auto_stabilise) + ": " + getResources().getString(isChecked ? R.string.on : R.string.off);
+									preview.showToast(main_activity.getChangedAutoStabiliseToastBoxer(), message);
 								}
 							}
-
-							if( !done_dialog ) {
-								String message = getResources().getString(preview.isVideo() ? R.string.preference_video_stabilization : R.string.preference_auto_stabilise) + ": " + getResources().getString(isChecked ? R.string.on : R.string.off);
-								preview.showToast(main_activity.getChangedAutoStabiliseToastBoxer(), message);
-							}
-							main_activity.getMainUI().closePopup(); // don't need to destroy popup
 						}
-					});
-
-					this.addView(view);
-					this.addView(checkBox);
+					);
+				}
+				
+				if( sharedPreferences.getBoolean(Prefs.POPUP_OPTICAL_STABILIZATION, false) &&  preview.getCameraController() != null) {
+					final List<String> modes = preview.getCameraController().getAvailableOpticalStabilizationModes();
+					if (modes.size() == 2) {
+						final String mode = preview.getCameraController().getOpticalStabilizationMode();
+						if (mode != null) {
+							addCheckBoxToPopup(getResources().getString(R.string.preference_optical_stabilization), mode.equals("on"), new CompoundButton.OnCheckedChangeListener() {
+								public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+									String value = isChecked ? "on" : "off";
+									
+									if (preview.getCameraController() != null && preview.getCameraController().setOpticalStabilizationMode(value)) {
+										final SharedPreferences sharedPreferences = main_activity.getSharedPrefs();
+										SharedPreferences.Editor editor = sharedPreferences.edit();
+										editor.putString(Prefs.OPTICAL_STABILIZATION + "_" + camera_id, value);
+										editor.apply();
+									}
+									
+									main_activity.getMainUI().closePopup(); // don't need to destroy popup
+								}
+							});
+						}
+					}
 				}
 
 				if (sharedPreferences.getBoolean(Prefs.POPUP_RESOLUTION, true)) {
@@ -549,8 +557,23 @@ public class PopupView extends LinearLayout {
 							}
 						});
 					} else {
-						final List<String> video_sizes = preview.getVideoQualityHander().getSupportedVideoQuality();
-						video_size_index = preview.getVideoQualityHander().getCurrentVideoQualityIndex();
+						List<String> video_sizes = preview.getSupportedVideoQuality(Prefs.getVideoFPSPref());
+						if( video_sizes.size() == 0 ) {
+							Log.e(TAG, "can't find any supported video sizes for current fps!");
+							// fall back to unfiltered list
+							video_sizes = preview.getVideoQualityHander().getSupportedVideoQuality();
+						}
+						final List<String> video_sizes_f = video_sizes;
+						video_size_index = 0; // default to largest
+						for(int i=0;i<video_sizes.size();i++) {
+							String video_size = video_sizes.get(i);
+							if( video_size.equals(preview.getVideoQualityHander().getCurrentVideoQuality()) ) {
+								video_size_index = i;
+								break;
+							}
+						}
+						if( MyDebug.LOG )
+							Log.d(TAG, "video_size_index:" + video_size_index);
 						final List<String> video_size_strings = new ArrayList<>();
 						for(String video_size : video_sizes) {
 							String quality_string = preview.getCamcorderProfileDescriptionShort(video_size);
@@ -571,7 +594,7 @@ public class PopupView extends LinearLayout {
 							private void update() {
 								if( video_size_index == -1 )
 									return;
-								String quality = video_sizes.get(video_size_index);
+								String quality = video_sizes_f.get(video_size_index);
 								SharedPreferences sharedPreferences = main_activity.getSharedPrefs();
 								SharedPreferences.Editor editor = sharedPreferences.edit();
 								editor.putString(Prefs.getVideoQualityPreferenceKey(), quality);
@@ -592,10 +615,90 @@ public class PopupView extends LinearLayout {
 							}
 							@Override
 							public int onClickNext() {
-								if( video_size_index != -1 && video_size_index < video_sizes.size()-1 ) {
+								if( video_size_index != -1 && video_size_index < video_sizes_f.size()-1 ) {
 									video_size_index++;
 									update();
 									return video_size_index;
+								}
+								return -1;
+							}
+						});
+					}
+				}
+
+				if (preview.isVideo() && sharedPreferences.getBoolean(Prefs.POPUP_CAPTURE_RATE, true)) {
+					final List<Float> capture_rate_values = preview.getSupportedVideoCaptureRates();
+					if( capture_rate_values.size() > 1 ) {
+						if( MyDebug.LOG )
+							Log.d(TAG, "add slow motion / timelapse video options");
+							//fixme
+						float capture_rate_value = sharedPreferences.getFloat(Prefs.CAPTURE_RATE, 1.0f);
+						final List<String> capture_rate_str = new ArrayList<>();
+						int capture_rate_std_index = -1;
+						for(int i=0;i<capture_rate_values.size();i++) {
+							float this_capture_rate = capture_rate_values.get(i);
+							if( Math.abs(1.0f - this_capture_rate) < 1.0e-5 ) {
+								capture_rate_str.add(getResources().getString(R.string.default_str));
+								capture_rate_std_index = i;
+							}
+							else {
+								capture_rate_str.add("" + this_capture_rate + "x");
+							}
+							if( Math.abs(capture_rate_value - this_capture_rate) < 1.0e-5 ) {
+								video_capture_rate_index = i;
+							}
+						}
+						if( video_capture_rate_index == -1 ) {
+							if( MyDebug.LOG )
+								Log.d(TAG, "can't find video_capture_rate_index");
+							// default to no slow motion or timelapse
+							video_capture_rate_index = capture_rate_std_index;
+							if( video_capture_rate_index == -1 ) {
+								Log.e(TAG, "can't find capture_rate_std_index");
+								video_capture_rate_index = 0;
+							}
+						}
+						addArrayOptionsToPopup(capture_rate_str, getResources().getString(R.string.preference_video_capture_rate), false, video_capture_rate_index, false, false, "VIDEOCAPTURERATE", new ArrayOptionsPopupListener() {
+							private int old_video_capture_rate_index = video_capture_rate_index;
+
+							private void update() {
+								if( video_capture_rate_index == -1 )
+									return;
+								float new_capture_rate_value = capture_rate_values.get(video_capture_rate_index);
+								SharedPreferences.Editor editor = sharedPreferences.edit();
+								// fixme
+								editor.putFloat(Prefs.CAPTURE_RATE, new_capture_rate_value);
+								editor.apply();
+								float old_capture_rate_value = capture_rate_values.get(old_video_capture_rate_index);
+								boolean old_slow_motion = (old_capture_rate_value < 1.0f-1.0e-5f);
+								boolean new_slow_motion = (new_capture_rate_value < 1.0f-1.0e-5f);
+								// if changing to/from a slow motion mode, this will in general switch on/off high fps frame
+								// rates, which changes the available video resolutions, so we need to re-open the popup
+								boolean keep_popup = old_slow_motion == new_slow_motion;
+								if( MyDebug.LOG ) {
+									Log.d(TAG, "update settings due to capture rate change");
+									Log.d(TAG, "old_capture_rate_value: " + old_capture_rate_value);
+									Log.d(TAG, "new_capture_rate_value: " + new_capture_rate_value);
+								}
+								old_video_capture_rate_index = video_capture_rate_index;
+
+								main_activity.updateForSettings(null, keep_popup);
+							}
+							@Override
+							public int onClickPrev() {
+								if( video_capture_rate_index != -1 && video_capture_rate_index > 0 ) {
+									video_capture_rate_index--;
+									update();
+									return video_capture_rate_index;
+								}
+								return -1;
+							}
+							@Override
+							public int onClickNext() {
+								if( video_capture_rate_index != -1 && video_capture_rate_index < capture_rate_values.size()-1 ) {
+									video_capture_rate_index++;
+									update();
+									return video_capture_rate_index;
 								}
 								return -1;
 							}
@@ -842,6 +945,19 @@ public class PopupView extends LinearLayout {
 							return -1;
 						}
 					});
+				}
+
+				if( sharedPreferences.getBoolean(Prefs.POPUP_GHOST_IMAGE, false)) {
+					addCheckBoxToPopup(
+						getResources().getString(R.string.preference_ghost_image),
+						Prefs.GHOST_IMAGE, false,
+						new CheckBoxPopupListener() {
+							@Override
+							public void onCheckedChanged(boolean isChecked) {
+								main_activity.getMainUI().setOverlayImage();
+							}
+						}
+					);
 				}
 
 				if (!preview.isVideo()) {
@@ -1292,7 +1408,16 @@ public class PopupView extends LinearLayout {
 		public abstract void onClick(String option);
 	}
 	
-	private void addButtonOptionsToPopup(List<String> options, int icons_id, int values_id, int keys_id, String prefix_string, String current_value, String test_key, final ButtonOptionsPopupListener listener) {
+	private void addButtonOptionsToPopup(
+		List<String> options,
+		int icons_id,
+		int values_id,
+		int keys_id,
+		String prefix_string,
+		String current_value,
+		String test_key,
+		final ButtonOptionsPopupListener listener
+	) {
 		if( MyDebug.LOG )
 			Log.d(TAG, "addButtonOptionsToPopup");
 		if( options != null ) {
@@ -1511,9 +1636,17 @@ public class PopupView extends LinearLayout {
 		}
 	}
 
-	private void addTextButtonOptionsToPopup(List<String> supported_options, final String title,
-			int icons_id, int values_id, int names_id, int keys_id,
-			String current_value, String test_key, final ButtonOptionsPopupListener listener) {
+	private void addTextButtonOptionsToPopup(
+		List<String> supported_options,
+		final String title,
+		int icons_id,
+		int values_id,
+		int names_id,
+		int keys_id,
+		String current_value,
+		String test_key,
+		final ButtonOptionsPopupListener listener
+	) {
 
 		if( MyDebug.LOG )
 			Log.d(TAG, "addTextButtonOptionsToPopup");
@@ -1615,7 +1748,15 @@ public class PopupView extends LinearLayout {
 		public abstract void onClick(String selected_value);
 	}
 
-	private void addRadioOptionsToPopup(final List<String> supported_options, final String title, final String prefix, final String preference_key, final String current_option, final String test_key, final RadioOptionsListener listener) {
+	private void addRadioOptionsToPopup(
+		final List<String> supported_options,
+		final String title,
+		final String prefix,
+		final String preference_key,
+		final String current_option,
+		final String test_key,
+		final RadioOptionsListener listener
+	) {
 		if( MyDebug.LOG )
 			Log.d(TAG, "addRadioOptionsToPopup: " + title);
 		if( supported_options != null ) {
@@ -1628,7 +1769,15 @@ public class PopupView extends LinearLayout {
 		}
 	}
 
-	private void addExpandableRadioOptionsToPopup(final List<String> supported_options, final String title, final String prefix, final String preference_key, final String current_option, final String test_key, final RadioOptionsListener listener) {
+	private void addExpandableRadioOptionsToPopup(
+		final List<String> supported_options,
+		final String title,
+		final String prefix,
+		final String preference_key,
+		final String current_option,
+		final String test_key,
+		final RadioOptionsListener listener
+	) {
 		if( MyDebug.LOG )
 			Log.d(TAG, "addExpandableRadioOptionsToPopup: " + title);
 		if( supported_options != null ) {
@@ -1715,7 +1864,16 @@ public class PopupView extends LinearLayout {
 		}
 	}
 
-	private void addRadioOptionsToGroup(final RadioGroup rg, List<String> supported_options, final String title, final String prefix, final String preference_key, final String current_option, final String test_key, final RadioOptionsListener listener) {
+	private void addRadioOptionsToGroup(
+		final RadioGroup rg,
+		List<String> supported_options,
+		final String title,
+		final String prefix,
+		final String preference_key,
+		final String current_option,
+		final String test_key,
+		final RadioOptionsListener listener
+	) {
 		if( MyDebug.LOG )
 			Log.d(TAG, "addRadioOptionsToGroup: " + title);
 		final long debug_time = System.nanoTime();
@@ -1795,7 +1953,16 @@ public class PopupView extends LinearLayout {
 		public abstract int onClickNext();
 	}
 	
-	private void addArrayOptionsToPopup(final List<String> supported_options, final String title, final boolean title_in_options, final int current_index, final boolean cyclic, final boolean reverse, final String test_key, final ArrayOptionsPopupListener listener) {
+	private void addArrayOptionsToPopup(
+		final List<String> supported_options,
+		final String title,
+		final boolean title_in_options,
+		final int current_index,
+		final boolean cyclic,
+		final boolean reverse,
+		final String test_key,
+		final ArrayOptionsPopupListener listener
+	) {
 		if( supported_options != null && current_index != -1 ) {
 			if( !title_in_options ) {
 				addTitleToPopup(title);
@@ -1886,7 +2053,53 @@ public class PopupView extends LinearLayout {
 			this.addView(ll2);
 		}
 	}
+
+	private abstract class CheckBoxPopupListener {
+		public void onCheckedChanged(boolean isChecked) {};
+	}
+
+	private void addCheckBoxToPopup(
+		final String title,
+		final String preference_key,
+		final boolean default_value,
+		final CheckBoxPopupListener listener
+	) {
+		addCheckBoxToPopup(title, sharedPreferences.getBoolean(preference_key, default_value), new CompoundButton.OnCheckedChangeListener() {
+			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+				final SharedPreferences sharedPreferences = main_activity.getSharedPrefs();
+				SharedPreferences.Editor editor = sharedPreferences.edit();
+				editor.putBoolean(preference_key, isChecked);
+				editor.apply();
+				
+				listener.onCheckedChanged(isChecked);
+				
+				main_activity.getMainUI().closePopup(); // don't need to destroy popup
+			}
+		});
+	}
 	
+	private void addCheckBoxToPopup(
+		final String title,
+		final boolean checked,
+		final CompoundButton.OnCheckedChangeListener listener
+	) {
+		// Костыль
+		View view = new LinearLayout(main_activity);
+		view.setPadding(0, elements_gap, 0, 0);
+		
+		CheckBox checkBox = new CheckBox(main_activity);
+		checkBox.setText(title);
+		checkBox.setTextColor(negative ? Color.BLACK : Color.WHITE);
+		checkBox.setTextSize(TypedValue.COMPLEX_UNIT_PX, text_size_main);
+		
+		checkBox.setChecked(checked);
+		
+		checkBox.setOnCheckedChangeListener(listener);
+
+		this.addView(view);
+		this.addView(checkBox);
+	}
+
 	private void showInfoDialog(int title_id, int info_id, final String info_preference_key) {
 		final MainActivity main_activity = (MainActivity)this.getContext();
 		AlertDialog.Builder alertDialog = new AlertDialog.Builder(PopupView.this.getContext());
@@ -2022,4 +2235,5 @@ public class PopupView extends LinearLayout {
 		}
 		return popup_buttons.get(key);
 	}
+	
 }

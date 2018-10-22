@@ -3,6 +3,7 @@ package com.caddish_hedgehog.hedgecam2;
 import com.caddish_hedgehog.hedgecam2.CameraController.CameraController;
 import com.caddish_hedgehog.hedgecam2.CameraController.CameraControllerManager2;
 import com.caddish_hedgehog.hedgecam2.Preview.Preview;
+import com.caddish_hedgehog.hedgecam2.Preview.VideoProfile;
 import com.caddish_hedgehog.hedgecam2.UI.FolderChooserDialog;
 import com.caddish_hedgehog.hedgecam2.UI.MainUI;
 import com.caddish_hedgehog.hedgecam2.UI.PopupView;
@@ -126,8 +127,8 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 	private int audio_noise_sensitivity = -1;
 	private SpeechRecognizer speechRecognizer;
 	private boolean speechRecognizerIsStarted;
-	
-	//private boolean ui_placement_right = true;
+	private Handler speech_recognizer_handler = null;
+	private Runnable speech_recognizer_runnable = null;
 	
 	private final ToastBoxer switch_video_toast = new ToastBoxer();
 	private final ToastBoxer screen_locked_toast = new ToastBoxer();
@@ -178,6 +179,7 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 	public volatile String test_last_saved_image;
 
 	public boolean selfie_mode = false;
+	public boolean audio_control = false;
 	public boolean set_expo_metering_area = false;
 
 	private Handler immersive_timer_handler = null;
@@ -317,7 +319,7 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 		preview = new Preview(applicationInterface, ((ViewGroup) this.findViewById(R.id.preview)));
 		if( MyDebug.LOG )
 			Log.d(TAG, "onCreate: time after creating preview: " + (System.currentTimeMillis() - debug_time));
-		mainUI.preview = preview;
+		mainUI.setPreview(preview);
 
 		// initialise on-screen button visibility
 //		mainUI.showGUI(true);
@@ -396,7 +398,7 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 								immersive_timer_handler = null;
 							}
 						};
-					} else if (!mainUI.popupIsOpen() && (visibility & View.SYSTEM_UI_FLAG_LOW_PROFILE) == 0 && sharedPreferences.getString(Prefs.IMMERSIVE_MODE, "immersive_mode_low_profile").equals("immersive_mode_low_profile")) {
+					} else if (!mainUI.popupIsOpen() && (visibility & View.SYSTEM_UI_FLAG_LOW_PROFILE) == 0 && sharedPreferences.getString(Prefs.IMMERSIVE_MODE, "immersive_mode_off").equals("immersive_mode_low_profile")) {
 						immersive_timer_runnable = new Runnable() {
 							@Override
 							public void run() {
@@ -423,7 +425,7 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 									setFullscreen();
 							}
 						}, 3000);
-					} else if (!mainUI.popupIsOpen() && (visibility & View.SYSTEM_UI_FLAG_LOW_PROFILE) == 0 && sharedPreferences.getString(Prefs.IMMERSIVE_MODE, "immersive_mode_low_profile").equals("immersive_mode_low_profile")) {
+					} else if (!mainUI.popupIsOpen() && (visibility & View.SYSTEM_UI_FLAG_LOW_PROFILE) == 0 && sharedPreferences.getString(Prefs.IMMERSIVE_MODE, "immersive_mode_off").equals("immersive_mode_low_profile")) {
 						final Handler handler = new Handler();
 						handler.postDelayed(new Runnable() {
 							@Override
@@ -500,7 +502,7 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 						if( MyDebug.LOG )
 							Log.d(TAG, "TextToSpeech initialised");
 						if( status == TextToSpeech.SUCCESS ) {
-							textToSpeechSuccess = true;					
+							textToSpeechSuccess = true;
 							if( MyDebug.LOG )
 								Log.d(TAG, "TextToSpeech succeeded");
 						}
@@ -513,10 +515,9 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 			}
 		}).start();
 
-		if( sharedPreferences.getString(Prefs.AUDIO_CONTROL, "none").equals("none") ) {
-			selfie_mode = sharedPreferences.getBoolean(Prefs.SELFIE_MODE, false);
-			mainUI.setSelfieMode(selfie_mode);
-		}
+		selfie_mode = sharedPreferences.getBoolean(Prefs.SELFIE_MODE, false);
+		audio_control = sharedPreferences.getBoolean(Prefs.AUDIO_CONTROL, false);
+		mainUI.setSelfieMode(selfie_mode);
 		
 		mainUI.setFaceDetection(sharedPreferences.getBoolean(Prefs.FACE_DETECTION, false));
 
@@ -569,7 +570,7 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 			editor.apply();
 		}*/
 		
-		if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP ) {
+		if( !is_samsung && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP ) {
 			boolean camera2 = true;
 			CameraControllerManager2 manager2 = new CameraControllerManager2(this);
 			if( manager2.getNumberOfCameras() == 0 ) {
@@ -594,6 +595,21 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 				editor.putBoolean(Prefs.USE_CAMERA2, true);
 				editor.apply();
 			}
+		}
+
+		if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT ) {
+			final boolean has_navigation_bar;
+			int id = resources.getIdentifier("config_showNavigationBar", "bool", "android");
+			if (id > 0)
+				has_navigation_bar = resources.getBoolean(id);
+			else
+				has_navigation_bar = false;
+
+/*			if (has_navigation_bar) {
+				SharedPreferences.Editor editor = sharedPreferences.edit();
+				editor.putString(Prefs.IMMERSIVE_MODE, "immersive_mode_low_profile");
+				editor.apply();
+			}*/
 		}
 	}
 
@@ -812,7 +828,7 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 			// need to run on UI thread so that this function returns quickly (otherwise we'll have lag in processing the audio)
 			// but also need to check we're not currently taking a photo or on timer, so we don't repeatedly queue up takePicture() calls, or cancel a timer
 			long time_now = System.currentTimeMillis();
-			boolean want_audio_listener = sharedPreferences.getString(Prefs.AUDIO_CONTROL, "none").equals("noise");
+			boolean want_audio_listener = sharedPreferences.getString(Prefs.AUDIO_CONTROL_TYPE, "noise").equals("noise");
 			if( time_last_audio_trigger_photo != -1 && time_now - time_last_audio_trigger_photo < 5000 ) {
 				// avoid risk of repeatedly being triggered - as well as problem of being triggered again by the camera's own "beep"!
 				if( MyDebug.LOG )
@@ -868,7 +884,7 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 		}
 	}
 	
-	public boolean onKeyDown(int keyCode, KeyEvent event) { 
+	public boolean onKeyDown(int keyCode, KeyEvent event) {
 		if( MyDebug.LOG )
 			Log.d(TAG, "onKeyDown: " + keyCode);
 		for(int i=0;i<buttons_events.length;i++) {
@@ -876,18 +892,20 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 				String key_action = sharedPreferences.getString(buttons_preferences[i], "nothing");
 
 				if (key_action.equals("shutter_button")) {
-					takePicture();
+					if (event.getDownTime() == event.getEventTime())
+						takePicture();
 					return true;
 				} else if (key_action.equals("pause_video")) {
-					pauseVideo();
+					if (event.getDownTime() == event.getEventTime())
+						pauseVideo();
 					return true;
 				} else if (key_action.equals("selfie_mode")) {
 					return true;
 				} else if (key_action.equals("zoom_in")) {
-					this.zoomIn();
+					mainUI.zoomIn();
 					return true;
 				} else if (key_action.equals("zoom_out")) {
-					this.zoomOut();
+					mainUI.zoomOut();
 					return true;
 				} else if (key_action.equals("autofocus")) {
 					// important not to repeatedly request focus, even though main_activity.getPreview().requestAutoFocus() will cancel - causes problem with hardware camera key where a half-press means to focus
@@ -903,19 +921,31 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 					if (sharedPreferences.getBoolean(Prefs.ZOOM_WHEN_FOCUSING, false))
 						this.zoomWhenFocusing();
 
-					this.changeFocusDistance(1);
+					mainUI.changeFocusDistance(1);
 					return true;
 				} else if (key_action.equals("focus_minus")) {
 					if (sharedPreferences.getBoolean(Prefs.ZOOM_WHEN_FOCUSING, false))
 						this.zoomWhenFocusing();
 
-					this.changeFocusDistance(-1);
+					mainUI.changeFocusDistance(-1);
+					return true;
+				} else if (key_action.equals("iso_plus")) {
+					mainUI.changeISO(1);
+					return true;
+				} else if (key_action.equals("iso_minus")) {
+					mainUI.changeISO(-1);
 					return true;
 				} else if (key_action.equals("exposure_plus")) {
-					this.changeExposure(1);
+					mainUI.changeExposure(1);
 					return true;
 				} else if (key_action.equals("exposure_minus")) {
-					this.changeExposure(-1);
+					mainUI.changeExposure(-1);
+					return true;
+				} else if (key_action.equals("wb_plus")) {
+					mainUI.changeWhiteBalance(1);
+					return true;
+				} else if (key_action.equals("wb_minus")) {
+					mainUI.changeWhiteBalance(-1);
 					return true;
 				} else if (key_action.equals("really_nothing")) {
 					return true;
@@ -936,7 +966,20 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 			}*/
 			return true;
 		}
-		return super.onKeyDown(keyCode, event); 
+		return super.onKeyDown(keyCode, event);
+	}
+	
+	// For some stupid devices like LG G4
+	public boolean onKeyUp(int keyCode, KeyEvent event) {
+		if( MyDebug.LOG )
+			Log.d(TAG, "onKeyUp: " + keyCode);
+		for(int i=0;i<buttons_events.length;i++) {
+			if (keyCode == buttons_events[i]) {
+				if (!sharedPreferences.getString(buttons_preferences[i], "nothing").equals("nothing"))
+					return true;
+			}
+		}
+		return super.onKeyUp(keyCode, event);
 	}
 	
 	private void zoomWhenFocusing() {
@@ -964,25 +1007,6 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 		}
 	}
 
-	public void zoomIn() {
-		mainUI.changeSeekbar(R.id.zoom_seekbar, 1);
-	}
-	
-	public void zoomOut() {
-		mainUI.changeSeekbar(R.id.zoom_seekbar, -1);
-	}
-	
-	public void changeExposure(int change) {
-		mainUI.changeSeekbar(R.id.exposure_seekbar, change);
-	}
-
-	public void changeISO(int change) {
-		mainUI.changeSeekbar(R.id.iso_seekbar, change*10);
-	}
-
-	public void changeFocusDistance(int change) {
-		mainUI.changeSeekbar(R.id.focus_seekbar, change*10);
-	}
 	
 	private final SensorEventListener accelerometerListener = new SensorEventListener() {
 		@Override
@@ -1035,7 +1059,6 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 		mSensorManager.registerListener(magneticListener, mSensorMagnetic, delay);
 		orientationEventListener.enable();
 
-		initSpeechRecognizer();
 		initLocation();
 		initSound();
 
@@ -1043,8 +1066,13 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 
 		preview.onResume();
 
-		mainUI.showSeekbars();
-		mainUI.layoutUI();
+		if (getPreferenceFragment() == null) {
+			if (audio_control)
+				startAudioListeners();
+		
+			mainUI.showSeekbars();
+			mainUI.layoutUI(true);
+		}
 
 		if( MyDebug.LOG ) {
 			Log.d(TAG, "onResume: total time to resume: " + (System.currentTimeMillis() - debug_time));
@@ -1124,48 +1152,31 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 		mainUI.destroyPopup();
 		selfie_mode = !selfie_mode;
 		
-		String audio_control = sharedPreferences.getString(Prefs.AUDIO_CONTROL, "none");
-		if( audio_control.equals("voice") && speechRecognizer != null ) {
-			if (selfie_mode) {
-				if( !speechRecognizerIsStarted ) {
-					Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-					intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "en_US"); // since we listen for "cheese", ensure this works even for devices with different language settings
-					speechRecognizer.startListening(intent);
-					speechRecognizerIsStarted = true;
-				}
-			} else {
-				if( speechRecognizerIsStarted ) {
-					speechRecognizer.stopListening();
-					speechRecognizerIsStarted = false;
-				}
-			}
-		}
-		else if( audio_control.equals("noise") ){
-			if (selfie_mode) {
-				if( audio_listener == null ) {
-					startAudioListener();
-				}
-			} else {
-				if( audio_listener != null ) {
-					freeAudioListener(false);
-				}
-			}
-		}
-		else {
-			SharedPreferences.Editor editor = sharedPreferences.edit();
-			editor.putBoolean(Prefs.SELFIE_MODE, selfie_mode);
-			editor.apply();
-		}
+		SharedPreferences.Editor editor = sharedPreferences.edit();
+		editor.putBoolean(Prefs.SELFIE_MODE, selfie_mode);
+		editor.apply();
 
 		mainUI.setSelfieMode(selfie_mode);
 
 		mainUI.setTakePhotoIcon();
-		if( speechRecognizerIsStarted )
-			preview.showToast(audio_control_toast, R.string.speech_recognizer_started);
-		else if( audio_listener != null )
-			preview.showToast(audio_control_toast, R.string.audio_listener_started);
-		else
-			this.showPhotoVideoToast(true);
+		this.showPhotoVideoToast(true);
+	}
+
+	public void clickedAudioControl(View view) {
+		if( MyDebug.LOG )
+			Log.d(TAG, "clickedAudioControl");
+		audio_control = !audio_control;
+
+		SharedPreferences.Editor editor = sharedPreferences.edit();
+		editor.putBoolean(Prefs.AUDIO_CONTROL, audio_control);
+		editor.apply();
+
+		if (audio_control) {
+			startAudioListeners();
+		} else {
+			stopAudioListeners(false);
+		}
+		mainUI.setAudioControl(audio_control);
 	}
 
 	public void clickedFaceDetection(View view) {
@@ -1187,30 +1198,13 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 		
 		this.showPhotoVideoToast(true);
 	}
-/* remme
-	private void speechRecognizerStarted() {
-		if( MyDebug.LOG )
-			Log.d(TAG, "speechRecognizerStarted");
-		mainUI.audioControlStarted();
-		speechRecognizerIsStarted = true;
-	}
-*/
 	
-	private void speechRecognizerStopped() {
-		if( MyDebug.LOG )
-			Log.d(TAG, "speechRecognizerStopped");
-		if (!speechRecognizerIsStarted)
-			return;
-		speechRecognizerIsStarted = false;
-		selfie_mode = false;
-		mainUI.setSelfieMode(false);
-	}
 	/* Returns the cameraId that the "Switch camera" button will switch to.
 	 */
 	public int getNextCameraId() {
 		if( MyDebug.LOG )
 			Log.d(TAG, "getNextCameraId");
-		int cameraId = preview.getCameraId();
+		int cameraId = Prefs.getCameraIdPref();
 		if( MyDebug.LOG )
 			Log.d(TAG, "current cameraId: " + cameraId);
 		if( this.preview.canSwitchCamera() ) {
@@ -1235,6 +1229,7 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 			int cameraId = getNextCameraId();
 			View switchCameraButton = findViewById(R.id.switch_camera);
 			switchCameraButton.setEnabled(false); // prevent slowdown if user repeatedly clicks
+			Prefs.setCameraIdPref(cameraId);
 			this.preview.setCamera(cameraId);
 			mainUI.layoutUI();
 			switchCameraButton.setEnabled(true);
@@ -1256,6 +1251,7 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 			this.preview.switchVideo(false);
 			switchVideoButton.setEnabled(true);
 
+			mainUI.showGUI(true, false);
 			mainUI.setPopupIcons();
 			mainUI.setTakePhotoIcon();
 
@@ -1358,12 +1354,14 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 
 		private boolean need_reconnect;
 		private boolean need_restart;
+		private boolean need_update_overlay;
 
 		void startListening() {
 			if( MyDebug.LOG )
 				Log.d(TAG, "startListening");
 			need_reconnect = false;
 			need_restart = false;
+			need_update_overlay = false;
 
 			// n.b., registerOnSharedPreferenceChangeListener warns that we must keep a reference to the listener (which
 			// is this class) as long as we want to listen for changes, otherwise the listener may be garbage collected!
@@ -1386,22 +1384,32 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 					mainUI.shutter_icon_material = sharedPreferences.getString(Prefs.SHUTTER_BUTTON_STYLE, "hedgecam").equals("material");
 					break;
 				case Prefs.IND_FREQ:
-				case Prefs.IND_SLOW_IF_BUSY:	
+				case Prefs.IND_SLOW_IF_BUSY:
 					preview.updateTickInterval();
 					break;
 				case Prefs.POPUP_FONT_SIZE:
 					preview.updateToastConfig();
+					break;
 				case Prefs.SELFIE_MODE:
 					selfie_mode = sharedPreferences.getBoolean(Prefs.SELFIE_MODE, false);
 					mainUI.setSelfieMode(selfie_mode);
+					break;
+				case Prefs.AUDIO_CONTROL:
+					audio_control = sharedPreferences.getBoolean(Prefs.AUDIO_CONTROL, false);
+					mainUI.setAudioControl(audio_control);
+					break;
 				case Prefs.GUI_ORIENTATION:
 					mainUI.updateOrientationPrefs(sharedPreferences);
+					break;
+				case Prefs.GHOST_IMAGE:
+				case Prefs.GHOST_IMAGE_SOURCE:
+				case Prefs.GHOST_IMAGE_FILE_SAF:
+				case Prefs.GHOST_IMAGE_ALPHA:
+					need_update_overlay = true;
 					break;
 				case Prefs.RAW:
 				case Prefs.IMMERSIVE_MODE:
 				case Prefs.FACE_DETECTION:
-				case Prefs.AUDIO_CONTROL:
-				case Prefs.AUDIO_NOISE_CONTROL_SENSITIVITY:
 				case Prefs.ROTATE_PREVIEW:
 				case Prefs.PREVIEW_MAX_SIZE:
 				case Prefs.STARTUP_FOCUS:
@@ -1429,6 +1437,9 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 				case Prefs.OPTICAL_STABILIZATION+"_0":
 				case Prefs.OPTICAL_STABILIZATION+"_1":
 				case Prefs.OPTICAL_STABILIZATION+"_2":
+				case Prefs.HOT_PIXEL_CORRECTION+"_2_0":
+				case Prefs.HOT_PIXEL_CORRECTION+"_2_1":
+				case Prefs.HOT_PIXEL_CORRECTION+"_2_2":
 				case Prefs.MIN_FOCUS_DISTANCE+"_0":
 				case Prefs.MIN_FOCUS_DISTANCE+"_1":
 				case Prefs.MIN_FOCUS_DISTANCE+"_2":
@@ -1446,17 +1457,24 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 				case Prefs.FAST_BURST_DISABLE_FILTERS:
 				case Prefs.NR_DISABLE_FILTERS:
 				case Prefs.ISO_STEPS:
+				case Prefs.EXPOSURE_STEPS:
+				case Prefs.WHITE_BALANCE_STEPS:
 				case Prefs.UNCOMPRESSED_PHOTO:
 				case Prefs.FULL_SIZE_COPY:
 				case Prefs.FOCUS_DISTANCE_CALIBRATION+"_0":
 				case Prefs.FOCUS_DISTANCE_CALIBRATION+"_1":
 				case Prefs.FOCUS_DISTANCE_CALIBRATION+"_2":
+				case Prefs.VIDEO_FPS:
+				case Prefs.VIDEO_LOG_PROFILE:
+				case Prefs.LOCK_PREVIEW_FPS_TO_VIDEO_FPS:
 					need_reconnect = true;
+					preview.closeCamera();
 					break;
 				case Prefs.SHOW_WHEN_LOCKED:
 				case Prefs.MULTITOUCH_ZOOM:
 				case Prefs.PREVIEW_SURFACE:
 				case Prefs.SPEED_UP_SENSORS:
+				case Prefs.SYSTEM_UI_ORIENTATION:
 					need_restart = true;
 				default:
 					break;
@@ -1469,6 +1487,9 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 		boolean needRestart() {
 			return need_restart;
 		}
+		boolean needUpdateOverlay() {
+			return need_update_overlay;
+		}
 	}
 	
 	public void openSettings() {
@@ -1477,7 +1498,7 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 		mainUI.destroyPopup();
 		preview.cancelTimer(); // best to cancel any timer, in case we take a photo while settings window is open, or when changing settings
 		preview.stopVideo(false); // important to stop video, as we'll be changing camera parameters when the settings window closes
-		stopAudioListeners();
+		stopAudioListeners(true);
 		
 		Bundle bundle = new Bundle();
 		bundle.putInt("cameraId", this.preview.getCameraId());
@@ -1530,6 +1551,8 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 		putBundleExtra(bundle, "edge_modes", this.preview.getSupportedEdgeModes());
 		bundle.putString("optical_stabilization_mode", this.preview.getOpticalStabilizationMode());
 		putBundleExtra(bundle, "optical_stabilization_modes", this.preview.getSupportedOpticalStabilizationModes());
+		bundle.putString("hot_pixel_correction_mode", this.preview.getHotPixelCorrectionMode());
+		putBundleExtra(bundle, "hot_pixel_correction_modes", this.preview.getSupportedHotPixelCorrectionModes());
 
 		if (!this.preview.usingCamera2API()) {
 			bundle.putString("zero_shutter_delay_mode", this.preview.getZeroShutterDelayMode());
@@ -1590,11 +1613,14 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 		if( preview.getVideoQualityHander().getCurrentVideoQuality() != null ) {
 			bundle.putString("current_video_quality", preview.getVideoQualityHander().getCurrentVideoQuality());
 		}
-		CamcorderProfile camcorder_profile = preview.getCamcorderProfile();
+		VideoProfile camcorder_profile = preview.getVideoProfile();
 		bundle.putInt("video_frame_width", camcorder_profile.videoFrameWidth);
 		bundle.putInt("video_frame_height", camcorder_profile.videoFrameHeight);
 		bundle.putInt("video_bit_rate", camcorder_profile.videoBitRate);
 		bundle.putInt("video_frame_rate", camcorder_profile.videoFrameRate);
+		bundle.putDouble("video_capture_rate", camcorder_profile.videoCaptureRate);
+		bundle.putBoolean("video_high_speed", preview.isVideoHighSpeed());
+		bundle.putFloat("video_capture_rate_factor", Prefs.getVideoCaptureRateFactor());
 
 		List<CameraController.Size> video_sizes = this.preview.getVideoQualityHander().getSupportedVideoSizes();
 		if( video_sizes != null ) {
@@ -1617,7 +1643,7 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 
 		showPreview(false);
 		setWindowFlagsForSettings();
-		MyPreferenceFragment fragment = new MyPreferenceFragment();
+		MyPreferenceFragment fragment = new MyPreferenceFragment(this);
 		fragment.setArguments(bundle);
 		// use commitAllowingStateLoss() instead of commit(), does to "java.lang.IllegalStateException: Can not perform this action after onSaveInstanceState" crash seen on Google Play
 		// see http://stackoverflow.com/questions/7575921/illegalstateexception-can-not-perform-this-action-after-onsaveinstancestate-wit
@@ -1640,8 +1666,15 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 		setWindowFlagsForCamera();
 		if( preferencesListener.needReconnect() ) {
 			updateForSettings();
+		} else {
+			applicationInterface.onPrefsChanged();
+			if (audio_control)
+				startAudioListeners();
 		}
 		preview.setCameraDisplayOrientation(); // need to call in case the preview rotation option was changed
+		if( preferencesListener.needUpdateOverlay() ) {
+			mainUI.setOverlayImage();
+		}
 		if (!mainUI.inImmersiveMode()) {
 			mainUI.showGUI(true);
 			mainUI.setPopupIcons();
@@ -1726,13 +1759,9 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 			Log.d(TAG, "updateForSettings: time after check need_reopen: " + (System.currentTimeMillis() - debug_time));
 		}
 
-		if( !sharedPreferences.getString(Prefs.AUDIO_CONTROL, "none").equals("none") ) {
-			selfie_mode = false;
-			mainUI.setSelfieMode(false);
-		}
-		mainUI.setFaceDetection(sharedPreferences.getBoolean(Prefs.FACE_DETECTION, false));
+		if (audio_control)
+			startAudioListeners();
 
-		initSpeechRecognizer(); // in case we've enabled or disabled speech recognizer
 		initLocation(); // in case we've enabled or disabled GPS
 		if( MyDebug.LOG ) {
 			Log.d(TAG, "updateForSettings: time after init speech and location: " + (System.currentTimeMillis() - debug_time));
@@ -1772,6 +1801,8 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 		
 		releaseSound();
 		initSound();
+		
+		applicationInterface.onPrefsChanged();
 
 		if( MyDebug.LOG ) {
 			Log.d(TAG, "updateForSettings: done: " + (System.currentTimeMillis() - debug_time));
@@ -1808,7 +1839,7 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 	public boolean usingKitKatImmersiveMode() {
 		// whether we are using a Kit Kat style immersive mode (either hiding GUI, or everything)
 		if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT ) {
-			String immersive_mode = sharedPreferences.getString(Prefs.IMMERSIVE_MODE, "immersive_mode_low_profile");
+			String immersive_mode = sharedPreferences.getString(Prefs.IMMERSIVE_MODE, "immersive_mode_off");
 			if( immersive_mode.equals("immersive_mode_gui") || immersive_mode.equals("immersive_mode_everything") )
 				return true;
 		}
@@ -1818,7 +1849,7 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 	public boolean usingKitKatImmersiveModeEverything() {
 		// whether we are using a Kit Kat style immersive mode for everything
 		if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT ) {
-			String immersive_mode = sharedPreferences.getString(Prefs.IMMERSIVE_MODE, "immersive_mode_low_profile");
+			String immersive_mode = sharedPreferences.getString(Prefs.IMMERSIVE_MODE, "immersive_mode_off");
 			if( immersive_mode.equals("immersive_mode_everything") )
 				return true;
 		}
@@ -1869,7 +1900,7 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 				getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_IMMERSIVE | View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_FULLSCREEN);
 			}
 			else {
-				String immersive_mode = sharedPreferences.getString(Prefs.IMMERSIVE_MODE, "immersive_mode_low_profile");
+				String immersive_mode = sharedPreferences.getString(Prefs.IMMERSIVE_MODE, "immersive_mode_off");
 				if( immersive_mode.equals("immersive_mode_low_profile") )
 					getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LOW_PROFILE);
 				else if( immersive_mode.equals("immersive_mode_fullscreen") ) {
@@ -1880,6 +1911,12 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 					getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
 				else
 					getWindow().getDecorView().setSystemUiVisibility(0);
+					
+				if (immersive_mode.equals("immersive_mode_overlay")) {
+					getWindow().addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
+				} else {
+					getWindow().clearFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
+				}
 			}
 		}
 		else
@@ -1905,7 +1942,7 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 		else {
 			layout.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE;
 		}
-		getWindow().setAttributes(layout); 
+		getWindow().setAttributes(layout);
 	}
 
 	void setMinBrightness() {
@@ -1913,7 +1950,7 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 			Log.d(TAG, "setMinBrightness");
 		WindowManager.LayoutParams layout = getWindow().getAttributes();
 		layout.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_OFF;
-		getWindow().setAttributes(layout); 
+		getWindow().setAttributes(layout);
 	}
 
 	/** Sets the window flags for normal operation (when camera preview is visible).
@@ -1928,15 +1965,12 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 			ComponentName widgetComponent = new ComponentName(this, MyWidgetProvider.class);
 			int[] widgetIds = widgetManager.getAppWidgetIds(widgetComponent);
 			intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, widgetIds);
-			sendBroadcast(intent);			
+			sendBroadcast(intent);
 		}*/
 
 		// force to landscape mode
-		setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-/*		setRequestedOrientation(mainUI.getUIPlacementRight()
-			? ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-			: ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE);*/
-		//setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE); // testing for devices with unusual sensor orientation (e.g., Nexus 5X)
+		setRequestedOrientation(mainUI.isSystemUIPortrait() ? ActivityInfo.SCREEN_ORIENTATION_PORTRAIT : ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+
 		// keep screen active - see http://stackoverflow.com/questions/2131948/force-screen-on
 		if( sharedPreferences.getBoolean(Prefs.KEEP_DISPLAY_ON, false) ) {
 			if( MyDebug.LOG )
@@ -1959,6 +1993,7 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 				Log.d(TAG, "don't show when locked");
 			getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED);
 		}
+		
 
 		setBrightnessForCamera(false);
 		
@@ -1971,7 +2006,7 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 	public void setWindowFlagsForSettings() {
 		switch (mainUI.getOrientation()) {
 			case Landscape:
-				if (!mainUI.getUIPlacementRight()) setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE);
+				setRequestedOrientation(mainUI.getUIPlacementRight() ? ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE : ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE);
 				break;
 			case Portrait:
 				setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
@@ -1980,15 +2015,18 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 				// allow screen rotation
 				fixRotation(false);
 		}
+		
+		Window window = getWindow();
 		// revert to standard screen blank behaviour
-		getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+		window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 		// settings should still be protected by screen lock
-		getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED);
+		window.clearFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED);
+		window.clearFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
 
 		{
-			WindowManager.LayoutParams layout = getWindow().getAttributes();
+			WindowManager.LayoutParams layout = window.getAttributes();
 			layout.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE;
-			getWindow().setAttributes(layout); 
+			window.setAttributes(layout);
 		}
 
 		setImmersiveMode(false);
@@ -1997,7 +2035,7 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 	}
 	
 	private void fixRotation(final boolean for_other_app) {
-		switch (mainUI.getUIRotation()) {
+		switch (mainUI.getUIRotationRelative()) {
 			case 0:
 				setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
 				break;
@@ -2027,7 +2065,7 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 								setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
 						}
 					} else {
-						setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+						setRequestedOrientation(mainUI.isSystemUIPortrait() ? ActivityInfo.SCREEN_ORIENTATION_PORTRAIT : ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
 					}
 				} else {
 					if (camera_in_background)
@@ -2206,6 +2244,9 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 						gallery_save_anim.cancel();
 					}
 					galleryButton.setColorFilter(null);
+					if (sharedPreferences.getBoolean(Prefs.GHOST_IMAGE, false) && sharedPreferences.getString(Prefs.GHOST_IMAGE_SOURCE, "last_photo").equals("last_photo")) {
+						mainUI.setOverlayImage();
+					}
 			}
 		});
 	}
@@ -2293,6 +2334,28 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 		startActivityForResult(intent, 42);
 	}
 
+	/** Opens the Storage Access Framework dialog to select a file for ghost image.
+	 * @param from_preferences Whether called from the Preferences
+	 */
+	@TargetApi(Build.VERSION_CODES.LOLLIPOP)
+	void openGhostImageChooserDialogSAF(boolean from_preferences) {
+		if( MyDebug.LOG )
+			Log.d(TAG, "openGhostImageChooserDialogSAF: " + from_preferences);
+		this.saf_dialog_from_preferences = from_preferences;
+		Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+		intent.addCategory(Intent.CATEGORY_OPENABLE);
+		intent.setType("image/*");
+		try {
+			startActivityForResult(intent, 43);
+		}
+		catch(ActivityNotFoundException e) {
+			// see https://stackoverflow.com/questions/34021039/action-open-document-not-working-on-miui/34045627
+			preview.showToast(null, R.string.open_files_saf_exception_ghost);
+			Log.e(TAG, "ActivityNotFoundException from startActivityForResult");
+			e.printStackTrace();
+		}
+	}
+
 	/** Call when the SAF save history has been updated.
 	 *  This is only public so we can call from testing.
 	 * @param save_folder The new SAF save folder Uri.
@@ -2375,6 +2438,58 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 				setWindowFlagsForCamera();
 				showPreview(true);
 			}
+		} else if ( requestCode == 43 ) {
+			boolean check_source_pref = false;
+			if( resultCode == RESULT_OK && resultData != null ) {
+				Uri fileUri = resultData.getData();
+				if( MyDebug.LOG )
+					Log.d(TAG, "returned single fileUri: " + fileUri);
+				// persist permission just in case?
+				final int takeFlags = resultData.getFlags()
+						& (Intent.FLAG_GRANT_READ_URI_PERMISSION
+						| Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+				try {
+					// Check for the freshest data.
+					getContentResolver().takePersistableUriPermission(fileUri, takeFlags);
+
+					SharedPreferences.Editor editor = sharedPreferences.edit();
+					editor.putString(Prefs.GHOST_IMAGE_FILE_SAF, fileUri.toString());
+					editor.apply();
+				}
+				catch(SecurityException e) {
+					Log.e(TAG, "SecurityException failed to take permission");
+					e.printStackTrace();
+					preview.showToast(null, R.string.saf_permission_failed_open_image);
+					// failed - if the user had yet to set a ghost image
+					check_source_pref = true;
+				}
+			}
+			else {
+				if( MyDebug.LOG )
+					Log.d(TAG, "SAF dialog cancelled");
+				// cancelled - if the user had yet to set a ghost image, make sure we switch the option back off
+				check_source_pref = true;
+			}
+
+			if (check_source_pref) {
+				String uri = sharedPreferences.getString(Prefs.GHOST_IMAGE_FILE_SAF, "");
+				if( uri.length() == 0 ) {
+					if( MyDebug.LOG )
+						Log.d(TAG, "no SAF ghost image was set");
+					SharedPreferences.Editor editor = sharedPreferences.edit();
+					editor.putString(Prefs.GHOST_IMAGE_SOURCE, "last_photo");
+					editor.apply();
+				}
+			}
+
+			if( !saf_dialog_from_preferences ) {
+				setWindowFlagsForCamera();
+				showPreview(true);
+			}
+		} else {
+			final MyPreferenceFragment fragment = getPreferenceFragment();
+			if (fragment != null)
+				fragment.onActivityResult(requestCode,  resultCode, resultData);
 		}
 	}
 
@@ -2721,7 +2836,7 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 //			preview.showToast(screen_locked_toast, R.string.screen_is_locked);
 			return true;
 		}
-	}	
+	}
 
 	@Override
 	protected void onSaveInstanceState(Bundle state) {
@@ -2901,10 +3016,6 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 		return "https://play.google.com/store/apps/details?id=harman.mark.donation";
 	}
 
-	/*public static String getDonateMarketLink() {
-		return "market://details?id=harman.mark.donation";
-	}*/
-
 	public Preview getPreview() {
 		return this.preview;
 	}
@@ -2956,8 +3067,9 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 		}
 		String toast_string;
 		boolean simple = true;
+		boolean video_high_speed = preview.isVideoHighSpeed();
 		if( preview.isVideo() ) {
-			CamcorderProfile profile = preview.getCamcorderProfile();
+			VideoProfile profile = preview.getVideoProfile();
 			String bitrate_string;
 			if( profile.videoBitRate >= 10000000 )
 				bitrate_string = profile.videoBitRate/1000000 + "Mbps";
@@ -2965,8 +3077,30 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 				bitrate_string = profile.videoBitRate/1000 + "Kbps";
 			else
 				bitrate_string = profile.videoBitRate + "bps";
+			String bitrate_value = Prefs.getVideoBitratePref();
+			if( !bitrate_value.equals("default") ) {
+				simple = false;
+			}
 
-			toast_string = resources.getString(R.string.video) + ": " + profile.videoFrameWidth + "x" + profile.videoFrameHeight + ", " + profile.videoFrameRate + "fps, " + bitrate_string;
+			int capture_rate = (int)(profile.videoCaptureRate+0.5);
+			toast_string = resources.getString(R.string.video) + ": " + profile.videoFrameWidth + "x" + profile.videoFrameHeight + ", " + capture_rate + "fps" + (video_high_speed ? " [" + getResources().getString(R.string.high_speed) + "]" : "") + ", " + bitrate_string;
+
+			String fps_value = Prefs.getVideoFPSPref();
+			if( !fps_value.equals("default") || video_high_speed ) {
+				simple = false;
+			}
+
+			float capture_rate_factor = Prefs.getVideoCaptureRateFactor();
+			if( Math.abs(capture_rate_factor - 1.0f) > 1.0e-5 ) {
+				toast_string += "\n" + resources.getString(R.string.preference_video_capture_rate) + ": " + capture_rate_factor + "x";
+				simple = false;
+			}
+
+			if( preview.supportsTonemapCurve() && Prefs.getVideoLogProfile() != 0.0f ) {
+				simple = false;
+				toast_string += "\n" + resources.getString(R.string.video_log);
+			}
+
 			boolean record_audio = sharedPreferences.getBoolean(Prefs.RECORD_AUDIO, true);
 			if( !record_audio ) {
 				toast_string += "\n" + resources.getString(R.string.audio_disabled);
@@ -3099,153 +3233,146 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 		if( audio_listener != null ) {
 			audio_listener.release(wait_until_done);
 			audio_listener = null;
-			selfie_mode = false;
-			mainUI.setSelfieMode(false);
-		}
-	}
-	
-	private void startAudioListener() {
-		if( MyDebug.LOG )
-			Log.d(TAG, "startAudioListener");
-		audio_listener = new AudioListener(this);
-		if( audio_listener.status() ) {
-			audio_listener.start();
-			String sensitivity_pref = sharedPreferences.getString(Prefs.AUDIO_NOISE_CONTROL_SENSITIVITY, "0");
-			switch(sensitivity_pref) {
-				case "3":
-					audio_noise_sensitivity = 50;
-					break;
-				case "2":
-					audio_noise_sensitivity = 75;
-					break;
-				case "1":
-					audio_noise_sensitivity = 125;
-					break;
-				case "-1":
-					audio_noise_sensitivity = 150;
-					break;
-				case "-2":
-					audio_noise_sensitivity = 200;
-					break;
-				default:
-					// default
-					audio_noise_sensitivity = 100;
-					break;
-			}
-		}
-		else {
-			audio_listener.release(true); // shouldn't be needed, but just to be safe
-			audio_listener = null;
-			preview.showToast(null, R.string.audio_listener_failed);
 		}
 	}
 	
 	private void initSpeechRecognizer() {
 		if( MyDebug.LOG )
 			Log.d(TAG, "initSpeechRecognizer");
-		// in theory we could create the speech recognizer always (hopefully it shouldn't use battery when not listening?), though to be safe, we only do this when the option is enabled (e.g., just in case this doesn't work on some devices!)
-		boolean want_speech_recognizer = sharedPreferences.getString(Prefs.AUDIO_CONTROL, "none").equals("voice");
-		if( speechRecognizer == null && want_speech_recognizer ) {
-			if( MyDebug.LOG )
-				Log.d(TAG, "create new speechRecognizer");
-			speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this);
-			if( speechRecognizer != null ) {
-				speechRecognizerIsStarted = false;
-				speechRecognizer.setRecognitionListener(new RecognitionListener() {
-					@Override
-					public void onBeginningOfSpeech() {
-						if( MyDebug.LOG )
-							Log.d(TAG, "RecognitionListener: onBeginningOfSpeech");
-					}
+		speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this);
+		if( speechRecognizer != null ) {
+			speechRecognizer.setRecognitionListener(new RecognitionListener() {
+				@Override
+				public void onBeginningOfSpeech() {
+					if( MyDebug.LOG )
+						Log.d(TAG, "RecognitionListener: onBeginningOfSpeech");
+				}
 
-					@Override
-					public void onBufferReceived(byte[] buffer) {
-						if( MyDebug.LOG )
-							Log.d(TAG, "RecognitionListener: onBufferReceived");
-					}
+				@Override
+				public void onBufferReceived(byte[] buffer) {
+					if( MyDebug.LOG )
+						Log.d(TAG, "RecognitionListener: onBufferReceived");
+				}
 
-					@Override
-					public void onEndOfSpeech() {
-						if( MyDebug.LOG )
-							Log.d(TAG, "RecognitionListener: onEndOfSpeech");
-						speechRecognizerStopped();
-					}
+				@Override
+				public void onEndOfSpeech() {
+					if( MyDebug.LOG )
+						Log.d(TAG, "RecognitionListener: onEndOfSpeech");
+					restartSpeechRecognizer(false);
+				}
 
-					@Override
-					public void onError(int error) {
-						if( MyDebug.LOG )
-							Log.d(TAG, "RecognitionListener: onError: " + error);
-						if( error != SpeechRecognizer.ERROR_NO_MATCH ) {
-							// we sometime receive ERROR_NO_MATCH straight after listening starts
-							// it seems that the end is signalled either by ERROR_SPEECH_TIMEOUT or onEndOfSpeech()
-							speechRecognizerStopped();
+				@Override
+				public void onError(int error) {
+					if( MyDebug.LOG )
+						Log.d(TAG, "RecognitionListener: onError: " + error);
+//						if( error != SpeechRecognizer.ERROR_NO_MATCH ) {
+						// we sometime receive ERROR_NO_MATCH straight after listening starts
+						// it seems that the end is signalled either by ERROR_SPEECH_TIMEOUT or onEndOfSpeech()
+//						}
+						// Костыль
+						restartSpeechRecognizer(error == SpeechRecognizer.ERROR_RECOGNIZER_BUSY);
+				}
+
+				@Override
+				public void onEvent(int eventType, Bundle params) {
+					if( MyDebug.LOG )
+						Log.d(TAG, "RecognitionListener: onEvent");
+				}
+
+				@Override
+				public void onPartialResults(Bundle partialResults) {
+					if( MyDebug.LOG )
+						Log.d(TAG, "RecognitionListener: onPartialResults");
+				}
+
+				@Override
+				public void onReadyForSpeech(Bundle params) {
+					if( MyDebug.LOG )
+						Log.d(TAG, "RecognitionListener: onReadyForSpeech");
+					if( speech_recognizer_handler != null && speech_recognizer_runnable != null ) {
+						speech_recognizer_handler.removeCallbacks(speech_recognizer_runnable);
+
+						speech_recognizer_handler = null;
+						speech_recognizer_runnable = null;
+
+						preview.showToast(audio_control_toast, R.string.speech_recognizer_started);
+					}
+				}
+
+				public void onResults(Bundle results) {
+					if( MyDebug.LOG )
+						Log.d(TAG, "RecognitionListener: onResults");
+					ArrayList<String> list = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
+					boolean found = false;
+					final String trigger = "cheese";
+					//String debug_toast = "";
+					for(int i=0;list != null && i<list.size();i++) {
+						String text = list.get(i);
+						if( MyDebug.LOG ) {
+							float [] scores = results.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES);
+							if( scores != null )
+								Log.d(TAG, "text: " + text + " score: " + scores[i]);
+						}
+						/*if( i > 0 )
+							debug_toast += "\n";
+						debug_toast += text + " : " + results.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES)[i];*/
+						if( text.toLowerCase(Locale.US).contains(trigger) ) {
+							found = true;
 						}
 					}
-
-					@Override
-					public void onEvent(int eventType, Bundle params) {
+					//preview.showToast(null, debug_toast); // debug only!
+					if( found ) {
 						if( MyDebug.LOG )
-							Log.d(TAG, "RecognitionListener: onEvent");
+							Log.d(TAG, "audio trigger from speech recognition");
+						audioTrigger();
 					}
-
-					@Override
-					public void onPartialResults(Bundle partialResults) {
+					else if( list != null && list.size() > 0 ) {
+						String toast = list.get(0) + "?";
 						if( MyDebug.LOG )
-							Log.d(TAG, "RecognitionListener: onPartialResults");
+							Log.d(TAG, "unrecognised: " + toast);
+						preview.showToast(audio_control_toast, toast);
 					}
+				}
 
-					@Override
-					public void onReadyForSpeech(Bundle params) {
-						if( MyDebug.LOG )
-							Log.d(TAG, "RecognitionListener: onReadyForSpeech");
-					}
-
-					public void onResults(Bundle results) {
-						if( MyDebug.LOG )
-							Log.d(TAG, "RecognitionListener: onResults");
-						speechRecognizerStopped();
-						ArrayList<String> list = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
-						boolean found = false;
-						final String trigger = "cheese";
-						//String debug_toast = "";
-						for(int i=0;list != null && i<list.size();i++) {
-							String text = list.get(i);
-							if( MyDebug.LOG ) {
-								float [] scores = results.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES);
-								if( scores != null )
-									Log.d(TAG, "text: " + text + " score: " + scores[i]);
-							}
-							/*if( i > 0 )
-								debug_toast += "\n";
-							debug_toast += text + " : " + results.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES)[i];*/
-							if( text.toLowerCase(Locale.US).contains(trigger) ) {
-								found = true;
-							}
-						}
-						//preview.showToast(null, debug_toast); // debug only!
-						if( found ) {
-							if( MyDebug.LOG )
-								Log.d(TAG, "audio trigger from speech recognition");
-							audioTrigger();
-						}
-						else if( list != null && list.size() > 0 ) {
-							String toast = list.get(0) + "?";
-							if( MyDebug.LOG )
-								Log.d(TAG, "unrecognised: " + toast);
-							preview.showToast(audio_control_toast, toast);
-						}
-					}
-
-					@Override
-					public void onRmsChanged(float rmsdB) {
-					}
-				});
-			}
+				@Override
+				public void onRmsChanged(float rmsdB) {
+				}
+			});
 		}
-		else if( speechRecognizer != null && !want_speech_recognizer ) {
-			if( MyDebug.LOG )
-				Log.d(TAG, "free existing SpeechRecognizer");
+	}
+
+	private void startSpeechRecognizer() {
+		if( MyDebug.LOG )
+			Log.d(TAG, "startSpeechRecognizer");
+		if( speechRecognizer != null ) {
+			Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+			intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "en_US"); // since we listen for "cheese", ensure this works even for devices with different language settings
+			intent.putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 15000);
+			speechRecognizer.startListening(intent);
+		}
+	}
+	
+	private void restartSpeechRecognizer(final boolean full) {
+		if( MyDebug.LOG )
+			Log.d(TAG, "restartSpeechRecognizer");
+		if (full) {
 			freeSpeechRecognizer();
+			Handler handler = new Handler();
+			handler.postDelayed(new Runnable() {
+				@Override
+				public void run() {
+					initSpeechRecognizer();
+					startSpeechRecognizer();
+				}
+			}, 500);
+		} else {
+			Handler handler = new Handler();
+			handler.postDelayed(new Runnable() {
+				@Override
+				public void run() {
+					startSpeechRecognizer();
+				}
+			}, 200);
 		}
 	}
 	
@@ -3253,34 +3380,98 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 		if( MyDebug.LOG )
 			Log.d(TAG, "freeSpeechRecognizer");
 		if( speechRecognizer != null ) {
-			speechRecognizer.cancel();
-			speechRecognizer.destroy();
-			speechRecognizer = null;
+			try {
+				speechRecognizer.cancel();
+				speechRecognizer.destroy();
+				speechRecognizer = null;
+			} catch (IllegalArgumentException e) {}
 		}
 	}
+
+	private void speechRecognizerFailed() {
+		speechRecognizer = null;
+
+		audio_control = false;
+
+		SharedPreferences.Editor editor = sharedPreferences.edit();
+		editor.putBoolean(Prefs.AUDIO_CONTROL, false);
+		editor.apply();
+
+		mainUI.setAudioControl(false);
+
+		preview.showToast(audio_control_toast, R.string.speech_recognizer_unavailable);
+	}
 	
-	public boolean hasAudioControl() {
-		String audio_control = sharedPreferences.getString(Prefs.AUDIO_CONTROL, "none");
+	void startAudioListeners() {
+		String audio_control = sharedPreferences.getString(Prefs.AUDIO_CONTROL_TYPE, "noise");
 		if( audio_control.equals("voice") ) {
-			return speechRecognizer != null;
+			initSpeechRecognizer();
+			if( speechRecognizer == null ) {
+				speechRecognizerFailed();
+			} else {
+				startSpeechRecognizer();
+
+			speech_recognizer_runnable = new Runnable() {
+				@Override
+				public void run() {
+					speechRecognizerFailed();
+					speech_recognizer_runnable = null;
+					speech_recognizer_handler = null;
+				}
+			};
+			speech_recognizer_handler = new Handler();
+			speech_recognizer_handler.postDelayed(speech_recognizer_runnable, 2000);
+			}
+		} else {
+			if( audio_listener == null ) {
+				audio_listener = new AudioListener(this);
+				if( audio_listener.status() ) {
+					String sensitivity_pref = sharedPreferences.getString(Prefs.AUDIO_NOISE_CONTROL_SENSITIVITY, "0");
+					switch(sensitivity_pref) {
+						case "3":
+							audio_noise_sensitivity = 50;
+							break;
+						case "2":
+							audio_noise_sensitivity = 75;
+							break;
+						case "1":
+							audio_noise_sensitivity = 125;
+							break;
+						case "-1":
+							audio_noise_sensitivity = 150;
+							break;
+						case "-2":
+							audio_noise_sensitivity = 200;
+							break;
+						default:
+							// default
+							audio_noise_sensitivity = 100;
+							break;
+					}
+					audio_listener.start();
+					preview.showToast(audio_control_toast, R.string.audio_listener_started);
+				}
+				else {
+					audio_listener.release(true); // shouldn't be needed, but just to be safe
+					audio_listener = null;
+					preview.showToast(null, R.string.audio_listener_failed);
+				}
+			}
 		}
-		else if( audio_control.equals("noise") ) {
-			return true;
-		}
-		return false;
 	}
 	
-	/*void startAudioListeners() {
-		initAudioListener();
-		// no need to restart speech recognizer, as we didn't free it in stopAudioListeners(), and it's controlled by a user button
-	}*/
-	
-	public void stopAudioListeners() {
-		freeAudioListener(true);
+	public void stopAudioListeners(boolean wait_until_done) {
+		freeAudioListener(wait_until_done);
+		if( speech_recognizer_handler != null && speech_recognizer_runnable != null ) {
+			speech_recognizer_handler.removeCallbacks(speech_recognizer_runnable);
+
+			speech_recognizer_handler = null;
+			speech_recognizer_runnable = null;
+		}
 		if( speechRecognizer != null ) {
 			// no need to free the speech recognizer, just stop it
 			speechRecognizer.stopListening();
-			speechRecognizerStopped();
+			freeSpeechRecognizer();
 		}
 	}
 	
@@ -3468,7 +3659,7 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 				public void onDismiss(DialogInterface dialog) {
 					if( MyDebug.LOG )
 						Log.d(TAG, "requesting permission...");
-					ActivityCompat.requestPermissions(MainActivity.this, permissions_f, permission_code); 
+					ActivityCompat.requestPermissions(MainActivity.this, permissions_f, permission_code);
 				}
 			}).show();
 		}

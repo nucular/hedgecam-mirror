@@ -1,24 +1,32 @@
 package com.caddish_hedgehog.hedgecam2.UI;
 
 import com.caddish_hedgehog.hedgecam2.CameraController.CameraController;
-import com.caddish_hedgehog.hedgecam2.IconView;
 import com.caddish_hedgehog.hedgecam2.MainActivity;
 import com.caddish_hedgehog.hedgecam2.MyDebug;
 import com.caddish_hedgehog.hedgecam2.Prefs;
 import com.caddish_hedgehog.hedgecam2.Preview.Preview;
 import com.caddish_hedgehog.hedgecam2.R;
+import com.caddish_hedgehog.hedgecam2.StorageUtils;
+import com.caddish_hedgehog.hedgecam2.UI.IconView;
 
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.res.ColorStateList;
 import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.Matrix;
 import android.graphics.Point;
 import android.graphics.Typeface;
 import android.media.AudioManager;
+import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.preference.PreferenceManager;
+import android.support.media.ExifInterface;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.Display;
@@ -34,14 +42,21 @@ import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
 import android.view.animation.ScaleAnimation;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
 import android.widget.ZoomControls;
 
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
+
 
 /** This contains functionality related to the main UI.
  */
@@ -51,18 +66,18 @@ public class MainUI {
 	private final MainActivity main_activity;
 	private final Resources resources;
 	private final SharedPreferences sharedPreferences;
-	public Preview preview;
+	private Preview preview;
 
-	private final int center_vertical = RelativeLayout.CENTER_VERTICAL;
-	private final int center_horizontal = RelativeLayout.CENTER_HORIZONTAL;
-	private final int align_left = RelativeLayout.ALIGN_LEFT;
-	private final int align_right = RelativeLayout.ALIGN_RIGHT;
-	private final int left_of = RelativeLayout.LEFT_OF;
-	private final int right_of = RelativeLayout.RIGHT_OF;
+	private int center_vertical = RelativeLayout.CENTER_VERTICAL;
+	private int center_horizontal = RelativeLayout.CENTER_HORIZONTAL;
+	private int align_left = RelativeLayout.ALIGN_LEFT;
+	private int align_right = RelativeLayout.ALIGN_RIGHT;
+	private int left_of = RelativeLayout.LEFT_OF;
+	private int right_of = RelativeLayout.RIGHT_OF;
 	private int above = RelativeLayout.ABOVE;
 	private int below = RelativeLayout.BELOW;
-	private final int align_parent_left = RelativeLayout.ALIGN_PARENT_LEFT;
-	private final int align_parent_right = RelativeLayout.ALIGN_PARENT_RIGHT;
+	private int align_parent_left = RelativeLayout.ALIGN_PARENT_LEFT;
+	private int align_parent_right = RelativeLayout.ALIGN_PARENT_RIGHT;
 	private int align_parent_top = RelativeLayout.ALIGN_PARENT_TOP;
 	private int align_parent_bottom = RelativeLayout.ALIGN_PARENT_BOTTOM;
 
@@ -75,10 +90,11 @@ public class MainUI {
 	private int current_orientation;
 	public boolean shutter_icon_material;
 	private int ui_rotation = 0;
+	private int ui_rotation_relative = 0;
 	private boolean ui_placement_right = true;
 	private int popup_anchor = R.id.gallery;
 	private int popup_from = R.id.popup;
-	private int bottom_container_anchor = R.id.gallery;
+	private int seekbars_container_anchor = R.id.gallery;
 	private boolean orientation_changed;
 
 	private boolean immersive_mode;
@@ -91,10 +107,16 @@ public class MainUI {
 	private int ind_margin_right = 0;
 	private int ind_margin_bottom = 0;
 	
+	private int button_size = 0;
+	
 	private final int manual_n = 500; // the number of values on the seekbar used for manual focus distance, ISO or exposure speed
 
 	private double focus_min_value;
 	private double focus_max_value;
+	
+	private boolean overlay_initialized = false;
+	private int overlay_rotation = 0;
+	boolean overlay_is_portrait = false;
 	
 	public enum GUIType {
 		Phone,
@@ -111,6 +133,7 @@ public class MainUI {
 		Portrait
 	}
 	private Orientation ui_orientation;
+	private final boolean system_ui_portrait;
 	
 	private final int BUTTON_SETTINGS = 0;
 	private final int BUTTON_POPUP = 1;
@@ -126,7 +149,8 @@ public class MainUI {
 	private final int BUTTON_EXPOSURE = 11;
 	private final int BUTTON_SWITCH_CAMERA = 12;
 	private final int BUTTON_FACE_DETECTION = 13;
-	private final int BUTTON_SELFIE_MODE = 14;
+	private final int BUTTON_AUDIO_CONTROL = 14;
+	private final int BUTTON_SELFIE_MODE = 15;
 
 	public final int[] ctrl_panel_buttons = {
 		R.id.settings,
@@ -143,6 +167,7 @@ public class MainUI {
 		R.id.exposure,
 		R.id.switch_camera,
 		R.id.face_detection,
+		R.id.audio_control,
 		R.id.selfie_mode,
 	};
 	
@@ -194,7 +219,6 @@ public class MainUI {
 		this.main_activity = main_activity;
 		this.resources = main_activity.getResources();
 		this.sharedPreferences = main_activity.getSharedPrefs();
-		this.preview = main_activity.getPreview();
 		
 		buttons_location = new int[ctrl_panel_buttons.length];
 		for(int i = 0; i < ctrl_panel_buttons.length; i++) buttons_location[i] = 0;
@@ -226,6 +250,11 @@ public class MainUI {
 		}
 		
 		show_seekbars = sharedPreferences.getBoolean(Prefs.SHOW_SEEKBARS, false);
+		system_ui_portrait = sharedPreferences.getString(Prefs.SYSTEM_UI_ORIENTATION, "landscape").equals("portrait");
+	}
+	
+	public void setPreview(Preview preview) {
+		this.preview = preview;
 	}
 
 	/** Similar view.setRotation(ui_rotation), but achieves this via an animation.
@@ -243,6 +272,12 @@ public class MainUI {
 		} else view.setRotation(ui_rotation);
 	}
 
+	public void layoutUI(boolean first_layout) {
+		if (first_layout) {
+			overlay_initialized = false;
+		}
+		layoutUI();
+	}
 	public void layoutUI() {
 		long debug_time = 0;
 		if( MyDebug.LOG ) {
@@ -251,20 +286,20 @@ public class MainUI {
 		}
 		
 		View parent = (View)main_activity.findViewById(R.id.ctrl_panel_anchor).getParent();
-/*		parent.setRotation(ui_placement_right ? 0 : 180);
-		((View)main_activity.findViewById(R.id.preview)).setRotation(ui_placement_right ? 0 : 180);
-		((View)main_activity.findViewById(R.id.prefs_container)).setRotation(ui_placement_right ? 0 : 180);*/
 
-		//FIXME. This stupid shit need for fixing wrong layout after closing settings
-//		root_width = Math.max(parent.getWidth(), parent.getHeight());
-//		root_height = Math.min(parent.getWidth(), parent.getHeight());
+		int margin_right = 0;
 		Display display = main_activity.getWindowManager().getDefaultDisplay();
 		Point size = new Point();
 		if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT ) {
-			String immersive_mode = sharedPreferences.getString(Prefs.IMMERSIVE_MODE, "immersive_mode_low_profile");
+			String immersive_mode = sharedPreferences.getString(Prefs.IMMERSIVE_MODE, "immersive_mode_off");
 			if( immersive_mode.equals("immersive_mode_fullscreen") || immersive_mode.equals("immersive_mode_sticky") )
 				display.getRealSize(size);
-			else 
+			else if (immersive_mode.equals("immersive_mode_overlay")) {
+				display.getSize(size);
+				int width = Math.max(size.x, size.y);
+				display.getRealSize(size);
+				margin_right = Math.max(size.x, size.y)-width;
+			} else
 				display.getSize(size);
 		} else {
 			display.getSize(size);
@@ -282,14 +317,13 @@ public class MainUI {
 		
 		switch (ui_orientation) {
 			case Landscape:
-				ui_rotation = sharedPreferences.getBoolean(Prefs.UI_LEFT_HANDED, false) ? 180 : 0;
-//				ui_rotation = 0;
+				ui_rotation = sharedPreferences.getBoolean(Prefs.UI_LEFT_HANDED, false) ? (system_ui_portrait ? 270 : 180) : (system_ui_portrait ? 90 : 0);
 				break;
 			case Portrait:
-				ui_rotation = 270;
+				ui_rotation = system_ui_portrait ? 0 : 270;
 				break;
 			default:
-				// new code for orientation fixed to landscape	
+				// new code for orientation fixed to landscape
 				// the display orientation should be locked to landscape, but how many degrees is that?
 				int rotation = main_activity.getWindowManager().getDefaultDisplay().getRotation();
 				int degrees = 0;
@@ -312,16 +346,19 @@ public class MainUI {
 					Log.d(TAG, "	relative_orientation = " + relative_orientation);
 				}
 		}
-		ui_placement_right = true;
-		if (ui_rotation == 180) ui_placement_right = false;
-		else if( ui_rotation == 90 || ui_rotation == 270 ) ui_placement_right = !sharedPreferences.getBoolean(Prefs.UI_LEFT_HANDED, false);
+		ui_rotation_relative = ui_rotation;
+		if (system_ui_portrait) {
+			ui_rotation_relative += 270;
+			if (ui_rotation_relative >= 360)
+				ui_rotation_relative -= 360;
+		}
 
-//		if (!ui_placement_right) ui_rotation += 180;
-//		if (ui_rotation > 360) ui_rotation -= 360;
-		main_activity.getPreview().setUIRotation(ui_rotation);
-		
+		ui_placement_right = true;
+		if (ui_rotation_relative == 180) ui_placement_right = false;
+		else if( ui_rotation_relative == 90 || ui_rotation_relative == 270 ) ui_placement_right = !sharedPreferences.getBoolean(Prefs.UI_LEFT_HANDED, false);
+
 		String gui_type_string = "default";
-		if( ui_rotation == 90 || ui_rotation == 270 ) gui_type_string = sharedPreferences.getString(Prefs.GUI_TYPE_PORTRAIT, "default");
+		if( ui_rotation_relative == 90 || ui_rotation_relative == 270 ) gui_type_string = sharedPreferences.getString(Prefs.GUI_TYPE_PORTRAIT, "default");
 		if (gui_type_string.equals("default")) gui_type_string = sharedPreferences.getString(Prefs.GUI_TYPE, "phone");
 		switch (gui_type_string) {
 			case ("phone2"):
@@ -364,19 +401,49 @@ public class MainUI {
 		// Shadow size of HedgeCam shutter button
 		if (!shutter_icon_material) buttons_shutter_gap -= resources.getDimensionPixelSize(R.dimen.default_shutter_shadow);
 
-		if( ui_placement_right ) {
-			above = RelativeLayout.ABOVE;
-			below = RelativeLayout.BELOW;
-			align_parent_top = RelativeLayout.ALIGN_PARENT_TOP;
-			align_parent_bottom = RelativeLayout.ALIGN_PARENT_BOTTOM;
+		if (system_ui_portrait) {
+			center_vertical = RelativeLayout.CENTER_HORIZONTAL;
+			center_horizontal = RelativeLayout.CENTER_VERTICAL;
+			align_left = RelativeLayout.ALIGN_TOP;
+			align_right = RelativeLayout.ALIGN_BOTTOM;
+			left_of = RelativeLayout.ABOVE;
+			right_of = RelativeLayout.BELOW;
+			align_parent_left = RelativeLayout.ALIGN_PARENT_TOP;
+			align_parent_right = RelativeLayout.ALIGN_PARENT_BOTTOM;
+			if( ui_placement_right ) {
+				above = RelativeLayout.RIGHT_OF;
+				below = RelativeLayout.LEFT_OF;
+				align_parent_top = RelativeLayout.ALIGN_PARENT_RIGHT;
+				align_parent_bottom = RelativeLayout.ALIGN_PARENT_LEFT;
+			} else {
+				above = RelativeLayout.LEFT_OF;
+				below = RelativeLayout.RIGHT_OF;
+				align_parent_top = RelativeLayout.ALIGN_PARENT_LEFT;
+				align_parent_bottom = RelativeLayout.ALIGN_PARENT_RIGHT;
+			}
 		} else {
-			above = RelativeLayout.BELOW;
-			below = RelativeLayout.ABOVE;
-			align_parent_top = RelativeLayout.ALIGN_PARENT_BOTTOM;
-			align_parent_bottom = RelativeLayout.ALIGN_PARENT_TOP;
+			center_vertical = RelativeLayout.CENTER_VERTICAL;
+			center_horizontal = RelativeLayout.CENTER_HORIZONTAL;
+			align_left = RelativeLayout.ALIGN_LEFT;
+			align_right = RelativeLayout.ALIGN_RIGHT;
+			left_of = RelativeLayout.LEFT_OF;
+			right_of = RelativeLayout.RIGHT_OF;
+			align_parent_left = RelativeLayout.ALIGN_PARENT_LEFT;
+			align_parent_right = RelativeLayout.ALIGN_PARENT_RIGHT;
+			if( ui_placement_right ) {
+				above = RelativeLayout.ABOVE;
+				below = RelativeLayout.BELOW;
+				align_parent_top = RelativeLayout.ALIGN_PARENT_TOP;
+				align_parent_bottom = RelativeLayout.ALIGN_PARENT_BOTTOM;
+			} else {
+				above = RelativeLayout.BELOW;
+				below = RelativeLayout.ABOVE;
+				align_parent_top = RelativeLayout.ALIGN_PARENT_BOTTOM;
+				align_parent_bottom = RelativeLayout.ALIGN_PARENT_TOP;
+			}
 		}
 		popup_anchor = R.id.gallery;
-		bottom_container_anchor = R.id.gallery;
+		seekbars_container_anchor = R.id.gallery;
 		{
 			ind_margin_left = 0;
 			ind_margin_top = 0;
@@ -404,8 +471,8 @@ public class MainUI {
 				default:
 			}
 
-			int shutter_width = (int)((shutter_icon_material 
-				? resources.getDimensionPixelSize(R.dimen.shutter_size) 
+			int shutter_width = (int)((shutter_icon_material
+				? resources.getDimensionPixelSize(R.dimen.shutter_size)
 				: resources.getDrawable(R.drawable.shutter_photo_selector).getIntrinsicWidth())
 				* shutter_size_mul);
 
@@ -414,14 +481,16 @@ public class MainUI {
 			if (view.getVisibility() == View.VISIBLE) {
 				ind_margin_right = view.getWidth()+shutter_margin;
 				popup_anchor = R.id.take_photo;
-				bottom_container_anchor = R.id.take_photo;
+				seekbars_container_anchor = R.id.take_photo;
 			}
 //			if (sharedPreferences.getBoolean(Prefs.SHOW_TAKE_PHOTO, true)) {
 				setTakePhotoIcon();
 				layoutParams = (RelativeLayout.LayoutParams)view.getLayoutParams();
+				layoutParams.addRule(center_horizontal, 0);
+				layoutParams.addRule(center_vertical, RelativeLayout.TRUE);
 				layoutParams.addRule(align_parent_left, 0);
 				layoutParams.addRule(align_parent_right, RelativeLayout.TRUE);
-				layoutParams.setMargins(0, 0, shutter_margin, 0);
+				setMargins(layoutParams, 0, 0, shutter_margin+margin_right, 0);
 				layoutParams.width = shutter_width;
 				layoutParams.height = shutter_width;
 				view.setLayoutParams(layoutParams);
@@ -429,8 +498,8 @@ public class MainUI {
 //			}
 
 			if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.N ) {
-				int pause_width = (int)((shutter_icon_material 
-					? resources.getDimensionPixelSize(R.dimen.pause_size) 
+				int pause_width = (int)((shutter_icon_material
+					? resources.getDimensionPixelSize(R.dimen.pause_size)
 					: resources.getDrawable(R.drawable.pause_selector).getIntrinsicWidth())
 					* shutter_size_mul);
 				view = main_activity.findViewById(R.id.pause_video);
@@ -444,20 +513,20 @@ public class MainUI {
 				layoutParams.addRule(below, 0);
 				layoutParams.width = pause_width;
 				layoutParams.height = pause_width;
-				layoutParams.setMargins(pause_margin, pause_margin, pause_margin, pause_margin);
+				setMargins(layoutParams, pause_margin, pause_margin, pause_margin+margin_right, pause_margin);
 				view.setLayoutParams(layoutParams);
 				setViewRotation(view, ui_rotation);
 			}
 
 			view = main_activity.findViewById(R.id.gallery);
-			int gallery_width = view.getWidth();
+			int gallery_width = system_ui_portrait ? view.getHeight() : view.getWidth();
 			int gallery_margin = (shutter_width+shutter_margin*2-gallery_width)/2;
 			layoutParams = (RelativeLayout.LayoutParams)view.getLayoutParams();
 			layoutParams.addRule(align_parent_top, RelativeLayout.TRUE);
 			layoutParams.addRule(align_parent_bottom, 0);
 			layoutParams.addRule(align_parent_left, 0);
 			layoutParams.addRule(align_parent_right, RelativeLayout.TRUE);
-			layoutParams.setMargins(0, 0, gallery_margin, 0);
+			setMargins(layoutParams, 0, 0, gallery_margin+margin_right, 0);
 			view.setLayoutParams(layoutParams);
 			setViewRotation(view, ui_rotation);
 	
@@ -467,7 +536,7 @@ public class MainUI {
 			layoutParams.addRule(align_parent_bottom, RelativeLayout.TRUE);
 			layoutParams.addRule(align_parent_left, 0);
 			layoutParams.addRule(align_parent_right, RelativeLayout.TRUE);
-			layoutParams.setMargins(0, 0, (shutter_width+shutter_margin*2-view.getWidth())/2, 0);
+			setMargins(layoutParams, 0, 0, (shutter_width+shutter_margin*2-(system_ui_portrait ? view.getHeight() : view.getWidth()))/2+margin_right, 0);
 			view.setLayoutParams(layoutParams);
 			setViewRotation(view, ui_rotation);
 
@@ -477,6 +546,7 @@ public class MainUI {
 			layoutParams.addRule(align_parent_bottom, 0);
 			layoutParams.addRule(align_parent_left, 0);
 			layoutParams.addRule(align_parent_right, RelativeLayout.TRUE);
+			setMargins(layoutParams, 0, 0, margin_right, 0);
 			view.setLayoutParams(layoutParams);
 			setViewRotation(view, ui_rotation);
 	
@@ -498,7 +568,6 @@ public class MainUI {
 
 			if (root_width == 0 || root_height == 0) return;
 
-			int button_size = 0;
 			int buttons_count = 0;
 			int mode_buttons_count = 0;
 			int margin = 0;
@@ -556,7 +625,7 @@ public class MainUI {
 			layoutParams = (RelativeLayout.LayoutParams)view.getLayoutParams();
 			layoutParams.addRule(center_horizontal, preview_align_left ? 0 : RelativeLayout.TRUE);
 			layoutParams.addRule(align_parent_left, preview_align_left ? RelativeLayout.TRUE : 0);
-			layoutParams.setMargins(preview_margin, 0, 0, 0);
+			setMargins(layoutParams, preview_margin, 0, 0, 0);
 			view.setLayoutParams(layoutParams);
 
 			if (buttons_count !=0 ) {
@@ -568,11 +637,11 @@ public class MainUI {
 				if (gui_type == GUIType.Phone || gui_type == GUIType.Phone2){
 					if (gui_type == GUIType.Phone) {
 						ind_margin_left = button_size;
-						if( ui_rotation == 0 || ui_rotation == 180 ) ind_margin_right = gallery_width+gallery_margin;
+						if( ui_rotation_relative == 0 || ui_rotation_relative == 180 ) ind_margin_right = gallery_width+gallery_margin;
 					}
 					else ind_margin_right += button_size+buttons_shutter_gap;
 
-					layoutParams.setMargins(0, 0, gui_type == GUIType.Phone2 ? buttons_shutter_gap : 0, 0);
+					setMargins(layoutParams, 0, 0, gui_type == GUIType.Phone2 ? buttons_shutter_gap : 0, 0);
 					layoutParams.addRule(align_parent_top, 0);
 					layoutParams.addRule(align_parent_bottom, RelativeLayout.TRUE);
 					layoutParams.addRule(align_parent_left, gui_type == GUIType.Phone2 ? 0 : RelativeLayout.TRUE);
@@ -586,7 +655,7 @@ public class MainUI {
 						view = main_activity.findViewById(ctrl_panel_buttons[i]);
 						if (view.getVisibility() == View.VISIBLE && buttons_location[i] != 2){
 							layoutParams = (RelativeLayout.LayoutParams)view.getLayoutParams();
-							layoutParams.setMargins(
+							setMargins(layoutParams,
 								0,
 								ui_placement_right ? 0 : (is_first ? margin/2 : margin),
 								0,
@@ -610,7 +679,7 @@ public class MainUI {
 							if (is_first && view.getVisibility() == View.VISIBLE) {
 								is_first = false;
 								popup_anchor = ctrl_panel_buttons[i];
-								if (gui_type == GUIType.Phone2) bottom_container_anchor = ctrl_panel_buttons[i];
+								if (gui_type == GUIType.Phone2) seekbars_container_anchor = ctrl_panel_buttons[i];
 							}
 						}
 					}
@@ -635,7 +704,7 @@ public class MainUI {
 						view = main_activity.findViewById(ctrl_panel_buttons[i]);
 						if (view.getVisibility() == View.VISIBLE && buttons_location[i] != 2){
 							layoutParams = (RelativeLayout.LayoutParams)view.getLayoutParams();
-							layoutParams.setMargins(0, gap_fix, 0, gap_fix);
+							setMargins(layoutParams, 0, gap_fix, 0, gap_fix);
 							layoutParams.addRule(align_parent_top, RelativeLayout.TRUE);
 							layoutParams.addRule(align_parent_bottom, 0);
 							layoutParams.addRule(align_parent_left, 0);
@@ -726,11 +795,11 @@ public class MainUI {
 							if (margin_x+button_size > ind_margin_right) {
 								ind_margin_right = margin_x+button_size;
 								popup_anchor = ctrl_panel_buttons[i];
-								bottom_container_anchor = ctrl_panel_buttons[i];
+								seekbars_container_anchor = ctrl_panel_buttons[i];
 							}
 							
 							layoutParams = (RelativeLayout.LayoutParams)view.getLayoutParams();
-							layoutParams.setMargins(0, ui_placement_right ? 0 : margin_y, margin_x, ui_placement_right ? margin_y : 0);
+							setMargins(layoutParams, 0, ui_placement_right ? 0 : margin_y, margin_x, ui_placement_right ? margin_y : 0);
 							layoutParams.addRule(align_parent_top, 0);
 							layoutParams.addRule(align_parent_bottom, 0);
 							layoutParams.addRule(align_parent_left, 0);
@@ -763,7 +832,7 @@ public class MainUI {
 					view = main_activity.findViewById(ctrl_panel_buttons[i]);
 					if (view.getVisibility() == View.VISIBLE && buttons_location[i] == 2){
 						layoutParams = (RelativeLayout.LayoutParams)view.getLayoutParams();
-						layoutParams.setMargins(margin, gap_fix, 0, gap_fix);
+						setMargins(layoutParams, margin, gap_fix, 0, gap_fix);
 						layoutParams.addRule(align_parent_top, RelativeLayout.TRUE);
 						layoutParams.addRule(align_parent_bottom, 0);
 						layoutParams.addRule(align_parent_left, previous == 0 ? RelativeLayout.TRUE : 0);
@@ -783,17 +852,36 @@ public class MainUI {
 					}
 				}
 			}
+			ind_margin_right += margin_right;
 		}
 
 		layoutSeekbars();
 		layoutPopupView();
 
 		setSelfieMode(main_activity.selfie_mode);
+		setAudioControl(main_activity.audio_control);
 		// no need to call setSwitchCameraContentDescription()
+		
+		if (overlay_initialized) {
+			final ImageView overlay = (ImageView)main_activity.findViewById(R.id.overlay);
+			if (overlay.getVisibility() == View.VISIBLE) {
+				setOverlayImageRotation(overlay);
+			}
+		} else {
+			setOverlayImage();
+			overlay_initialized = true;
+		}
 
 		if( MyDebug.LOG ) {
 			Log.d(TAG, "layoutUI: total time: " + (System.currentTimeMillis() - debug_time));
 		}
+	}
+	
+	private void setMargins(RelativeLayout.LayoutParams lp, int left, int top, int right, int bottom) {
+		if (system_ui_portrait)
+			lp.setMargins(bottom, left, top, right);
+		else
+			lp.setMargins(left, top, right, bottom);
 	}
 	
 	public void layoutSeekbars() {
@@ -816,7 +904,7 @@ public class MainUI {
 					current_rotation = ui_placement_right ? 0 : 180;
 					break;
 				case "auto":
-					current_rotation = ui_rotation;
+					current_rotation = ui_rotation_relative;
 					break;
 			}
 
@@ -834,6 +922,29 @@ public class MainUI {
 			}
 
 			boolean upside_down = current_rotation == 180 || (!ui_placement_right && current_rotation == 270);
+			int rotation_diff = current_rotation - ui_rotation_relative;
+			boolean seekbar_upside_down = rotation_diff == 90 || rotation_diff == 180;
+
+			int seekbar_width_id = R.dimen.seekbar_width_large;
+			switch(sharedPreferences.getString(Prefs.SLIDERS_SIZE, "large")) {
+				case "small":
+					seekbar_width_id = R.dimen.seekbar_width_small;
+					break;
+				case "normal":
+					seekbar_width_id = R.dimen.seekbar_width_normal;
+					break;
+				case "xlarge":
+					seekbar_width_id = R.dimen.seekbar_width_xlarge;
+					break;
+			}
+			int width_pixels = Math.min(resources.getDimensionPixelSize(seekbar_width_id),
+				(( current_rotation == 0 || current_rotation == 180 ) ? root_width : root_height) - resources.getDimensionPixelSize(R.dimen.ctrl_button_size)*2);
+
+			if (system_ui_portrait) {
+				current_rotation -= 270;
+				if (current_rotation < 0)
+					current_rotation += 360;
+			}
 
 			for(int id : bottom_elements) {
 				view = main_activity.findViewById(id);
@@ -848,18 +959,17 @@ public class MainUI {
 					int margin_bottom = 0;
 					if (last_seekbar == 0) margin_bottom = resources.getDimensionPixelSize(R.dimen.seekbar_margin_bottom);
 					if (!(view instanceof SeekBar)) {
-						//layoutParams.setMargins(0, upside_down ? margin_bottom : 0, 0, upside_down ? 0 : margin_bottom);
 						layoutParams.setMargins(0, 0, 0, margin_bottom);
 					}
-					else 
+					else
 					view.setLayoutParams(layoutParams);
 
 					if (view instanceof SeekBar) {
 						view.setPadding(
 							view.getPaddingLeft(),
-							slider_padding+(upside_down ? margin_bottom : 0),
+							slider_padding+(seekbar_upside_down ? margin_bottom : 0),
 							view.getPaddingRight(),
-							slider_padding+(upside_down ? 0 : margin_bottom)
+							slider_padding+(seekbar_upside_down ? 0 : margin_bottom)
 						);
 					}
 					
@@ -870,50 +980,46 @@ public class MainUI {
 			int icons_rotation = 0;
 			if (current_rotation != ui_rotation) {
 				icons_rotation = ui_rotation - current_rotation;
-				if (icons_rotation < 0) icons_rotation += 360; 
+				if (icons_rotation < 0) icons_rotation += 360;
 			}
 
-			view = main_activity.findViewById(R.id.bottom_container);
+			view = main_activity.findViewById(R.id.seekbars_container);
 			view.setVisibility(View.VISIBLE);
-			int translation_y = 0;
 			int left = 0;
-			int width = RelativeLayout.LayoutParams.MATCH_PARENT;
-			if (current_rotation == 270 || gui_type == GUIType.Tablet || gui_type == GUIType.Universal) {
-				left = bottom_container_anchor;
-			}
-			if (current_rotation == 270 || current_rotation == 90) {
-				width = root_height;
+			if (current_rotation == (system_ui_portrait ? 0 : 270)) {
+				left = seekbars_container_anchor;
 			}
 			RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams)view.getLayoutParams();
 			
 			layoutParams.addRule(left_of, left);
 			layoutParams.addRule(center_horizontal, left == 0 ? RelativeLayout.TRUE : 0);
-			layoutParams.width = width;
+			if (system_ui_portrait) {
+				layoutParams.height = root_height;
+				if (current_rotation == 270 || current_rotation == 90) {
+					layoutParams.width = root_width;
+					layoutParams.setMargins((root_height-root_width)/2, 0, (root_height-root_width)/2, 0);
+				} else {
+					layoutParams.width = root_height;
+					layoutParams.setMargins(0, 0, 0, 0);
+				}
+			} else {
+				int width = RelativeLayout.LayoutParams.MATCH_PARENT;
+				if (current_rotation == 270 || current_rotation == 90) {
+					layoutParams.width = root_height;
+				} else {
+					layoutParams.width = RelativeLayout.LayoutParams.MATCH_PARENT;
+				}
+			}
 			view.setLayoutParams(layoutParams);
 			view.setRotation(current_rotation);
 
-			int seekbar_width_id = R.dimen.seekbar_width_large;
-			switch(sharedPreferences.getString(Prefs.SLIDERS_SIZE, "large")) {
-				case "small":
-					seekbar_width_id = R.dimen.seekbar_width_small;
-					break;
-				case "normal":
-					seekbar_width_id = R.dimen.seekbar_width_normal;
-					break;
-				case "xlarge":
-					seekbar_width_id = R.dimen.seekbar_width_xlarge;
-					break;
-			}
-
-			int width_pixels = Math.min(resources.getDimensionPixelSize(seekbar_width_id),
-				(( current_rotation == 0 || current_rotation == 180 ) ? root_width : root_height) - resources.getDimensionPixelSize(R.dimen.ctrl_button_size)*2);
 			for(int i = 0; i < rotatable_seekbars.length; i++) {
 				view = main_activity.findViewById(rotatable_seekbars[i]);
 				if( view.getVisibility() == View.VISIBLE ) {
 					RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams)view.getLayoutParams();
 					lp.width = width_pixels;
 					view.setLayoutParams(lp);
-					view.setRotation(upside_down ? 180 : 0);
+					view.setRotation(seekbar_upside_down ? 180 : 0);
 					
 					if (seekbar_icons[i] != 0) {
 						int icon_margin = view.getPaddingBottom() - view.getPaddingTop();
@@ -935,18 +1041,21 @@ public class MainUI {
 
 			view = main_activity.findViewById(R.id.zoom);
 			if( view.getVisibility() == View.VISIBLE ) {
-				view.setRotation(upside_down ? 180 : 0);
+				view.setRotation(seekbar_upside_down ? 180 : 0);
 			}
 			view = main_activity.findViewById(R.id.exposure_seekbar_zoom);
 			if( view.getVisibility() == View.VISIBLE ) {
-				view.setRotation(upside_down ? 180 : 0);
+				view.setRotation(seekbar_upside_down ? 180 : 0);
 			}
 
+			cancelSeekbarAnimation();
 			view = main_activity.findViewById(R.id.seekbar_hint);
+			view.clearAnimation();
+			view.setVisibility(View.GONE);
 			view.setRotation(icons_rotation);
 
 		} else {
-			main_activity.findViewById(R.id.bottom_container).setVisibility(View.GONE);
+			main_activity.findViewById(R.id.seekbars_container).setVisibility(View.GONE);
 		}
 	}
 
@@ -962,6 +1071,7 @@ public class MainUI {
 		View view = main_activity.findViewById(R.id.popup_container);
 		view.setAnimation(null);
 		RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams)view.getLayoutParams();
+		layoutParams.setMargins(0, 0, 0, 0);
 		if (from_mode_panel) {
 			layoutParams.addRule(center_horizontal, RelativeLayout.TRUE);
 			layoutParams.addRule(center_vertical, 0);
@@ -971,6 +1081,10 @@ public class MainUI {
 			layoutParams.addRule(below, popup_from);
 			layoutParams.addRule(left_of, 0);
 			layoutParams.addRule(right_of, 0);
+			if (system_ui_portrait) {
+				int diff = (root_width-root_height+resources.getDimensionPixelSize(R.dimen.ctrl_button_size))/2;
+				layoutParams.setMargins(0, diff, 0, diff);
+			}
 		} else if (gui_type == GUIType.Classic) {
 			layoutParams.addRule(center_horizontal, 0);
 			layoutParams.addRule(center_vertical, 0);
@@ -980,6 +1094,9 @@ public class MainUI {
 			layoutParams.addRule(below, R.id.popup);
 			layoutParams.addRule(left_of, R.id.take_photo);
 			layoutParams.addRule(right_of, 0);
+			if (system_ui_portrait) {
+				layoutParams.setMargins(0, main_activity.findViewById(R.id.take_photo).getTop()-root_height+resources.getDimensionPixelSize(R.dimen.ctrl_button_size), 0, 0);
+			}
 		} else if (gui_type == GUIType.Tablet || gui_type == GUIType.Universal) {
 			layoutParams.addRule(center_horizontal, 0);
 			layoutParams.addRule(center_vertical, RelativeLayout.TRUE);
@@ -989,6 +1106,9 @@ public class MainUI {
 			layoutParams.addRule(below, 0);
 			layoutParams.addRule(left_of, popup_anchor);
 			layoutParams.addRule(right_of, 0);
+			if (system_ui_portrait) {
+				layoutParams.setMargins(0, main_activity.findViewById(popup_anchor).getTop()-root_height, 0, 0);
+			}
 		} else {
 			layoutParams.addRule(center_horizontal, 0);
 			layoutParams.addRule(center_vertical, 0);
@@ -998,6 +1118,12 @@ public class MainUI {
 			layoutParams.addRule(below, 0);
 			layoutParams.addRule(left_of, gui_type == GUIType.Phone2 ? popup_anchor : 0);
 			layoutParams.addRule(right_of, gui_type == GUIType.Phone2 ? 0 : popup_anchor);
+			if (system_ui_portrait) {
+				if (gui_type == GUIType.Phone2)
+					layoutParams.setMargins(0, main_activity.findViewById(popup_anchor).getTop()-root_height, 0, 0);
+				else
+					layoutParams.setMargins(0, 0, 0, root_width-root_height-main_activity.findViewById(popup_anchor).getBottom());
+			}
 		}
 		view.setLayoutParams(layoutParams);
 
@@ -1009,20 +1135,35 @@ public class MainUI {
 			Log.d(TAG, "popup view width: " + view.getWidth());
 			Log.d(TAG, "popup view height: " + view.getHeight());
 		}
-		if( ui_rotation == 90 || ui_rotation == 270 ) {
+		boolean ui_rotation_portrait = ui_rotation == 90 || ui_rotation == 270;
+		if (ui_rotation_portrait) {
 			if (from_mode_panel) {
-				view.setTranslationY( (view.getHeight()-view.getWidth())/2 * (ui_placement_right ? -1 : 1));
+				setViewTranslationY(view, (view.getHeight()-view.getWidth())/2 * (ui_placement_right ? -1 : 1));
 			} else if (gui_type == GUIType.Classic) {
-				view.setTranslationX( (view.getWidth()-view.getHeight())/2 );
-				view.setTranslationY( (view.getHeight()-view.getWidth())/2 * (ui_placement_right ? -1 : 1));
+				setViewTranslationX(view, (view.getWidth()-view.getHeight())/2 );
+				setViewTranslationY(view, (view.getHeight()-view.getWidth())/2 * (ui_placement_right ? -1 : 1));
 			} else if (gui_type == GUIType.Tablet || gui_type == GUIType.Universal) {
-				view.setTranslationX( (view.getWidth()-view.getHeight())/2 );
+				setViewTranslationX(view, (view.getWidth()-view.getHeight())/2 );
 			} else {
-				if (gui_type == GUIType.Phone2) view.setTranslationX( (view.getWidth()-view.getHeight())/2 );
-				else view.setTranslationX( (view.getHeight()-view.getWidth())/2 );
-				view.setTranslationY( (view.getWidth()-view.getHeight())/2 * (ui_placement_right ? -1 : 1));
+				if (gui_type == GUIType.Phone2) setViewTranslationX(view, (view.getWidth()-view.getHeight())/2 );
+				else setViewTranslationX(view, (view.getHeight()-view.getWidth())/2 );
+				setViewTranslationY(view, (view.getWidth()-view.getHeight())/2 * (ui_placement_right ? -1 : 1));
 			}
 		}
+	}
+
+	private void setViewTranslationX(View view, float translation) {
+		if (system_ui_portrait)
+			view.setTranslationY(-translation);
+		else
+			view.setTranslationX(translation);
+	}
+
+	private void setViewTranslationY(View view, float translation) {
+		if (system_ui_portrait)
+			view.setTranslationX(translation);
+		else
+			view.setTranslationY(translation);
 	}
 
 	/** Set icon for taking photos vs videos.
@@ -1038,7 +1179,7 @@ public class MainUI {
 			int bg_resource = 0;
 			int content_description = 0;
 			
-			if ( 
+			if (
 				main_activity.getPreview().isOnTimer()
 				|| main_activity.getPreview().isBurst()
 				|| main_activity.getPreview().isWaitingFace()
@@ -1225,7 +1366,7 @@ public class MainUI {
 		this.immersive_mode = immersive_mode;
 		main_activity.runOnUiThread(new Runnable() {
 			public void run() {
-				showGUI(!immersive_mode, sharedPreferences.getString(Prefs.IMMERSIVE_MODE, "immersive_mode_low_profile").equals("immersive_mode_everything"));
+				showGUI(!immersive_mode, sharedPreferences.getString(Prefs.IMMERSIVE_MODE, "immersive_mode_off").equals("immersive_mode_everything"));
 			}
 		});
 	}
@@ -1274,7 +1415,7 @@ public class MainUI {
 	}
 	
 	private void updateButtonsLocation() {
-		boolean m = 
+		boolean m =
 			sharedPreferences.getBoolean(Prefs.SHOW_MODE_PANEL, false) &&
 			!sharedPreferences.getString(Prefs.GUI_TYPE_PORTRAIT, "default").equals("classic") &&
 			!sharedPreferences.getString(Prefs.GUI_TYPE, "phone").equals("classic");
@@ -1341,7 +1482,7 @@ public class MainUI {
 			else if (sharedPreferences.getBoolean(Prefs.CTRL_PANEL_EXPOSURE, true)) buttons_location[BUTTON_EXPOSURE] = 1;
 		}
 
-		buttons_location[BUTTON_SWITCH_CAMERA] = 0;		
+		buttons_location[BUTTON_SWITCH_CAMERA] = 0;
 		if (main_activity.getPreview().getCameraControllerManager().getNumberOfCameras() > 1) {
 			if (m && sharedPreferences.getBoolean(Prefs.MODE_PANEL_SWITCH_CAMERA, false)) buttons_location[BUTTON_SWITCH_CAMERA] = 2;
 			else if (sharedPreferences.getBoolean(Prefs.CTRL_PANEL_SWITCH_CAMERA, true)) buttons_location[BUTTON_SWITCH_CAMERA] = 1;
@@ -1350,6 +1491,10 @@ public class MainUI {
 		buttons_location[BUTTON_FACE_DETECTION] = 0;
 		if (m && sharedPreferences.getBoolean(Prefs.MODE_PANEL_FACE_DETECTION, false)) buttons_location[BUTTON_FACE_DETECTION] = 2;
 		else if (sharedPreferences.getBoolean(Prefs.CTRL_PANEL_FACE_DETECTION, false)) buttons_location[BUTTON_FACE_DETECTION] = 1;
+
+		buttons_location[BUTTON_AUDIO_CONTROL] = 0;
+		if (m && sharedPreferences.getBoolean(Prefs.MODE_PANEL_AUDIO_CONTROL, false)) buttons_location[BUTTON_AUDIO_CONTROL] = 2;
+		else if (sharedPreferences.getBoolean(Prefs.CTRL_PANEL_AUDIO_CONTROL, false)) buttons_location[BUTTON_AUDIO_CONTROL] = 1;
 
 		buttons_location[BUTTON_SELFIE_MODE] = 0;
 		if (m && sharedPreferences.getBoolean(Prefs.MODE_PANEL_SELFIE_MODE, false)) buttons_location[BUTTON_SELFIE_MODE] = 2;
@@ -1395,8 +1540,29 @@ public class MainUI {
 					}
 				} else {
 					// still allow popup in order to change flash mode when recording video
+					boolean enable_popup = false;
 					if( main_activity.getPreview().supportsFlash() ) {
-						view = (View) main_activity.findViewById(main_activity.findViewById(R.id.flash_mode).getVisibility() == View.VISIBLE ? R.id.flash_mode : R.id.popup);
+						if (main_activity.findViewById(R.id.flash_mode).getVisibility() == View.VISIBLE) {
+							view = (View) main_activity.findViewById(R.id.flash_mode);
+							view.setEnabled(true);
+							view.setAlpha(1.0f);
+						
+						} else {
+							enable_popup = true;
+						}
+					}
+					if( main_activity.getPreview().supportsFocus() ) {
+						if (main_activity.findViewById(R.id.focus_mode).getVisibility() == View.VISIBLE) {
+							view = (View) main_activity.findViewById(R.id.focus_mode);
+							view.setEnabled(true);
+							view.setAlpha(1.0f);
+						
+						} else {
+							enable_popup = true;
+						}
+					}
+					if (enable_popup) {
+						view = (View) main_activity.findViewById(R.id.popup);
 						view.setEnabled(true);
 						view.setAlpha(1.0f);
 					}
@@ -1426,6 +1592,23 @@ public class MainUI {
 		else {
 			res = R.drawable.ctrl_selfie;
 			descr = R.string.selfie_mode_start;
+		}
+		
+		view.setImageResource(res);
+		view.setContentDescription(resources.getString(descr));
+	}
+
+	public void setAudioControl(final boolean state) {
+		ImageButton view = (ImageButton)main_activity.findViewById(R.id.audio_control);
+		
+		final int res;
+		final int descr;
+		if (state) {
+			res = R.drawable.ctrl_mic_red;
+			descr = R.string.audio_control_stop;
+		} else {
+			res = R.drawable.ctrl_mic;
+			descr = R.string.audio_control_start;
 		}
 		
 		view.setImageResource(res);
@@ -1520,39 +1703,6 @@ public class MainUI {
 		} else if (show_seekbars) showSeekbars(true, true);
 	}
 
-	public void setSeekbarZoom(int new_zoom) {
-		if( MyDebug.LOG )
-			Log.d(TAG, "setSeekbarZoom: " + new_zoom);
-		SeekBar zoomSeekBar = (SeekBar) main_activity.findViewById(R.id.zoom_seekbar);
-		if( MyDebug.LOG )
-			Log.d(TAG, "progress was: " + zoomSeekBar.getProgress());
-		zoomSeekBar.setProgress(new_zoom);
-		if( MyDebug.LOG )
-			Log.d(TAG, "progress is now: " + zoomSeekBar.getProgress());
-	}
-	
-	public void changeSeekbar(int seekBarId, int change) {
-		if( MyDebug.LOG )
-			Log.d(TAG, "changeSeekbar: " + change);
-		SeekBar seekBar = (SeekBar)main_activity.findViewById(seekBarId);
-		int value = seekBar.getProgress();
-		int new_value = value + change;
-		if( new_value < 0 )
-			new_value = 0;
-		else if( new_value > seekBar.getMax() )
-			new_value = seekBar.getMax();
-		if( MyDebug.LOG ) {
-			Log.d(TAG, "value: " + value);
-			Log.d(TAG, "new_value: " + new_value);
-			Log.d(TAG, "max: " + seekBar.getMax());
-		}
-		if( new_value != value ) {
-			seekBar.setProgress(new_value);
-		}
-		if (seekBarId == R.id.exposure_seekbar){
-			setExposureIcon();
-		}
-	}
 	
 	public void setFlashIcon() {
 		if( MyDebug.LOG ) Log.d(TAG, "setFlashIcon");
@@ -1670,7 +1820,7 @@ public class MainUI {
 			return value.substring(4);
 		else if (value.length() >= 3 && value.substring(0, 3).equalsIgnoreCase("ISO"))
 			return value.substring(3);
-		else 
+		else
 			return value;
 	}
 
@@ -1713,8 +1863,7 @@ public class MainUI {
 	public void togglePopup(View view) {
 		
 		PopupView.PopupType popup_type = PopupView.PopupType.Main;
-		popup_from = view.getId();
-		switch (popup_from) {
+		switch (view.getId()) {
 			case R.id.focus_mode:
 				popup_type = PopupView.PopupType.Focus;
 				break;
@@ -1738,12 +1887,33 @@ public class MainUI {
 				break;
 		}
 		
+		if (popup_type == PopupView.PopupType.ISO && preview.supportsISORange() && preview.isVideo()) {
+			String new_iso;
+			if (Prefs.getISOPref().equals("manual"))
+				new_iso = "auto";
+			else
+				new_iso = "manual";
+			
+			Prefs.setISOPref(new_iso);
+			
+			setManualIsoSeekbars();
+			updateSeekbars();
+			setExposureIcon();
+
+			main_activity.updateForSettings(preview.getISOString(new_iso));
+			setISOIcon();
+
+			return;
+		}
+
+		popup_from = view.getId();
+
 		final ViewGroup popup_container = (ViewGroup)main_activity.findViewById(R.id.popup_container);
 		if( popupIsOpen() && current_popup == popup_type ) {
 			closePopup();
 			return;
 		}
-		if( main_activity.getPreview().getCameraController() == null ) {
+		if( preview.getCameraController() == null ) {
 			if( MyDebug.LOG )
 				Log.d(TAG, "camera not opened!");
 			return;
@@ -1752,8 +1922,8 @@ public class MainUI {
 		if( MyDebug.LOG )
 			Log.d(TAG, "open popup");
 
-		main_activity.getPreview().cancelTimer(); // best to cancel any timer, in case we take a photo while settings window is open, or when changing settings
-		main_activity.stopAudioListeners();
+		preview.cancelTimer(); // best to cancel any timer, in case we take a photo while settings window is open, or when changing settings
+		main_activity.stopAudioListeners(true);
 		
 		final long time_s = System.currentTimeMillis();
 
@@ -1799,7 +1969,7 @@ public class MainUI {
 		}
 		popup_container.setVisibility(View.VISIBLE);
 		
-		if (sharedPreferences.getString(Prefs.IMMERSIVE_MODE, "immersive_mode_low_profile").equals("immersive_mode_low_profile")) {
+		if (sharedPreferences.getString(Prefs.IMMERSIVE_MODE, "immersive_mode_off").equals("immersive_mode_low_profile")) {
 			main_activity.getWindow().getDecorView().setSystemUiVisibility(0);
 		}
 		
@@ -1807,7 +1977,7 @@ public class MainUI {
 		// but need to do after the layout has been done, so we have a valid width/height to use
 		// n.b., even though we only need the portion of layoutUI for the popup container, there
 		// doesn't seem to be any performance benefit in only calling that part
-		popup_container.getViewTreeObserver().addOnGlobalLayoutListener( 
+		popup_container.getViewTreeObserver().addOnGlobalLayoutListener(
 			new OnGlobalLayoutListener() {
 				@SuppressWarnings("deprecation")
 				@Override
@@ -1841,17 +2011,24 @@ public class MainUI {
 		int[] margins = new int[4];
 		margins[0] = ind_margin_left;
 		margins[1] = ind_margin_top;
-		if (gui_type == GUIType.Classic && last_seekbar != 0) {
-			int bottom = 0;
-			View view = main_activity.findViewById(R.id.bottom_container);
-			if (view.getVisibility() == View.VISIBLE && ui_rotation == view.getRotation())
-				bottom = view.getHeight()-main_activity.findViewById(last_seekbar).getTop();
-
-			margins[2] = ind_margin_right+(ui_rotation == 270 ? bottom : 0);
-			margins[3] = ind_margin_bottom+(ui_rotation == 0 || ui_rotation == 180 ? bottom : 0);
-		} else {
-			margins[2] = ind_margin_right;
-			margins[3] = ind_margin_bottom;
+		margins[2] = ind_margin_right;
+		margins[3] = ind_margin_bottom;
+		if (last_seekbar != 0) {
+			View view = main_activity.findViewById(R.id.seekbars_container);
+			if (view.getVisibility() == View.VISIBLE) {
+				int view_rotation = (int)view.getRotation();
+				int add_to_margin = -1;
+				if (ui_rotation == view_rotation) {
+					if (ui_rotation_relative == 0 || ui_rotation_relative == 180)
+						add_to_margin = 3;
+					else if (ui_rotation_relative == 270)
+						add_to_margin = 2;
+				} else if (ui_rotation_relative == 90 && view_rotation == (system_ui_portrait ? 0 : 270))
+					add_to_margin = 2;
+					
+				if (add_to_margin >= 0)
+					margins[add_to_margin] += view.getHeight()-main_activity.findViewById(last_seekbar).getTop();
+			}
 		}
 
 		return margins;
@@ -1893,6 +2070,10 @@ public class MainUI {
 	public int getUIRotation() {
 		return ui_rotation;
 	}
+
+	public int getUIRotationRelative() {
+		return ui_rotation_relative;
+	}
 	
 	// for testing
 	public View getPopupButton(String key) {
@@ -1903,6 +2084,46 @@ public class MainUI {
 		return popup_view;
 	}
 	
+	private boolean seekbars_was_visible;
+	public void multitouchEventStart() {
+		if( MyDebug.LOG )
+			Log.d(TAG, "multitouchEventStart");
+		View view = main_activity.findViewById(R.id.seekbars_container);
+		seekbars_was_visible = view.getVisibility() == View.VISIBLE;
+		if (seekbars_was_visible) {
+			view.setVisibility(View.GONE);
+		}
+	}
+
+	public void multitouchEventStop() {
+		if( MyDebug.LOG )
+			Log.d(TAG, "multitouchEventStop");
+		if (seekbars_was_visible) {
+			main_activity.findViewById(R.id.seekbars_container).setVisibility(View.VISIBLE);
+			seekbars_was_visible = false;
+		}
+	}
+
+	public void changeSeekbar(int seekBarId, int change) {
+		if( MyDebug.LOG )
+			Log.d(TAG, "changeSeekbar: " + change);
+		SeekBar seekBar = (SeekBar)main_activity.findViewById(seekBarId);
+		int value = seekBar.getProgress();
+		int new_value = value + change;
+		if( new_value < 0 )
+			new_value = 0;
+		else if( new_value > seekBar.getMax() )
+			new_value = seekBar.getMax();
+		if( MyDebug.LOG ) {
+			Log.d(TAG, "value: " + value);
+			Log.d(TAG, "new_value: " + new_value);
+			Log.d(TAG, "max: " + seekBar.getMax());
+		}
+		if( new_value != value ) {
+			seekBar.setProgress(new_value);
+		}
+	}
+
 	public void setZoomSeekbar() {
 		if( MyDebug.LOG )
 			Log.d(TAG, "set up zoom");
@@ -1919,12 +2140,12 @@ public class MainUI {
 
 				zoomControls.setOnZoomInClickListener(new View.OnClickListener(){
 					public void onClick(View v){
-						main_activity.zoomIn();
+						zoomIn();
 					}
 				});
 				zoomControls.setOnZoomOutClickListener(new View.OnClickListener(){
 					public void onClick(View v){
-						main_activity.zoomOut();
+						zoomOut();
 					}
 				});
 				if( !inImmersiveMode() ) {
@@ -1971,7 +2192,26 @@ public class MainUI {
 			zoomSeekBar.setVisibility(View.GONE);
 		}
 	}
-	
+
+	public void setSeekbarZoom(int new_zoom) {
+		if( MyDebug.LOG )
+			Log.d(TAG, "setSeekbarZoom: " + new_zoom);
+		SeekBar zoomSeekBar = (SeekBar) main_activity.findViewById(R.id.zoom_seekbar);
+		if( MyDebug.LOG )
+			Log.d(TAG, "progress was: " + zoomSeekBar.getProgress());
+		zoomSeekBar.setProgress(new_zoom);
+		if( MyDebug.LOG )
+			Log.d(TAG, "progress is now: " + zoomSeekBar.getProgress());
+	}
+
+	public void zoomIn() {
+		changeSeekbar(R.id.zoom_seekbar, 1);
+	}
+
+	public void zoomOut() {
+		changeSeekbar(R.id.zoom_seekbar, -1);
+	}
+
 	public void setExposureSeekbar() {
 		if( preview.supportsExposures() ) {
 			if( MyDebug.LOG )
@@ -1990,13 +2230,15 @@ public class MainUI {
 					setExposureIcon();
 					if (fromUser)
 						setSeekbarHint(seekBar, preview.getExposureCompensationString(min_exposure + progress));
+					else if (((View)seekBar).getVisibility() == View.VISIBLE)
+						showSeekbarHint(seekBar, preview.getExposureCompensationString(min_exposure + progress), false);
 					else
 						preview.showToast(resources.getString(R.string.exposure_compensation) + " " + preview.getExposureCompensationString(min_exposure + progress));
 				}
 
 				@Override
 				public void onStartTrackingTouch(SeekBar seekBar) {
-					showSeekbarHint(seekBar, preview.getExposureCompensationString(min_exposure + seekBar.getProgress()));
+					showSeekbarHint(seekBar, preview.getExposureCompensationString(min_exposure + seekBar.getProgress()), true);
 				}
 
 				@Override
@@ -2008,15 +2250,193 @@ public class MainUI {
 			ZoomControls seek_bar_zoom = (ZoomControls)main_activity.findViewById(R.id.exposure_seekbar_zoom);
 			seek_bar_zoom.setOnZoomInClickListener(new View.OnClickListener(){
 				public void onClick(View v){
-					main_activity.changeExposure(1);
+					changeExposure(1);
 				}
 			});
 			seek_bar_zoom.setOnZoomOutClickListener(new View.OnClickListener(){
 				public void onClick(View v){
-					main_activity.changeExposure(-1);
+					changeExposure(-1);
 				}
 			});
 		}
+	}
+
+	private final int[] std_exposures = {
+		32000, 16000, 8000, 4000, 2000, 1000, 500, 250, 125, 100, 60, 50, 30, 25, 15, 8, 4, 2, 1,
+		2, 5, 10, 15, 20, 30, 60
+	};
+	private class Exposure {
+		public String text;
+		public long exposure_time;
+
+		public Exposure(String text, long exposure_time) {
+			this.text = text;
+			this.exposure_time = exposure_time;
+		}
+	};
+	
+	private final List<Exposure> exposures = new ArrayList<>();
+	private boolean iso_steps;
+	private boolean exposure_steps;
+
+	public void setManualIsoSeekbars() {
+		if( preview.supportsISORange()) {
+			if( MyDebug.LOG )
+				Log.d(TAG, "set up iso");
+			
+			final CameraController camera_controller = preview.getCameraController();
+			if (camera_controller == null) return;
+			
+			final boolean is_manual = Prefs.getISOPref().equals("manual");
+
+			SeekBar iso_seek_bar = ((SeekBar)main_activity.findViewById(R.id.iso_seekbar));
+			iso_seek_bar.setOnSeekBarChangeListener(null); // clear an existing listener - don't want to call the listener when setting up the progress bar to match the existing state
+			if (is_manual) {
+				final int iso_min = preview.getMinimumISO();
+				final int iso_max = preview.getMaximumISO();
+				final int iso_value = Math.min(Math.max(sharedPreferences.getInt(Prefs.MANUAL_ISO, iso_max/2), iso_min), iso_max);
+				iso_steps = sharedPreferences.getBoolean(Prefs.ISO_STEPS, false);
+				final int steps = iso_steps ? (31-Integer.numberOfLeadingZeros(iso_max/iso_min))*3 : manual_n;
+				
+				camera_controller.setISO(iso_value);
+				
+				setProgressSeekbarExponential(iso_seek_bar, iso_min, iso_max, iso_value, steps);
+				iso_seek_bar.setOnSeekBarChangeListener(new OnSeekBarChangeListener() {
+					private int iso = 0;
+					@Override
+					public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+						if( MyDebug.LOG )
+							Log.d(TAG, "iso seekbar onProgressChanged: " + progress);
+						double frac = progress/(double)steps;
+						if( MyDebug.LOG )
+							Log.d(TAG, "exposure_time frac: " + frac);
+
+						iso = (int)(MainActivity.exponentialScaling(frac, iso_min, iso_max) + 0.5d);
+						preview.setISO(iso);
+						if (fromUser)
+							setSeekbarHint(seekBar, Integer.toString(iso));
+						else if (((View)seekBar).getVisibility() == View.VISIBLE)
+							showSeekbarHint(seekBar, Integer.toString(iso), false);
+						else
+							preview.showToast(resources.getString(R.string.iso) + " " + iso);
+					}
+
+					@Override
+					public void onStartTrackingTouch(SeekBar seekBar) {
+						showSeekbarHint(seekBar, Integer.toString(iso_value), true);
+					}
+
+					@Override
+					public void onStopTrackingTouch(SeekBar seekBar) {
+						SharedPreferences.Editor editor = sharedPreferences.edit();
+						editor.putInt(Prefs.MANUAL_ISO, iso);
+						editor.apply();
+
+						hideSeekbarHint();
+					}
+				});
+			}
+			if( preview.supportsExposureTime() ) {
+				if( MyDebug.LOG )
+					Log.d(TAG, "set up exposure time");
+				SeekBar exposure_time_seek_bar = ((SeekBar)main_activity.findViewById(R.id.exposure_time_seekbar));
+				exposure_time_seek_bar.setOnSeekBarChangeListener(null); // clear an existing listener - don't want to call the listener when setting up the progress bar to match the existing state
+				if (is_manual) {
+					final long expo_min = preview.getMinimumExposureTime();
+					final long expo_max = preview.getMaximumExposureTime();
+					long expo_value = sharedPreferences.getLong(Prefs.EXPOSURE_TIME, camera_controller.getExposureTime());
+					expo_value = Math.min(Math.max(expo_value, expo_min), expo_max);
+					
+					camera_controller.setExposureTime(expo_value);
+				
+					exposure_steps = sharedPreferences.getBoolean(Prefs.EXPOSURE_STEPS, false);
+					exposures.clear();
+					if (exposure_steps) {
+						exposures.add(new Exposure(preview.getExposureTimeString(expo_min), expo_min));
+						int progress = 0;
+						for(int i = 0; i < std_exposures.length; i++) {
+							final boolean is_second = i > 0 && std_exposures[i-1] < std_exposures[i];
+							long exposure = (long)(is_second ? 1000000000.0d*std_exposures[i]+0.5d : 1000000000.0d/std_exposures[i]+0.5d);
+							if (exposure > expo_min && exposure < expo_max) {
+								exposures.add(new Exposure(
+									((is_second || std_exposures[i] == 1) ? Integer.toString(std_exposures[i]) : "1/" + std_exposures[i]) + " " + resources.getString(R.string.seconds_abbreviation),
+									exposure
+								));
+								if (exposure <= expo_value)
+									progress = exposures.size()-1;
+							}
+						}
+						exposures.add(new Exposure(preview.getExposureTimeString(expo_max), expo_max));
+						if (expo_max == expo_value)
+							progress = exposures.size()-1;
+
+						exposure_time_seek_bar.setMax(exposures.size()-1);
+						exposure_time_seek_bar.setProgress(progress);
+					} else {
+						setProgressSeekbarExponential(exposure_time_seek_bar, expo_min, expo_max, expo_value);
+					}
+
+					exposure_time_seek_bar.setOnSeekBarChangeListener(new OnSeekBarChangeListener() {
+						private long exposure_time = 0;
+
+						@Override
+						public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+							if( MyDebug.LOG )
+								Log.d(TAG, "exposure_time seekbar onProgressChanged: " + progress);
+							double frac = progress/(double)manual_n;
+							if( MyDebug.LOG )
+								Log.d(TAG, "exposure_time frac: " + frac);
+
+							String text;
+							if (exposure_steps) {
+								Exposure exposure = exposures.get(progress);
+								exposure_time = exposure.exposure_time;
+								text = exposure.text;
+							} else {
+								exposure_time = (long)(MainActivity.exponentialScaling(frac, expo_min, expo_max) + 0.5d);
+								text = preview.getExposureTimeString(exposure_time);
+							}
+
+							preview.setExposureTime(exposure_time);
+
+							if (fromUser)
+								setSeekbarHint(seekBar, text);
+							else if (((View)seekBar).getVisibility() == View.VISIBLE)
+								showSeekbarHint(seekBar, text, false);
+							else
+								preview.showToast(resources.getString(R.string.exposure) + " " + text);
+						}
+
+						@Override
+						public void onStartTrackingTouch(SeekBar seekBar) {
+							showSeekbarHint(seekBar, exposure_steps ? exposures.get(seekBar.getProgress()).text : preview.getExposureTimeString(exposure_time), true);
+						}
+
+						@Override
+						public void onStopTrackingTouch(SeekBar seekBar) {
+							SharedPreferences.Editor editor = sharedPreferences.edit();
+							editor.putLong(Prefs.EXPOSURE_TIME, exposure_time);
+							editor.apply();
+							
+							hideSeekbarHint();
+						}
+					});
+				}
+			}
+		}
+	}
+
+	public void changeExposure(int change) {
+		if (Prefs.getISOPref().equals("manual")) {
+			changeSeekbar(R.id.exposure_time_seekbar, exposure_steps ? change : change*10);
+		} else {
+			changeSeekbar(R.id.exposure_seekbar, change);
+			setExposureIcon();
+		}
+	}
+
+	public void changeISO(int change) {
+		changeSeekbar(R.id.iso_seekbar, iso_steps ? change : change*10);
 	}
 
 	public void setManualFocusSeekbars() {
@@ -2102,6 +2522,8 @@ public class MainUI {
 					preview.setFocusDistance(focus_distance);
 					if (fromUser)
 						setSeekbarHint(seekBar, preview.getFocusDistanceString(focus_distance));
+					else if (((View)seekBar).getVisibility() == View.VISIBLE)
+						showSeekbarHint(seekBar, preview.getFocusDistanceString(focus_distance), false);
 					else
 						preview.showToast(resources.getString(R.string.focus_distance) + " " + preview.getFocusDistanceString(focus_distance));
 				}
@@ -2111,7 +2533,7 @@ public class MainUI {
 					if (sharedPreferences.getBoolean(Prefs.ZOOM_WHEN_FOCUSING, false))
 						preview.focusZoom();
 
-					showSeekbarHint(seekBar, preview.getFocusDistanceString(focus_distance));
+					showSeekbarHint(seekBar, preview.getFocusDistanceString(focus_distance), true);
 				}
 
 				@Override
@@ -2165,6 +2587,8 @@ public class MainUI {
 						preview.setFocusDistance(focus_distance);
 						if (fromUser)
 							setSeekbarHint(seekBar, preview.getFocusDistanceString(focus_distance));
+						else if (((View)seekBar).getVisibility() == View.VISIBLE)
+							showSeekbarHint(seekBar, preview.getFocusDistanceString(focus_distance), false);
 						else
 							preview.showToast(resources.getString(R.string.focus_distance) + " " + preview.getFocusDistanceString(focus_distance));
 					}
@@ -2174,7 +2598,7 @@ public class MainUI {
 						if (sharedPreferences.getBoolean(Prefs.ZOOM_WHEN_FOCUSING, false))
 							preview.focusZoom();
 
-						showSeekbarHint(seekBar, preview.getFocusDistanceString(focus_distance));
+						showSeekbarHint(seekBar, preview.getFocusDistanceString(focus_distance), true);
 					}
 
 					@Override
@@ -2194,117 +2618,16 @@ public class MainUI {
 					}
 				});
 			}
-		} 
+		}
 		focusSeekBar.setVisibility(is_visible ? View.VISIBLE : View.GONE);
 		focusBracketingSeekBar.setVisibility(is_bracketing ? View.VISIBLE : View.GONE);
 	}
 
-	public void setManualIsoSeekbars() {
-		if( preview.supportsISORange()) {
-			if( MyDebug.LOG )
-				Log.d(TAG, "set up iso");
-			
-			final CameraController camera_controller = preview.getCameraController();
-			if (camera_controller == null) return;
-			
-			final boolean is_manual = Prefs.getISOPref().equals("manual");
-
-			SeekBar iso_seek_bar = ((SeekBar)main_activity.findViewById(R.id.iso_seekbar));
-			iso_seek_bar.setOnSeekBarChangeListener(null); // clear an existing listener - don't want to call the listener when setting up the progress bar to match the existing state
-			if (is_manual) {
-				final int iso_min = preview.getMinimumISO();
-				final int iso_max = preview.getMaximumISO();
-				final int iso_value = Math.min(Math.max(sharedPreferences.getInt(Prefs.MANUAL_ISO, iso_max/2), iso_min), iso_max);
-				final int steps = sharedPreferences.getBoolean(Prefs.ISO_STEPS, false) ? (31-Integer.numberOfLeadingZeros(iso_max/iso_min))*3 : manual_n;
-				
-				camera_controller.setISO(iso_value);
-				
-				setProgressSeekbarExponential(iso_seek_bar, iso_min, iso_max, iso_value, steps);
-				iso_seek_bar.setOnSeekBarChangeListener(new OnSeekBarChangeListener() {
-					private int iso = 0;
-					@Override
-					public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-						if( MyDebug.LOG )
-							Log.d(TAG, "iso seekbar onProgressChanged: " + progress);
-						double frac = progress/(double)steps;
-						if( MyDebug.LOG )
-							Log.d(TAG, "exposure_time frac: " + frac);
-
-						iso = (int)(MainActivity.exponentialScaling(frac, iso_min, iso_max) + 0.5d);
-						preview.setISO(iso);
-						if (fromUser)
-							setSeekbarHint(seekBar, Integer.toString(iso));
-						else
-							preview.showToast(resources.getString(R.string.iso) + " " + iso);
-					}
-
-					@Override
-					public void onStartTrackingTouch(SeekBar seekBar) {
-						showSeekbarHint(seekBar, Integer.toString(iso_value));
-					}
-
-					@Override
-					public void onStopTrackingTouch(SeekBar seekBar) {
-						SharedPreferences.Editor editor = sharedPreferences.edit();
-						editor.putInt(Prefs.MANUAL_ISO, iso);
-						editor.apply();
-
-						hideSeekbarHint();
-					}
-				});
-			}
-			if( preview.supportsExposureTime() ) {
-				if( MyDebug.LOG )
-					Log.d(TAG, "set up exposure time");
-				SeekBar exposure_time_seek_bar = ((SeekBar)main_activity.findViewById(R.id.exposure_time_seekbar));
-				exposure_time_seek_bar.setOnSeekBarChangeListener(null); // clear an existing listener - don't want to call the listener when setting up the progress bar to match the existing state
-				if (is_manual) {
-					final long expo_min = preview.getMinimumExposureTime();
-					final long expo_max = preview.getMaximumExposureTime();
-					long expo_value = sharedPreferences.getLong(Prefs.EXPOSURE_TIME, camera_controller.getExposureTime());
-					expo_value = Math.min(Math.max(expo_value, expo_min), expo_max);
-					
-					camera_controller.setExposureTime(expo_value);
-				
-					setProgressSeekbarExponential(exposure_time_seek_bar, expo_min, expo_max, expo_value);
-					exposure_time_seek_bar.setOnSeekBarChangeListener(new OnSeekBarChangeListener() {
-						private long exposure_time = 0;
-
-						@Override
-						public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-							if( MyDebug.LOG )
-								Log.d(TAG, "exposure_time seekbar onProgressChanged: " + progress);
-							double frac = progress/(double)manual_n;
-							if( MyDebug.LOG )
-								Log.d(TAG, "exposure_time frac: " + frac);
-
-							exposure_time = (long)(MainActivity.exponentialScaling(frac, expo_min, expo_max) + 0.5d);
-							preview.setExposureTime(exposure_time);
-
-							if (fromUser)
-								setSeekbarHint(seekBar, preview.getExposureTimeString(exposure_time));
-							else
-								preview.showToast(resources.getString(R.string.exposure) + " " + preview.getExposureTimeString(exposure_time));
-						}
-
-						@Override
-						public void onStartTrackingTouch(SeekBar seekBar) {
-							showSeekbarHint(seekBar, preview.getExposureTimeString(exposure_time));
-						}
-
-						@Override
-						public void onStopTrackingTouch(SeekBar seekBar) {
-							SharedPreferences.Editor editor = sharedPreferences.edit();
-							editor.putLong(Prefs.EXPOSURE_TIME, exposure_time);
-							editor.apply();
-							
-							hideSeekbarHint();
-						}
-					});
-				}
-			}
-		}
+	public void changeFocusDistance(int change) {
+		changeSeekbar(R.id.focus_seekbar, change*10);
 	}
+
+	private boolean white_balance_steps;
 
 	public void setManualWBSeekbar() {
 		if( MyDebug.LOG )
@@ -2321,38 +2644,47 @@ public class MainUI {
 				int value = Prefs.getWhiteBalanceTemperaturePref();
 				preview.setWhiteBalanceTemperature(value);
 				
+				white_balance_steps = sharedPreferences.getBoolean(Prefs.WHITE_BALANCE_STEPS, false);
+				final int step_divider = white_balance_steps ? 100 : 2;
+				
 				// white balance should use linear scaling
-				white_balance_seek_bar.setMax(maximum_temperature - minimum_temperature);
-				white_balance_seek_bar.setProgress(value - minimum_temperature);
+				white_balance_seek_bar.setMax((maximum_temperature - minimum_temperature)/step_divider);
+				white_balance_seek_bar.setProgress((value - minimum_temperature)/step_divider);
 				white_balance_seek_bar.setOnSeekBarChangeListener(new OnSeekBarChangeListener() {
 					@Override
 					public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
 						if( MyDebug.LOG )
 							Log.d(TAG, "white balance seekbar onProgressChanged: " + progress);
-						int temperature = minimum_temperature + progress;
+						int temperature = minimum_temperature + progress*step_divider;
 						preview.setWhiteBalanceTemperature(temperature);
 
 						if (fromUser)
 							setSeekbarHint(seekBar, Integer.toString(temperature));
+						else if (((View)seekBar).getVisibility() == View.VISIBLE)
+							showSeekbarHint(seekBar, Integer.toString(temperature), false);
 						else
 							preview.showToast(resources.getString(R.string.white_balance) + " " + temperature);
 					}
 
 					@Override
 					public void onStartTrackingTouch(SeekBar seekBar) {
-						showSeekbarHint(seekBar, Integer.toString(minimum_temperature + seekBar.getProgress()));
+						showSeekbarHint(seekBar, Integer.toString(minimum_temperature + seekBar.getProgress()*step_divider), true);
 					}
 
 					@Override
 					public void onStopTrackingTouch(SeekBar seekBar) {
-						Prefs.setWhiteBalanceTemperaturePref(seekBar.getProgress()+minimum_temperature);
+						Prefs.setWhiteBalanceTemperaturePref(minimum_temperature+seekBar.getProgress()*step_divider);
 						hideSeekbarHint();
 					}
 				});
 			}
 		}
 	}
-	
+
+	public void changeWhiteBalance(int change) {
+		changeSeekbar(R.id.white_balance_seekbar, white_balance_steps ? change : change*10);
+	}
+
 	public void setProgressSeekbarExponential(SeekBar seekBar, double min_value, double max_value, double value) {
 		setProgressSeekbarExponential(seekBar, min_value, max_value, value, manual_n);
 	}
@@ -2415,7 +2747,12 @@ public class MainUI {
 		return new float[0];
 	}
 
-	public void showSeekbarHint(SeekBar seekBar, String text) {
+	private AlphaAnimation seekbarHintAnimation;
+
+	public void showSeekbarHint(SeekBar seekBar, String text, boolean fromUser) {
+		if( MyDebug.LOG )
+			Log.d(TAG, "showSeekbarHint");
+		cancelSeekbarAnimation();
 		View view = main_activity.findViewById(R.id.seekbar_hint);
 		int seekbar_id = seekBar.getId();
 		RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams)view.getLayoutParams();
@@ -2424,9 +2761,13 @@ public class MainUI {
 		view.setLayoutParams(layoutParams);
 		view.setVisibility(View.VISIBLE);
 		setSeekbarHint(seekBar, text);
+		if (!fromUser)
+			hideSeekbarHint(2000);
 	}
 
 	public void setSeekbarHint(SeekBar seekBar, String text) {
+		if( MyDebug.LOG )
+			Log.d(TAG, "setSeekbarHint");
 		View view = main_activity.findViewById(R.id.seekbar_hint);
 		if (view.getVisibility() == View.VISIBLE) {
 			((TextView)view).setText(" " + text + " ");
@@ -2449,8 +2790,231 @@ public class MainUI {
 			);
 		}
 	}
+	
+	private void cancelSeekbarAnimation() {
+		if (seekbarHintAnimation != null) {
+			seekbarHintAnimation.setAnimationListener(null);
+			seekbarHintAnimation.cancel();
+			seekbarHintAnimation = null;
+		}
+	}
+	
+	private void hideSeekbarHint() {
+		hideSeekbarHint(0);
+	}
+		
+	private void hideSeekbarHint(int timeout) {
+		if( MyDebug.LOG )
+			Log.d(TAG, "hideSeekbarHint");
+		seekbarHintAnimation = new AlphaAnimation(1.0f, 0.0f);
+		seekbarHintAnimation.setDuration(500);
+		if (timeout > 0)
+			seekbarHintAnimation.setStartOffset(timeout);
 
-	public void hideSeekbarHint() {
-		main_activity.findViewById(R.id.seekbar_hint).setVisibility(View.GONE);
+		seekbarHintAnimation.setAnimationListener(new Animation.AnimationListener() {
+			@Override
+			public void onAnimationStart(Animation animation) {}
+
+			@Override
+			public void onAnimationEnd(Animation animation) {
+				if( MyDebug.LOG )
+					Log.d(TAG, "onAnimationEnd");
+				main_activity.findViewById(R.id.seekbar_hint).setVisibility(View.GONE);
+				seekbarHintAnimation = null;
+			}
+
+			@Override
+			public void onAnimationRepeat(Animation animation) {}
+		});
+		main_activity.findViewById(R.id.seekbar_hint).startAnimation(seekbarHintAnimation);
+	}
+
+	public boolean isSystemUIPortrait() {
+		return system_ui_portrait;
+	}
+	
+	public void setOverlayImage() {
+		if( MyDebug.LOG )
+			Log.d(TAG, "setOverlayImage");
+		final ImageView overlay = (ImageView)main_activity.findViewById(R.id.overlay);
+		if (sharedPreferences.getBoolean(Prefs.GHOST_IMAGE, false)) {
+			final ContentResolver resolver = main_activity.getContentResolver();
+			if (resolver != null) {
+				int alpha;
+				try {
+					alpha = Integer.parseInt(sharedPreferences.getString(Prefs.GHOST_IMAGE_ALPHA, "50"));
+					alpha = (int)((float)alpha*2.55f+0.5f);
+				} catch(NumberFormatException e) {
+					alpha = 127;
+				}
+				overlay.setAlpha(alpha);
+				new AsyncTask<Void, Void, Bitmap>() {
+					private static final String TAG = "HedgeCam/MainUI/AsyncTask";
+
+					protected Bitmap doInBackground(Void... params) {
+						if( MyDebug.LOG )
+							Log.d(TAG, "doInBackground");
+						Uri uri = null;
+						Bitmap bitmap = null;
+
+						String source = sharedPreferences.getString(Prefs.GHOST_IMAGE_SOURCE, "last_photo");
+						if (source.equals("last_photo")) {
+							StorageUtils.Media media = main_activity.getStorageUtils().getLatestMedia();
+							if (media != null)
+								uri = media.uri;
+						} else {
+							String file = sharedPreferences.getString(Prefs.GHOST_IMAGE_FILE_SAF, "");
+							if (file.length() > 0)
+								uri = Uri.parse(file);
+						}
+
+						if (uri != null) {
+							ExifInterface exif = null;
+
+							View parent = (View)(overlay.getParent());
+							int parent_width = Math.max(parent.getMeasuredWidth(), parent.getMeasuredHeight());
+							int parent_height = Math.min(parent.getMeasuredWidth(), parent.getMeasuredHeight());
+							if( MyDebug.LOG ) {
+								Log.d(TAG, "	parent_width: " + parent_width);
+								Log.d(TAG, "	parent_height: " + parent_height);
+							}
+
+							try {
+								InputStream is = resolver.openInputStream(uri);
+								BitmapFactory.Options options = new BitmapFactory.Options();
+								options.inJustDecodeBounds = true;
+								BitmapFactory.decodeStream(is, null, options);
+								int bitmap_width = Math.max(options.outWidth, options.outHeight);
+								int bitmap_height = Math.min(options.outWidth, options.outHeight);
+								if( MyDebug.LOG ) {
+									Log.d(TAG, "	bitmap_width: " + bitmap_width);
+									Log.d(TAG, "	bitmap_height: " + bitmap_height);
+								}
+								int scale = Math.min(bitmap_width/parent_width, bitmap_height/parent_height);
+								if( MyDebug.LOG )
+									Log.d(TAG, "	scale: " + scale);
+
+								is.close();
+								is = resolver.openInputStream(uri);
+								if (scale > 1) {
+									options.inJustDecodeBounds = false;
+									options.inSampleSize = scale;
+									bitmap = BitmapFactory.decodeStream(is, null, options);
+								} else {
+									bitmap = BitmapFactory.decodeStream(is);
+								}
+								exif = new ExifInterface(is);
+								is.close();
+							}
+							catch (FileNotFoundException idontneedthisshit) {}
+							catch (IOException idontneedthisshit) {}
+
+							if (bitmap != null) {
+								overlay_rotation = 0;
+
+								if( exif != null ) {
+									switch (exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_UNDEFINED)) {
+										case ExifInterface.ORIENTATION_ROTATE_180:
+											overlay_rotation = 180;
+											break;
+										case ExifInterface.ORIENTATION_ROTATE_90:
+											overlay_rotation = 90;
+											break;
+										case ExifInterface.ORIENTATION_ROTATE_270:
+											overlay_rotation = 270;
+											break;
+									}
+
+									if( MyDebug.LOG )
+										Log.d(TAG, "exif rotation: " + overlay_rotation);
+								}
+								
+								int width = bitmap.getWidth();
+								int height = bitmap.getHeight();
+								
+								overlay_is_portrait = (overlay_rotation == 0 || overlay_rotation == 180) ? width < height : width > height;
+								if( MyDebug.LOG ) {
+									Log.d(TAG, "	width: "+ width);
+									Log.d(TAG, "	height: "+ height);
+									Log.d(TAG, "	overlay_is_portrait: " + overlay_is_portrait);
+								}
+								
+								if (system_ui_portrait) {
+									if (!overlay_is_portrait)
+										overlay_rotation += 90;
+								} else {
+									if (overlay_is_portrait)
+										overlay_rotation += 270;
+								}
+								
+								if (overlay_rotation >= 360)
+									overlay_rotation -= 360;
+									
+								/* This shit works too slow
+								if( rotation != 0 ) {
+									if( MyDebug.LOG )
+										Log.d(TAG, "	need to rotate bitmap due to exif orientation tag");
+									Matrix m = new Matrix();
+									m.setRotate(rotation, bitmap.getWidth() * 0.5f, bitmap.getHeight() * 0.5f);
+									Bitmap rotated_bitmap = Bitmap.createBitmap(bitmap, 0, 0, width, height, m, true);
+									if( rotated_bitmap != bitmap ) {
+										bitmap.recycle();
+										bitmap = rotated_bitmap;
+									}
+								}*/
+							}
+						}
+
+						return bitmap;
+					}
+
+					protected void onPostExecute(Bitmap bitmap) {
+						if( MyDebug.LOG )
+							Log.d(TAG, "onPostExecute");
+						if (bitmap != null) {
+							overlay.setImageBitmap(null);
+							FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams)overlay.getLayoutParams();
+							if (overlay_rotation == 90 || overlay_rotation == 270) {
+								View parent = (View)(overlay.getParent());
+								int diff = (parent.getMeasuredWidth()-parent.getMeasuredHeight())/2;
+								lp.setMargins(diff, -diff, diff, -diff);
+							} else {
+								lp.setMargins(0,0,0,0);
+							}
+							overlay.setLayoutParams(lp);
+							setOverlayImageRotation(overlay);
+							overlay.setImageBitmap(bitmap);
+							overlay.setVisibility(View.VISIBLE);
+						} else {
+							overlay.setVisibility(View.GONE);
+							overlay.setImageBitmap(null);
+						}
+					}
+				}.execute();
+				return;
+			}
+		}
+	
+		overlay.setVisibility(View.GONE);
+		overlay.setImageBitmap(null);
+	}
+	
+	public void setOverlayImageRotation(ImageView overlay) {
+		int rotation = overlay_rotation;
+		if (overlay_is_portrait) {
+			if (ui_rotation_relative == 90)
+				rotation += 180;
+		} else {
+			if (ui_placement_right) {
+				if (ui_rotation_relative == 180)
+					rotation += 180;
+			} else {
+				if (ui_rotation_relative != 0)
+					rotation += 180;
+			}
+		}
+		if (rotation >= 360)
+			rotation -= 360;
+		overlay.setRotation(rotation);
 	}
 }

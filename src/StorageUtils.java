@@ -39,9 +39,6 @@ import android.util.Log;
 public class StorageUtils {
 	private static final String TAG = "HedgeCam/StorageUtils";
 
-	static final int MEDIA_TYPE_IMAGE = 1;
-	static final int MEDIA_TYPE_VIDEO = 2;
-
 	private final Context context;
 	private Uri last_media_scanned;
 
@@ -84,76 +81,76 @@ public class StorageUtils {
 
  			if( MyDebug.LOG ) // this code only used for debugging/logging
  			{
-				String[] CONTENT_PROJECTION = { Images.Media.DATA, Images.Media.DISPLAY_NAME, Images.Media.MIME_TYPE, Images.Media.SIZE, Images.Media.DATE_TAKEN, Images.Media.DATE_ADDED }; 
-				Cursor c = context.getContentResolver().query(uri, CONTENT_PROJECTION, null, null, null); 
-				if( c == null ) { 
-		 			if( MyDebug.LOG )
-		 				Log.e(TAG, "Couldn't resolve given uri [1]: " + uri); 
+				String[] CONTENT_PROJECTION = { Images.Media.DATA, Images.Media.DISPLAY_NAME, Images.Media.MIME_TYPE, Images.Media.SIZE, Images.Media.DATE_TAKEN, Images.Media.DATE_ADDED };
+				Cursor c = context.getContentResolver().query(uri, CONTENT_PROJECTION, null, null, null);
+				if( c == null ) {
+					if( MyDebug.LOG )
+						Log.e(TAG, "Couldn't resolve given uri [1]: " + uri);
 				}
-				else if( !c.moveToFirst() ) { 
-		 			if( MyDebug.LOG )
-		 				Log.e(TAG, "Couldn't resolve given uri [2]: " + uri); 
+				else if( !c.moveToFirst() ) {
+					if( MyDebug.LOG )
+						Log.e(TAG, "Couldn't resolve given uri [2]: " + uri);
 				}
 				else {
-					String file_path = c.getString(c.getColumnIndex(Images.Media.DATA)); 
-					String file_name = c.getString(c.getColumnIndex(Images.Media.DISPLAY_NAME)); 
-					String mime_type = c.getString(c.getColumnIndex(Images.Media.MIME_TYPE)); 
-					long date_taken = c.getLong(c.getColumnIndex(Images.Media.DATE_TAKEN)); 
-					long date_added = c.getLong(c.getColumnIndex(Images.Media.DATE_ADDED)); 
-	 				Log.d(TAG, "file_path: " + file_path); 
-	 				Log.d(TAG, "file_name: " + file_name); 
-	 				Log.d(TAG, "mime_type: " + mime_type); 
-	 				Log.d(TAG, "date_taken: " + date_taken); 
-	 				Log.d(TAG, "date_added: " + date_added); 
-					c.close(); 
+					String file_path = c.getString(c.getColumnIndex(Images.Media.DATA));
+					String file_name = c.getString(c.getColumnIndex(Images.Media.DISPLAY_NAME));
+					String mime_type = c.getString(c.getColumnIndex(Images.Media.MIME_TYPE));
+					long date_taken = c.getLong(c.getColumnIndex(Images.Media.DATE_TAKEN));
+					long date_added = c.getLong(c.getColumnIndex(Images.Media.DATE_ADDED));
+					Log.d(TAG, "file_path: " + file_path);
+					Log.d(TAG, "file_name: " + file_name);
+					Log.d(TAG, "mime_type: " + mime_type);
+					Log.d(TAG, "date_taken: " + date_taken);
+					Log.d(TAG, "date_added: " + date_added);
+					c.close();
 				}
 			}
  			/*{
  				// hack: problem on Camera2 API (at least on Nexus 6) that if geotagging is enabled, then the resultant image has incorrect Exif TAG_GPS_DATESTAMP (GPSDateStamp) set (tends to be around 2038 - possibly a driver bug of casting long to int?)
  				// whilst we don't yet correct for that bug, the more immediate problem is that it also messes up the DATE_TAKEN field in the media store, which messes up Gallery apps
  				// so for now, we correct it based on the DATE_ADDED value.
-				String[] CONTENT_PROJECTION = { Images.Media.DATE_ADDED }; 
-				Cursor c = context.getContentResolver().query(uri, CONTENT_PROJECTION, null, null, null); 
-				if( c == null ) { 
-		 			if( MyDebug.LOG )
-		 				Log.e(TAG, "Couldn't resolve given uri [1]: " + uri); 
+				String[] CONTENT_PROJECTION = { Images.Media.DATE_ADDED };
+				Cursor c = context.getContentResolver().query(uri, CONTENT_PROJECTION, null, null, null);
+				if( c == null ) {
+					if( MyDebug.LOG )
+						Log.e(TAG, "Couldn't resolve given uri [1]: " + uri);
 				}
-				else if( !c.moveToFirst() ) { 
-		 			if( MyDebug.LOG )
-		 				Log.e(TAG, "Couldn't resolve given uri [2]: " + uri); 
+				else if( !c.moveToFirst() ) {
+					if( MyDebug.LOG )
+						Log.e(TAG, "Couldn't resolve given uri [2]: " + uri);
 				}
 				else {
-					long date_added = c.getLong(c.getColumnIndex(Images.Media.DATE_ADDED)); 
-		 			if( MyDebug.LOG )
-		 				Log.e(TAG, "replace date_taken with date_added: " + date_added); 
-					ContentValues values = new ContentValues(); 
-					values.put(Images.Media.DATE_TAKEN, date_added*1000); 
+					long date_added = c.getLong(c.getColumnIndex(Images.Media.DATE_ADDED));
+					if( MyDebug.LOG )
+						Log.e(TAG, "replace date_taken with date_added: " + date_added);
+					ContentValues values = new ContentValues();
+					values.put(Images.Media.DATE_TAKEN, date_added*1000);
 					context.getContentResolver().update(uri, values, null, null);
-					c.close(); 
+					c.close();
 				}
  			}*/
 		}
 		else if( is_new_video ) {
 			context.sendBroadcast(new Intent("android.hardware.action.NEW_VIDEO", uri));
 
-			/*String[] CONTENT_PROJECTION = { Video.Media.DURATION }; 
-			Cursor c = context.getContentResolver().query(uri, CONTENT_PROJECTION, null, null, null); 
-			if( c == null ) { 
-	 			if( MyDebug.LOG )
-	 				Log.e(TAG, "Couldn't resolve given uri [1]: " + uri); 
+			/*String[] CONTENT_PROJECTION = { Video.Media.DURATION };
+			Cursor c = context.getContentResolver().query(uri, CONTENT_PROJECTION, null, null, null);
+			if( c == null ) {
+				if( MyDebug.LOG )
+					Log.e(TAG, "Couldn't resolve given uri [1]: " + uri);
 			}
-			else if( !c.moveToFirst() ) { 
-	 			if( MyDebug.LOG )
-	 				Log.e(TAG, "Couldn't resolve given uri [2]: " + uri); 
+			else if( !c.moveToFirst() ) {
+				if( MyDebug.LOG )
+					Log.e(TAG, "Couldn't resolve given uri [2]: " + uri);
 			}
 			else {
-				long duration = c.getLong(c.getColumnIndex(Video.Media.DURATION)); 
-	 			if( MyDebug.LOG )
-	 				Log.e(TAG, "replace duration: " + duration); 
-				ContentValues values = new ContentValues(); 
-				values.put(Video.Media.DURATION, 1000); 
+				long duration = c.getLong(c.getColumnIndex(Video.Media.DURATION));
+				if( MyDebug.LOG )
+					Log.e(TAG, "replace duration: " + duration);
+				ContentValues values = new ContentValues();
+				values.put(Video.Media.DURATION, 1000);
 				context.getContentResolver().update(uri, values, null, null);
-				c.close(); 
+				c.close();
 			}*/
 		}
 	}
@@ -161,10 +158,10 @@ public class StorageUtils {
 	/*public Uri broadcastFileRaw(File file, Date current_date, Location location) {
 		if( MyDebug.LOG )
 			Log.d(TAG, "broadcastFileRaw: " + file.getAbsolutePath());
-		ContentValues values = new ContentValues(); 
+		ContentValues values = new ContentValues();
 		values.put(ImageColumns.TITLE, file.getName().substring(0, file.getName().lastIndexOf(".")));
 		values.put(ImageColumns.DISPLAY_NAME, file.getName());
-		values.put(ImageColumns.DATE_TAKEN, current_date.getTime()); 
+		values.put(ImageColumns.DATE_TAKEN, current_date.getTime());
 		values.put(ImageColumns.MIME_TYPE, "image/dng");
 		//values.put(ImageColumns.MIME_TYPE, "image/jpeg");
 		if( location != null ) {
@@ -176,18 +173,18 @@ public class StorageUtils {
 		//values.put(ImageColumns.DATA, "/storage/emulated/0/DCIM/OpenCamera/blah.dng");
 		Uri uri = null;
 		try {
-			uri = context.getContentResolver().insert(Images.Media.EXTERNAL_CONTENT_URI, values); 
+			uri = context.getContentResolver().insert(Images.Media.EXTERNAL_CONTENT_URI, values);
  			if( MyDebug.LOG )
  				Log.d(TAG, "inserted media uri: " + uri);
 			context.sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, uri));
 		}
-		catch (Throwable th) { 
-			// This can happen when the external volume is already mounted, but 
-			// MediaScanner has not notify MediaProvider to add that volume. 
-			// The picture is still safe and MediaScanner will find it and 
-			// insert it into MediaProvider. The only problem is that the user 
-			// cannot click the thumbnail to review the picture. 
-			Log.e(TAG, "Failed to write MediaStore" + th); 
+		catch (Throwable th) {
+			// This can happen when the external volume is already mounted, but
+			// MediaScanner has not notify MediaProvider to add that volume.
+			// The picture is still safe and MediaScanner will find it and
+			// insert it into MediaProvider. The only problem is that the user
+			// cannot click the thumbnail to review the picture.
+			Log.e(TAG, "Failed to write MediaStore" + th);
 		}
 		return uri;
 	}*/
@@ -225,11 +222,11 @@ public class StorageUtils {
 			MediaScannerConnection.scanFile(context, new String[] { file.getAbsolutePath() }, null,
 					new MediaScannerConnection.OnScanCompletedListener() {
 					public void onScanCompleted(String path, Uri uri) {
-			 			failed_to_scan = false;
-			 			if( MyDebug.LOG ) {
-			 				Log.d(TAG, "Scanned " + path + ":");
-			 				Log.d(TAG, "-> uri=" + uri);
-			 			}
+						failed_to_scan = false;
+						if( MyDebug.LOG ) {
+							Log.d(TAG, "Scanned " + path + ":");
+							Log.d(TAG, "-> uri=" + uri);
+						}
 						if ((is_new_picture || is_new_video) && file_size != 0) {
 							final ContentValues cv = new ContentValues();
 							cv.put("_size", file_size);
@@ -239,32 +236,32 @@ public class StorageUtils {
 								cv, "_data=\""+file.getAbsolutePath()+"\"", null
 							);
 
-				 			if( MyDebug.LOG ) {
+							if( MyDebug.LOG ) {
 								Log.d(TAG, "Real file size: " + file_size);
-				 				Log.d(TAG, "Rows updated" + updated);
+								Log.d(TAG, "Rows updated" + updated);
 							}
 						}
 
-			 			if( set_last_scanned ) {
-			 				last_media_scanned = uri;
-				 			if( MyDebug.LOG )
-				 				Log.d(TAG, "set last_media_scanned to " + last_media_scanned);
-			 			}
-			 			announceUri(uri, is_new_picture, is_new_video);
+						if( set_last_scanned ) {
+							last_media_scanned = uri;
+							if( MyDebug.LOG )
+								Log.d(TAG, "set last_media_scanned to " + last_media_scanned);
+						}
+						announceUri(uri, is_new_picture, is_new_video);
 
 						// it seems caller apps seem to prefer the content:// Uri rather than one based on a File
 						// update for Android 7: seems that passing file uris is now restricted anyway, see https://code.google.com/p/android/issues/detail?id=203555
-			 			Activity activity = (Activity)context;
-			 			String action = activity.getIntent().getAction();
-			 			if( MediaStore.ACTION_VIDEO_CAPTURE.equals(action) ) {
+						Activity activity = (Activity)context;
+						String action = activity.getIntent().getAction();
+						if( MediaStore.ACTION_VIDEO_CAPTURE.equals(action) ) {
 							if( MyDebug.LOG )
 								Log.d(TAG, "from video capture intent");
-				 			Intent output = new Intent();
-				 			output.setData(uri);
-				 			activity.setResult(Activity.RESULT_OK, output);
-				 			activity.finish();
-			 			}
-			 		}
+							Intent output = new Intent();
+							output.setData(uri);
+							activity.setResult(Activity.RESULT_OK, output);
+							activity.finish();
+						}
+					}
 				}
 			);
 		}
@@ -448,13 +445,12 @@ public class StorageUtils {
 		return null;
 	}
 
-	private String createMediaFilename(int type, String suffix, int count, String extension, Date current_date) {
+	private String createMediaFilename(String prefix, String suffix, int count, String extension, Date current_date) {
 		String index = "";
 		if( count > 0 ) {
 			index = "_" + count; // try to find a unique filename
 		}
-		SharedPreferences sharedPreferences = ((MainActivity)context).getSharedPrefs();
-		boolean useZuluTime = sharedPreferences.getString(Prefs.SAVE_ZULU_TIME, "local").equals("zulu");
+		boolean useZuluTime = ((MainActivity)context).getSharedPrefs().getString(Prefs.SAVE_ZULU_TIME, "local").equals("zulu");
 		String timeStamp;
 		if( useZuluTime ) {
 			SimpleDateFormat fmt = new SimpleDateFormat("yyyyMMdd_HHmmss'Z'", Locale.US);
@@ -464,27 +460,12 @@ public class StorageUtils {
 		else {
 			timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(current_date);
 		}
-		String mediaFilename;
-		if( type == MEDIA_TYPE_IMAGE ) {
-			String prefix = sharedPreferences.getString(Prefs.SAVE_PHOTO_PREFIX, "IMG_");
-			mediaFilename = prefix + timeStamp + suffix + index + "." + extension;
-		}
-		else if( type == MEDIA_TYPE_VIDEO ) {
-			String prefix = sharedPreferences.getString(Prefs.SAVE_VIDEO_PREFIX, "VID_");
-			mediaFilename = prefix + timeStamp + suffix + index + "." + extension;
-		}
-		else {
-			// throw exception as this is a programming error
-			if( MyDebug.LOG )
-				Log.e(TAG, "unknown type: " + type);
-			throw new RuntimeException();
-		}
-		return mediaFilename;
+		return prefix + timeStamp + suffix + index + "." + extension;
 	}
 	
 	// only valid if !isUsingSAF()
 	@SuppressLint("SimpleDateFormat")
-	File createOutputMediaFile(int type, String suffix, String extension, Date current_date) throws IOException {
+	File createOutputMediaFile(String prefix, String suffix, String extension, Date current_date) throws IOException {
 		File mediaStorageDir = getImageFolder();
 
 		// Create the storage directory if it does not exist
@@ -500,7 +481,7 @@ public class StorageUtils {
 		// Create a media file name
 		File mediaFile = null;
 		for(int count=0;count<100;count++) {
-			String mediaFilename = createMediaFilename(type, suffix, count, extension, current_date);
+			String mediaFilename = createMediaFilename(prefix, suffix, count, extension, current_date);
 			mediaFile = new File(mediaStorageDir.getPath() + File.separator + mediaFilename);
 			if( !mediaFile.exists() ) {
 				break;
@@ -553,34 +534,36 @@ public class StorageUtils {
 
 	// only valid if isUsingSAF()
 	@TargetApi(Build.VERSION_CODES.LOLLIPOP)
-	Uri createOutputMediaFileSAF(int type, String suffix, String extension, Date current_date) throws IOException {
+	Uri createOutputMediaFileSAF(String prefix, String suffix, String extension, Date current_date) throws IOException {
 		String mimeType;
-		if( type == MEDIA_TYPE_IMAGE ) {
-			if( extension.equals("dng") ) {
-				mimeType = "image/dng";
-				//mimeType = "image/x-adobe-dng";
-			}
-			else
+		switch(extension) {
+			case "jpg":
 				mimeType = "image/jpeg";
-		}
-		else if( type == MEDIA_TYPE_VIDEO ) {
-			mimeType = "video/mp4";
-		}
-		else {
-			// throw exception as this is a programming error
-			if( MyDebug.LOG )
-				Log.e(TAG, "unknown type: " + type);
-			throw new RuntimeException();
+				break;
+			case "dng":
+				mimeType = "image/dng";
+				break;
+			case "mp4":
+				mimeType = "video/mp4";
+				break;
+			case "txt":
+				mimeType = "text/plain";
+				break;
+			default:
+				// throw exception as this is a programming error
+				if( MyDebug.LOG )
+					Log.e(TAG, "unknown extension: " + extension);
+				throw new RuntimeException();
 		}
 		// note that DocumentsContract.createDocument will automatically append to the filename if it already exists
-		String mediaFilename = createMediaFilename(type, suffix, 0, extension, current_date);
+		String mediaFilename = createMediaFilename(prefix, suffix, 0, extension, current_date);
 		return createOutputFileSAF(mediaFilename, mimeType);
 	}
 
-	static class Media {
+	public static class Media {
 		final long id;
 		final boolean video;
-		final Uri uri;
+		public final Uri uri;
 		final long date;
 		final int orientation;
 
@@ -673,7 +656,7 @@ public class StorageUtils {
 		return media;
 	}
 	
-	Media getLatestMedia() {
+	public Media getLatestMedia() {
 		Media image_media = getLatestMedia(false);
 		Media video_media = getLatestMedia(true);
 		Media media = null;

@@ -15,6 +15,7 @@ import java.util.TimerTask;
 import com.caddish_hedgehog.hedgecam2.CameraController.CameraController;
 import com.caddish_hedgehog.hedgecam2.Preview.ApplicationInterface;
 import com.caddish_hedgehog.hedgecam2.Preview.Preview;
+import com.caddish_hedgehog.hedgecam2.Preview.VideoProfile;
 import com.caddish_hedgehog.hedgecam2.UI.DrawPreview;
 
 import android.annotation.TargetApi;
@@ -148,6 +149,10 @@ public class MyApplicationInterface implements ApplicationInterface {
 		return imageSaver;
 	}
 
+	public DrawPreview getDrawPreview() {
+		return drawPreview;
+	}
+
 	@Override
 	public Context getContext() {
 		return main_activity;
@@ -265,14 +270,14 @@ public class MyApplicationInterface implements ApplicationInterface {
 	}
 
 	@Override
-	public File createOutputVideoFile() throws IOException {
-		last_video_file = storageUtils.createOutputMediaFile(StorageUtils.MEDIA_TYPE_VIDEO, "", "mp4", new Date());
+	public File createOutputVideoFile(String prefix) throws IOException {
+		last_video_file = storageUtils.createOutputMediaFile(prefix, "", "mp4", new Date());
 		return last_video_file;
 	}
 
 	@Override
-	public Uri createOutputVideoSAF() throws IOException {
-		last_video_file_saf = storageUtils.createOutputMediaFileSAF(StorageUtils.MEDIA_TYPE_VIDEO, "", "mp4", new Date());
+	public Uri createOutputVideoSAF(String prefix) throws IOException {
+		last_video_file_saf = storageUtils.createOutputMediaFileSAF(prefix, "", "mp4", new Date());
 		return last_video_file_saf;
 	}
 
@@ -384,7 +389,7 @@ public class MyApplicationInterface implements ApplicationInterface {
 		if( sharedPreferences.getBoolean(Prefs.LOCK_VIDEO, false) ) {
 			main_activity.lockScreen();
 		}
-		main_activity.stopAudioListeners(); // important otherwise MediaRecorder will fail to start() if we have an audiolistener! Also don't want to have the speech recognizer going off
+		main_activity.stopAudioListeners(true); // important otherwise MediaRecorder will fail to start() if we have an audiolistener! Also don't want to have the speech recognizer going off
 		main_activity.getMainUI().startingVideo();
 		main_activity.getMainUI().destroyPopup(); // as the available popup options change while recording video
 		
@@ -829,7 +834,7 @@ public class MyApplicationInterface implements ApplicationInterface {
 	}
 	
 	@Override
-	public void onVideoRecordStartError(CamcorderProfile profile) {
+	public void onVideoRecordStartError(VideoProfile profile) {
 		if( MyDebug.LOG )
 			Log.d(TAG, "onVideoRecordStartError");
 		String error_message;
@@ -845,7 +850,7 @@ public class MyApplicationInterface implements ApplicationInterface {
 	}
 
 	@Override
-	public void onVideoRecordStopError(CamcorderProfile profile) {
+	public void onVideoRecordStopError(VideoProfile profile) {
 		if( MyDebug.LOG )
 			Log.d(TAG, "onVideoRecordStopError");
 		//main_activity.getPreview().showToast(null, R.string.failed_to_record_video);
@@ -1047,6 +1052,11 @@ public class MyApplicationInterface implements ApplicationInterface {
 	}
 
 	@Override
+	public void onPrefsChanged() {
+		drawPreview.onPrefsChanged();
+	}
+
+	@Override
 	public void faceDetected(boolean detected) {
 		if (sharedPreferences.getBoolean(Prefs.FACE_DETECTION_SOUND, false))
 			main_activity.playSound(detected ? R.raw.double_beep : R.raw.double_beep_hi);
@@ -1223,7 +1233,6 @@ public class MyApplicationInterface implements ApplicationInterface {
 
 		if ((photo_mode == Prefs.PhotoMode.FastBurst || photo_mode == Prefs.PhotoMode.NoiseReduction) && n_capture_images != Prefs.getBurstCount())
 			sample_factor = 0;
-			
 
 		ImageSaver.ProcessingSettings settings = new ImageSaver.ProcessingSettings();
 
@@ -1274,6 +1283,7 @@ public class MyApplicationInterface implements ApplicationInterface {
 		ImageSaver.Metadata metadata = new ImageSaver.Metadata();
 		metadata.author = sharedPreferences.getString(Prefs.METADATA_AUTHOR, "");
 		metadata.comment = sharedPreferences.getString(Prefs.METADATA_COMMENT, "");
+		metadata.comment_as_file = sharedPreferences.getBoolean(Prefs.METADATA_COMMENT_AS_FILE, false);
 		
 		String info = "";
 		boolean position_info = sharedPreferences.getBoolean(Prefs.METADATA_POSITION_INFO, false);
@@ -1398,10 +1408,14 @@ public class MyApplicationInterface implements ApplicationInterface {
 		}
 		
 		if (info.length() > 0) {
-			if (metadata.comment.length() > 0)
-				metadata.comment += "\n";
-			metadata.comment += info;
+			if (metadata.comment.length() > 0) {
+				metadata.comment += "\n" + info;
+			} else {
+				metadata.comment = info.substring(1);
+			}
 		}
+
+		String prefix = sharedPreferences.getString(Prefs.SAVE_PHOTO_PREFIX, "IMG_");
 
 		success = imageSaver.saveImageJpeg(do_in_background, photo_mode,
 				images,
@@ -1411,7 +1425,7 @@ public class MyApplicationInterface implements ApplicationInterface {
 				settings,
 				metadata,
 				is_front_facing,
-				current_date, n_capture_images,
+				prefix, current_date, n_capture_images,
 				store_location, location, store_geo_direction, geo_direction,
 				sample_factor);
 
@@ -1499,7 +1513,8 @@ public class MyApplicationInterface implements ApplicationInterface {
 			photo_mode = Prefs.PhotoMode.Standard;
 		}
 
-		boolean success = imageSaver.saveImageRaw(do_in_background, photo_mode, dngCreator, image, current_date, n_capture_images);
+		String prefix = sharedPreferences.getString(Prefs.SAVE_PHOTO_PREFIX, "IMG_");
+		boolean success = imageSaver.saveImageRaw(do_in_background, photo_mode, dngCreator, image, prefix, current_date, n_capture_images);
 		
 		if( MyDebug.LOG )
 			Log.d(TAG, "onRawPictureTaken complete");
@@ -1569,18 +1584,27 @@ public class MyApplicationInterface implements ApplicationInterface {
 			if( MyDebug.LOG )
 				Log.d(TAG, "Delete: " + image_uri);
 			File file = storageUtils.getFileFromDocumentUriSAF(image_uri, false); // need to get file before deleting it, as fileFromDocumentUriSAF may depend on the file still existing
-			if( !DocumentsContract.deleteDocument(main_activity.getContentResolver(), image_uri) ) {
-				if( MyDebug.LOG )
-					Log.e(TAG, "failed to delete " + image_uri);
-			}
-			else {
-				if( MyDebug.LOG )
-					Log.d(TAG, "successfully deleted " + image_uri);
-				preview.showToast(null, R.string.photo_deleted);
-				if( file != null ) {
-					// SAF doesn't broadcast when deleting them
-					storageUtils.broadcastFile(file, false, false, true);
+			try {
+				if( !DocumentsContract.deleteDocument(main_activity.getContentResolver(), image_uri) ) {
+					if( MyDebug.LOG )
+						Log.e(TAG, "failed to delete " + image_uri);
 				}
+				else {
+					if( MyDebug.LOG )
+						Log.d(TAG, "successfully deleted " + image_uri);
+					preview.showToast(null, R.string.photo_deleted);
+					if( file != null ) {
+						// SAF doesn't broadcast when deleting them
+						storageUtils.broadcastFile(file, false, false, true);
+					}
+				}
+			}
+			catch(FileNotFoundException e) {
+				// note, Android Studio reports a warning that FileNotFoundException isn't thrown, but it can be
+				// thrown by DocumentsContract.deleteDocument - and we get an error if we try to remove the catch!
+				if( MyDebug.LOG )
+					Log.e(TAG, "exception when deleting " + image_uri);
+				e.printStackTrace();
 			}
 		}
 		else if( image_name != null ) {
@@ -1623,8 +1647,6 @@ public class MyApplicationInterface implements ApplicationInterface {
 		}, 500);
 	}
 
-	// for testing
-
 	boolean hasThumbnailAnimation() {
 		return this.drawPreview.hasThumbnailAnimation();
 	}
@@ -1651,7 +1673,12 @@ public class MyApplicationInterface implements ApplicationInterface {
 	public boolean isSetExpoMeteringArea() {
 		return main_activity.set_expo_metering_area;
 	}
+	
+	public boolean fpsIsHighSpeed() {
+		return main_activity.getPreview().fpsIsHighSpeed(Prefs.getVideoFPSPref());
+	}
 
+	// for testing
 	public boolean test_set_available_memory = false;
 	public long test_available_memory = 0;
 }

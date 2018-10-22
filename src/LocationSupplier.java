@@ -69,9 +69,9 @@ public class LocationSupplier {
 
 		public void onStatusChanged(String provider, int status, Bundle extras) {
 			 switch( status ) {
-			 	case LocationProvider.OUT_OF_SERVICE:
-			 	case LocationProvider.TEMPORARILY_UNAVAILABLE:
-			 	{
+				case LocationProvider.OUT_OF_SERVICE:
+				case LocationProvider.TEMPORARILY_UNAVAILABLE:
+				{
 					if( MyDebug.LOG ) {
 						if( status == LocationProvider.OUT_OF_SERVICE )
 							Log.d(TAG, "location provider out of service");
@@ -80,10 +80,10 @@ public class LocationSupplier {
 					}
 					this.location = null;
 					this.test_has_received_location = false;
-			 		break;
-			 	}
-			 	default:
-			 		break;
+					break;
+				}
+				default:
+					break;
 			 }
 		}
 

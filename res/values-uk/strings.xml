@@ -3,6 +3,7 @@
 
 
 	<string name="translation_author">Olexandr, Caddish Hedgehog</string>
+	<string name="about_credits">Базується на додатку Open Camera, який написав Марк Харман\n\nРосповсюджується під ліцензією GPL версії 3, або новіше</string>
 	<string name="intro_text">Торкніться екрану щоб зфокусуватись та натисніть синю кнопку, аби зробити фото. В налаштуваннях вас чекає дуже багато цікавого. :)\n\nПолітика приватності: Доступ до місця-знаходження потрібне для гео-міток, але в типових параметрах це вимкнено. Якщо увімкнути, ваше місце-розташування кодуватиметься в збережених файлах (і тільки для цього використовується).</string>
 	<string name="intro_ok">Гаразд (Більше це повідомлення не з\'явиться.)</string>
 
@@ -19,10 +20,6 @@
 	<string name="unlimited">Нескінченно</string>
 	<string name="device_default">Типово для пристрою</string>
 	<string name="sorry">На жаль</string>
-
-	<string name="about_available">Доступно</string>
-	<string name="about_not_available">Не доступно</string>
-	<string name="about_copy_to_clipboard">Копіювати до буферу</string>
 
 	<string name="choose_save_location">Виберіть теку для збереження:</string>
 	<string name="clear_folder_history">Очистити історію теки</string>
@@ -60,7 +57,7 @@
 	<string name="back_camera">Задня камера</string>
 	<string name="disable_face_detection">Вимкнути розпізнавання обличчя</string>
 	<string name="enable_face_detection">Увімкнути розпізнавання обличчя</string>
-	<string name="exposure">Експозиція</string>
+	<string name="exposure">Витримка</string>
 	<string name="front_camera">Фронтальна камера</string>
 	<string name="gallery">Галерея</string>
 	<string name="pause_video">Призупинити запис відео</string>
@@ -79,6 +76,8 @@
 	<string name="take_photo">Зробити фото</string>
 	<string name="take_video">Записати відео</string>
 	<string name="trash">Видалити останній знімок</string>
+	<string name="high_speed">Швидкісний</string> <!-- in the sense of high speed video frame rates -->
+	<string name="preference_video_capture_rate">Швидкість</string>
 
 	<string name="screen_lock_message_1">ЗАБЛОКОВАНО</string>
 	<string name="screen_lock_message_2">Проведіть по екрану, аби розблокувати</string>
@@ -131,6 +130,9 @@
 	<string name="video_no_free_space">Недостатньо вільного міця для запису відео</string>
 	<string name="video_power_critical">Запис відео зупинено\nКритично низький рівень заряду батареї</string>
 	<string name="focus_bracketing_range_not_defined">Диапазон фокус-брекетингу не визначено</string>
+	<string name="speech_recognizer_unavailable">Розпізнавання мови недоступно</string>
+	<string name="open_files_saf_exception_ghost">Діалог відкриття файлів не знайдено, накладення зображення з файлу недоступно</string>
+	<string name="saf_permission_failed_open_image">Неможливо відкрити зображення</string>
 
 	<string name="no_permission">В ДОСТУПІ ВІДМОВЛЕНО</string>
 
@@ -252,7 +254,8 @@
 	<string name="preference_burst_lock_summary">Блокувати екран при запуску режиму повторення</string>
 	<string name="preference_wait_face">Очікувати обличчя</string>
 	<string name="preference_wait_face_summary">Запускати зйомку при роспізнанні обличчя. Перед використанням цього режиму не забудьте включити роспізнавання обличчя.</string>
-	<string name="preference_audio_control">Налаштування керування звуком</string>
+	<string name="preference_audio_control">Керування звуком</string>
+	<string name="preference_audio_control_type">Тип керування</string>
 	<string name="vc_loud_noise">Гучний шум</string>
 	<string name="vc_cheese">Голосова команда: \"cheese\"</string>
 	<string name="preference_audio_noise_control_sensitivity">Чутливість керування</string>
@@ -305,6 +308,8 @@
 	<string name="preference_ctrl_panel_margin_summary">%s\n\nВідстань між кнопками керування та кнопкою затвору при використанні типів інтерфейсу \"Телефонний 2\", \"Планшетний\" та \"Універсальний\"</string>
 	<string name="preference_ui_left_handed">Інтерфейс для лівші</string>
 	<string name="preference_ui_left_handed_summary">Повернути інтерфейс для більш зручного керування лівшою</string>
+	<string name="preference_system_ui_orientation">Орієнтація системного інтерфейсу</string>
+	<string name="preference_system_ui_orientation_summary">%s</string>
 
 	<string name="preference_screen_ctrl_panel">Панель керування</string>
 	<string name="preference_screen_ctrl_panel_buttons">Кнопки панелі керування</string>
@@ -332,6 +337,10 @@
 	<string name="preference_show_zoom_slider_controls_summary">Показ повзунку для керування масштабуванням</string>
 	<string name="preference_iso_steps">Ступеневе регулювання ISO</string>
 	<string name="preference_iso_steps_summary">Використовувати ступеневе регулювання ISO замість плавного</string>
+	<string name="preference_exposure_steps">Ступеневе регулювання витримки</string>
+	<string name="preference_exposure_steps_summary">Використовувати ступеневе регулювання витримки замість плавного</string>
+	<string name="preference_white_balance_steps">Ступеневе регулювання ББ</string>
+	<string name="preference_white_balance_steps_summary">Використовувати ступеневе регулювання баланса білого замість плавного</string>
 
 	<string name="preference_screen_popup">Зринаюче меню</string>
 	<string name="preference_font_size">Розмір шрифту</string>
@@ -363,6 +372,7 @@
 	<string name="preference_immersive_mode_summary">Опції для \"режиму занурення\"</string>
 	<string name="im_fullscreen">Повний екран</string>
 	<string name="im_sticky">Повний екран, накладення</string>
+	<string name="im_overlay">Накладення</string>
 	<string name="im_hide_nav_buttons">Приховати кнопки навігації</string>
 	<string name="im_hide_gui">Приховати GUI</string>
 	<string name="im_hide_everything">Приховати все</string>
@@ -393,6 +403,11 @@
 	<string name="preference_preview_max_expo_summary">Максимальна експозиція попереднього перегляду (не впливає на фото/відео)</string>
 	<string name="preference_zoom_when_focusing">Приближувати при фокусуванні</string>
 	<string name="preference_zoom_when_focusing_summary">Збільшувати центральну зону передперегляду під час ручного фокусування</string>
+	<string name="preference_ghost_image">Накладення зображення</string>
+	<string name="preference_ghost_image_source">Зображення</string>
+	<string name="gi_last_photo">Останнє фото</string>
+	<string name="gi_file">Файл...</string>
+	<string name="preference_ghost_image_alpha">Непрозорість</string>
 	<string name="preference_preview_surface">Поверхня</string>
 	<string name="preference_preview_surface_summary">%s\n\nПоверхня попереднього перегляду. Переключайте цей параметр тільки якщо ви знаєте, на що він впливає</string>
 
@@ -421,6 +436,8 @@
 	<string name="preference_show_time_summary">Показ поточного часу на екрані</string>
 	<string name="preference_show_battery">Показувати батарею</string>
 	<string name="preference_show_battery_summary">Показувати поточний рівень заряду батареї</string>
+	<string name="preference_show_video_max_amp">Показувати рівень звуку</string>
+	<string name="preference_show_video_max_amp_summary">Відображення індикатора рівня звуку під час запису відео</string>
 	<string name="preference_alt_indication">Альтернативна індикація</string>
 	<string name="preference_alt_indication_summary">Альтернативна індикація зон фокусування та виміру експозиції</string>
 	<string name="preference_grid">Показати сітку</string>
@@ -466,6 +483,10 @@
 	<string name="ba_focus_minus">Фокус-</string>
 	<string name="ba_exposure_plus">Експозиція+</string>
 	<string name="ba_exposure_minus">Експозиція-</string>
+
+
+	<string name="ba_white_balance_plus">Баланс білого+</string>
+	<string name="ba_white_balance_minus">Баланс білого-</string>
 	<string name="ba_capture_only">Тільки перехватити</string>
 	<string name="ba_nothing">Нічого</string>
 
@@ -473,10 +494,10 @@
 	<string name="preference_pause_preview">Пауза після знімку</string>
 	<string name="preference_pause_preview_summary">Пауза після зняття фото, з можливістю поділитися чи видалити фотографію</string>
 	<string name="preference_lock_orientation">Блокування орієнтації фото/відео</string>
-	<string name="preference_lock_orientation_summary">Ігнорування системної орієнтації екрану пристрою</string>
-	<string name="no_lock">Відсутня</string>
+	<string name="no_lock">Відсутнє</string>
 	<string name="lock_landscape">Альбомна</string>
 	<string name="lock_portrait">Портретна</string>
+	<string name="preference_lock_orientation_summary">Ігнорування системної орієнтації екрану пристрою</string>
 	<string name="preference_show_when_locked">Камера на екрані блокування</string>
 	<string name="preference_show_when_locked_summary">Якщо увімкнуто, то HedgeCam все одно буде показуватись над будь-яким екраном блокування (ви можете отримати доступ до налаштувань, галереї и т.п.)</string>
 	<string name="preference_multitouch_zoom">Збільшення дотиком</string>
@@ -487,7 +508,7 @@
 	<string name="fr_room">Кімната</string>
 	<string name="fr_group">Групове фото</string>
 	<string name="preference_level_angle_calibration">Калібрування рівня</string>
-	<string name="preference_level_angle_calibration_summary">Ручне калібрування рівня нахилу</string>
+	<string name="preference_level_angle_calibration_summary">%s\n\nРучне калібрування рівня нахилу</string>
 
 	<string name="preference_screen_bug_fix">Вирішення проблем</string>
 	<string name="preference_startup_focus">Автофокус під час запуску</string>
@@ -507,6 +528,8 @@
 	<string name="preference_use_1920x1088_summary">Розширення відео 1920x1088 замість 1920x1080. Цей параметр вирішує проблему з кольоровой стрічкой з краю відео на деяких пристроях на платформі MediaTek</string>
 	<string name="preference_speed_up_sensors">Прискорити сенсори</string>
 	<string name="preference_speed_up_sensors_summary">Збільшити частоту оновлення інформації від акселерометра та датчика магнітного поля</string>
+	<string name="preference_full_size_copy">Повнорозмірна копія</string>
+	<string name="preference_full_size_copy_summary">Створювати повнорозмірну стислу копію фото при використанні незжатого виведення. Використовуйте цю опцію якщо на вашому пристрої некоректно працює незжатий вивід фото (YUV)</string>
 
 	<string name="preference_category_camera_quality">Фото та відео</string>
 
@@ -520,12 +543,17 @@
 	<string name="jpeg_and_dng">JPEG та DNG (RAW)</string>
 	<string name="preference_flip_front_facing">Дзеркальне відображення</string>
 	<string name="preference_flip_front_facing_summary">Дзеркальне відображення фото, зроблених передньою камерою</string>
-	<string name="preference_uncompressed_photo">Незжатий вивід</string>
+	<string name="preference_uncompressed_photo">Незжатий виведення</string>
 	<string name="preference_uncompressed_photo_summary">Використовувати YUV 420 замість JPEG. Пошвидшує збереження та підвищуе якість зображення при використанні пост-обробки. Може працювати некоректно на деяких пристроях.</string>
+	<string name="preference_yuv_conversion">Перетворення YUV</string>
+	<string name="yuv_wide_range">Розширений діапазон</string>
+	<string name="yuv_saturated">Насичення</string>
 	<string name="preference_category_metadata">Метадані</string>
 	<string name="preference_category_metadata_summary">Метадані, що зберігаються всередині файлів JPEG</string>
 	<string name="preference_metadata_author">Автор</string>
 	<string name="preference_metadata_comment">Коментар</string>
+	<string name="preference_metadata_comment_as_file">Коментар як файл</string>
+	<string name="preference_metadata_comment_as_file_summary">Зберігати коментар в окремий текстовий файл</string>
 	<string name="preference_metadata_position_info">Положення</string>
 	<string name="preference_metadata_position_info_summary">Додавати в коментар інформацію про положення пристрою (поворот, нахил, тощо)</string>
 	<string name="preference_metadata_mode_info">Режим зйомки</string>
@@ -561,8 +589,8 @@
 	<string name="preference_hdr_local_contrast_summary">%s\n\nРівень підвищення локального контрасту при обробці HDR та DRO</string>
 	<string name="preference_hdr_n_tiles">Кількість блоків</string>
 	<string name="preference_hdr_n_tiles_summary">%sВідстань між світлими та темними ділянками зображення при обробці HDR та DRO</string>
-	<string name="preference_fb_focus_time">Час фокусування</string>
-	<string name="preference_fb_focus_time_summary">%s</string>
+	<string name="preference_hdr_ignore_sf">Ігнорувати адаптивну фільтрацію</string>
+	<string name="preference_hdr_ignore_sf_summary">Якщо адаптивна фільтрація включена, ігнорувати її налаштування і ніколи не відключати фільтрацію в режимі HDR</string>
 	<string name="preference_category_fb_summary">Налаштування брекетингу фокусування</string>
 	<string name="preference_photos_count">Кількість фото</string>
 	<string name="preference_fb_focus_time">Час фокусування</string>
@@ -611,12 +639,19 @@
 
 	<string name="preference_screen_video_settings">Налаштування відео</string>
 	<string name="video_quality">Розширення відео</string>
-	<string name="preference_video_stabilization">Увімкнути стабілізацію відео</string>
+	<string name="preference_video_stabilization">Стабілізація відео</string>
 	<string name="preference_video_stabilization_summary">Стабілізація відео зменшує тряску, через рух камерою</string>
 	<string name="preference_video_bitrate">Відео бітрейт (приблизно)</string>
 	<string name="preference_video_bitrate_summary">Вибір бітрейту відео (чим вище, тим краще якість, але файл буде займати більше місця на флеш-картці. Якщо бітрейт не підтримується, це може викликати помилку під час запису відео)</string>
 	<string name="preference_video_fps">Частота кадрів відео (приблизно)</string>
 	<string name="preference_video_fps_summary">Кількість кадрів на секунду (FPS) у відео (може викликати помилку під час запису, якщо частота не підтримується)</string>
+	<string name="preference_video_log">Логарифмічне тональне відображення</string>
+	<string name="vl_low">Низько</string>
+	<string name="vl_medium">Середнє</string>
+	<string name="vl_strong">Сильно</string>
+	<string name="vl_extra_strong">Дуже сильно</string>
+	<string name="preference_video_log_summary">%s\n\nВикористовувати логарифмічне тональне відображення (Flat profile) під час запису відео</string>
+	<string name="video_log">Логарифмічн відображення</string>
 	<string name="preference_video_max_duration">Максимальна тривалість відео</string>
 	<string name="preference_video_max_duration_summary">Відеозапис припиниться, через вказаний час</string>
 	<string name="preference_video_restart">Записати нове відео, коли буде досягнуто ліміту</string>
@@ -677,6 +712,8 @@
 	<string name="nr_zero_shutter_lag">Без відставання затвору</string>
 	<string name="preference_zero_shutter_delay">Нульова затримка затвора</string>
 	<string name="preference_zero_shutter_delay_summary">%s</string>
+	<string name="preference_hot_pixel_correction">Корекція гарячих пікселів</string>
+	<string name="preference_hot_pixel_correction_summary">%s</string>
 
 	<string name="preference_screen_files">Файли</string>
 	<string name="preference_save_location">Тека збереження</string>
@@ -702,12 +739,20 @@
 	<string name="preference_category_online">Різне</string>
 	<string name="preference_online_help">Онлайн допомога</string>
 	<string name="preference_online_help_summary">Відкрити сайт програми в веб браузері</string>
-	<string name="preference_donate">Подякувати</string>
-	<string name="preference_donate_summary">Якщо вам сподобався цей додаток, киньте монетку. Ви можете зробити це, придбавши мій додаток. Дякую!</string>
 	<string name="preference_use_camera2">Використовувати Camera2 API</string>
 	<string name="preference_use_camera2_summary">Дозволяє використання Camera2 API для Android 5 - додаткові, але експериментальні можливості (потрібно перезавантажити)</string>
+
+	<string name="preference_donate">Пожертвувати</string>
+	<string name="preference_donate_summary">Підтримати розробку додатку матеріально. Заздалегідь дякую!</string>
+	<string name="donate">Пожертвувати</string>
+	<string name="wallet_was_copied">Номер гаманця був скопійований в буфер</string>
+	<string name="thank_you">Дякую!</string>
+	<string name="thank_you_summary">Автор висловлює вам вдячність за пожертвування!</string>
+
 	<string name="preference_about">Про додаток</string>
+	<string name="preference_about_translation">Переклад</string>
 	<string name="preference_info">Інформація</string>
+	<string name="about_copy_to_clipboard">Копіювати до буферу</string>
 	<string name="preference_reset">Скидання налаштувань</string>
 	<string name="preference_reset_summary">Скинути всі налаштування на стандартні значення</string>
 	<string name="preference_advanced">Для експертів</string>

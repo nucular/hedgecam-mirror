@@ -270,10 +270,10 @@ public class FolderChooserDialog extends DialogFragment {
 		private final static String disallowed = "|\\?*<\":>";
 		
 		@Override
-		public CharSequence filter(CharSequence source, int start, int end, Spanned dest, int dstart, int dend) { 
-			for(int i=start;i<end;i++) { 
+		public CharSequence filter(CharSequence source, int start, int end, Spanned dest, int dstart, int dend) {
+			for(int i=start;i<end;i++) {
 				if( disallowed.indexOf( source.charAt(i) ) != -1 ) {
-					return ""; 
+					return "";
 				}
 			}
 			return null;
@@ -286,10 +286,10 @@ public class FolderChooserDialog extends DialogFragment {
 		if( current_folder == null )
 			return;
 		if( canWrite() ) {
-			final EditText edit_text = new EditText(getActivity());  
+			final EditText edit_text = new EditText(getActivity());
 			edit_text.setSingleLine();
 			InputFilter filter = new NewFolderInputFilter();
-			edit_text.setFilters(new InputFilter[]{filter});		 	
+			edit_text.setFilters(new InputFilter[]{filter});
 
 			AlertDialog.Builder builder = new AlertDialog.Builder(getActivity())
 				//.setIcon(R.drawable.alert_dialog_icon)

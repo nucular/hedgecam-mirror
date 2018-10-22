@@ -1599,7 +1599,7 @@ public class HDRProcessor {
 				q = radius/25;
 			else
 				radius = 25;
-		} 
+		}
 		if( MyDebug.LOG )
 			Log.d(TAG, "radius = " + radius + ", q = " + q);
 		

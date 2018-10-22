@@ -11,6 +11,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -112,6 +113,7 @@ public class ImageSaver {
 	static class Metadata {
 		public String author;
 		public String comment;
+		public boolean comment_as_file;
 	}
 
 	static class Request {
@@ -133,6 +135,7 @@ public class ImageSaver {
 		final ProcessingSettings processing_settings;
 		final Metadata metadata;
 		final boolean is_front_facing;
+		final String prefix;
 		final Date current_date;
 		final int image_number;
 		final boolean store_location;
@@ -151,7 +154,7 @@ public class ImageSaver {
 			ProcessingSettings processing_settings,
 			Metadata metadata,
 			boolean is_front_facing,
-			Date current_date, int image_number,
+			String prefix, Date current_date, int image_number,
 			boolean store_location, Location location, boolean store_geo_direction, double geo_direction,
 			int sample_factor) {
 			this.type = type;
@@ -167,6 +170,7 @@ public class ImageSaver {
 			this.processing_settings = processing_settings;
 			this.metadata = metadata;
 			this.is_front_facing = is_front_facing;
+			this.prefix = prefix;
 			this.current_date = current_date;
 			this.image_number = image_number;
 			this.store_location = store_location;
@@ -208,7 +212,7 @@ public class ImageSaver {
 			ProcessingSettings processing_settings,
 			Metadata metadata,
 			boolean is_front_facing,
-			Date current_date, int image_number,
+			String prefix, Date current_date, int image_number,
 			boolean store_location, Location location, boolean store_geo_direction, double geo_direction,
 			int sample_factor) {
 		if( MyDebug.LOG ) {
@@ -227,7 +231,7 @@ public class ImageSaver {
 				processing_settings,
 				metadata,
 				is_front_facing,
-				current_date, image_number,
+				prefix, current_date, image_number,
 				store_location, location, store_geo_direction, geo_direction,
 				sample_factor);
 	}
@@ -241,7 +245,7 @@ public class ImageSaver {
 	boolean saveImageRaw(boolean do_in_background,
 			Prefs.PhotoMode photo_mode,
 			DngCreator dngCreator, Image image,
-			Date current_date, int image_number) {
+			String prefix, Date current_date, int image_number) {
 		if( MyDebug.LOG ) {
 			Log.d(TAG, "saveImageRaw");
 			Log.d(TAG, "do_in_background? " + do_in_background);
@@ -257,7 +261,7 @@ public class ImageSaver {
 				null,
 				null,
 				false,
-				current_date, image_number,
+				prefix, current_date, image_number,
 				false, null, false, 0.0,
 				1);
 	}
@@ -275,7 +279,7 @@ public class ImageSaver {
 			ProcessingSettings processing_settings,
 			Metadata metadata,
 			boolean is_front_facing,
-			Date current_date, int image_number,
+			String prefix, Date current_date, int image_number,
 			boolean store_location, Location location, boolean store_geo_direction, double geo_direction,
 			int sample_factor) {
 		if( MyDebug.LOG ) {
@@ -296,7 +300,7 @@ public class ImageSaver {
 				processing_settings,
 				metadata,
 				is_front_facing,
-				current_date, image_number,
+				prefix, current_date, image_number,
 				store_location, location, store_geo_direction, geo_direction,
 				sample_factor);
 
@@ -315,7 +319,7 @@ public class ImageSaver {
 		}
 		else {
 			if( is_raw ) {
-				success = saveImageNowRaw(request.dngCreator, request.image, request.current_date, false);
+				success = saveImageNowRaw(request.dngCreator, request.image, request.prefix, request.current_date, false);
 			}
 			else {
 				success = saveImageNow(request, false);
@@ -375,7 +379,7 @@ public class ImageSaver {
 					if( request.type == Request.Type.RAW ) {
 						if( MyDebug.LOG )
 							Log.d(TAG, "request is raw");
-						success = saveImageNowRaw(request.dngCreator, request.image, request.current_date, true);
+						success = saveImageNowRaw(request.dngCreator, request.image, request.prefix, request.current_date, true);
 					}
 					else if( request.type == Request.Type.JPEG ) {
 						if( MyDebug.LOG )
@@ -431,7 +435,7 @@ public class ImageSaver {
 			null,
 			null,
 			false,
-			null, 0,
+			null, null, 0,
 			false, null, false, 0.0,
 			1);
 		if( MyDebug.LOG )
@@ -1357,10 +1361,10 @@ public class ImageSaver {
 				}
 			}
 			else if( storageUtils.isUsingSAF() ) {
-				saveUri = storageUtils.createOutputMediaFileSAF(StorageUtils.MEDIA_TYPE_IMAGE, filename_suffix, "jpg", current_date);
+				saveUri = storageUtils.createOutputMediaFileSAF(request.prefix, filename_suffix, "jpg", current_date);
 			}
 			else {
-				picFile = storageUtils.createOutputMediaFile(StorageUtils.MEDIA_TYPE_IMAGE, filename_suffix, "jpg", current_date);
+				picFile = storageUtils.createOutputMediaFile(request.prefix, filename_suffix, "jpg", current_date);
 				if( MyDebug.LOG )
 					Log.d(TAG, "save to: " + picFile.getAbsolutePath());
 			}
@@ -1442,6 +1446,17 @@ public class ImageSaver {
 						// broadcast for SAF is done later, when we've actually written out the file
 						storageUtils.broadcastFile(picFile, true, false, update_thumbnail);
 						main_activity.test_last_saved_image = picFile.getAbsolutePath();
+						
+						if (request.metadata.comment_as_file && request.metadata.comment != null && request.metadata.comment.length() > 0) {
+							OutputStream s = new FileOutputStream(storageUtils.createOutputMediaFile(request.prefix, filename_suffix, "txt", current_date));
+							if (s != null) {
+								OutputStreamWriter w = new OutputStreamWriter(s);
+								w.write(request.metadata.comment);
+								w.close();
+								
+								s.close();
+							}
+						}
 					}
 				}
 				if( request.image_capture_intent ) {
@@ -1484,6 +1499,17 @@ public class ImageSaver {
 						// announce the SAF Uri
 						// (shouldn't do this for a capture intent - e.g., causes crash when calling from Google Keep)
 						storageUtils.announceUri(saveUri, true, false);
+					}
+
+					if (request.metadata.comment_as_file && request.metadata.comment != null && request.metadata.comment.length() > 0) {
+						OutputStream s = main_activity.getContentResolver().openOutputStream(storageUtils.createOutputMediaFileSAF(request.prefix, filename_suffix, "txt", current_date));
+						if (s != null) {
+							OutputStreamWriter w = new OutputStreamWriter(s);
+							w.write(request.metadata.comment);
+							w.close();
+							
+							s.close();
+						}
 					}
 				}
 			}
@@ -1892,7 +1918,7 @@ public class ImageSaver {
 	/** May be run in saver thread or picture callback thread (depending on whether running in background).
 	 */
 	@TargetApi(Build.VERSION_CODES.LOLLIPOP)
-	private boolean saveImageNowRaw(DngCreator dngCreator, Image image, Date current_date, boolean in_background) {
+	private boolean saveImageNowRaw(DngCreator dngCreator, Image image, String prefix, Date current_date, boolean in_background) {
 		if( MyDebug.LOG )
 			Log.d(TAG, "saveImageNowRaw");
 
@@ -1912,14 +1938,14 @@ public class ImageSaver {
 			Uri saveUri = null;
 
 			if( storageUtils.isUsingSAF() ) {
-				saveUri = storageUtils.createOutputMediaFileSAF(StorageUtils.MEDIA_TYPE_IMAGE, "", "dng", current_date);
+				saveUri = storageUtils.createOutputMediaFileSAF(prefix, "", "dng", current_date);
 				if( MyDebug.LOG )
 					Log.d(TAG, "saveUri: " + saveUri);
 				// When using SAF, we don't save to a temp file first (unlike for JPEGs). Firstly we don't need to modify Exif, so don't
 				// need a real file; secondly copying to a temp file is much slower for RAW.
 			}
 			else {
-				picFile = storageUtils.createOutputMediaFile(StorageUtils.MEDIA_TYPE_IMAGE, "", "dng", current_date);
+				picFile = storageUtils.createOutputMediaFile(prefix, "", "dng", current_date);
 				if( MyDebug.LOG )
 					Log.d(TAG, "save to: " + picFile.getAbsolutePath());
 			}
@@ -1947,8 +1973,6 @@ public class ImageSaver {
 
 			if( saveUri == null ) {
 				success = true;
-				//Uri media_uri = storageUtils.broadcastFileRaw(picFile, current_date, location);
-				//storageUtils.announceUri(media_uri, true, false);				
 				storageUtils.broadcastFile(picFile, true, false, false);
 			}
 			else {
@@ -1959,8 +1983,6 @@ public class ImageSaver {
 				if( real_file != null ) {
 					if( MyDebug.LOG )
 						Log.d(TAG, "broadcast file");
-					//Uri media_uri = storageUtils.broadcastFileRaw(real_file, current_date, location);
-					//storageUtils.announceUri(media_uri, true, false);
 					storageUtils.broadcastFile(real_file, true, false, false);
 				}
 				else {
@@ -2191,7 +2213,7 @@ public class ImageSaver {
 				exif.setAttribute(ExifInterface.TAG_ARTIST, data.author);
 				exif.setAttribute(ExifInterface.TAG_COPYRIGHT, data.author);
 			}
-			if (data.comment != null && data.comment.length() > 0) {
+			if (!data.comment_as_file && data.comment != null && data.comment.length() > 0) {
 				exif.setComment(data.comment);
 			}
 		}

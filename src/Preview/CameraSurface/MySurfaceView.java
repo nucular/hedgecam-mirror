@@ -42,15 +42,17 @@ public class MySurfaceView extends SurfaceView implements CameraSurface {
 		// deprecated setting, but required on Android versions prior to 3.0
 		getHolder().setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS); // deprecated
 
-		tick = new Runnable() {
-			public void run() {
-				/*if( MyDebug.LOG )
-					Log.d(TAG, "invalidate()");*/
-				preview.test_ticker_called = true;
-				invalidate();
-				handler.postDelayed(this, preview.getTickInterval());
-			}
-		};
+		if (!preview.isUsingCanvasView()) {
+			tick = new Runnable() {
+				public void run() {
+					/*if( MyDebug.LOG )
+						Log.d(TAG, "invalidate()");*/
+					preview.test_ticker_called = true;
+					invalidate();
+					handler.postDelayed(this, preview.getTickInterval());
+				}
+			};
+		} else tick = null;
 	}
 	
 	@Override
@@ -85,7 +87,8 @@ public class MySurfaceView extends SurfaceView implements CameraSurface {
 
 	@Override
 	public void onDraw(Canvas canvas) {
-		preview.draw(canvas);
+		if (tick != null)
+			preview.draw(canvas);
 	}
 
 	@Override
@@ -105,13 +108,15 @@ public class MySurfaceView extends SurfaceView implements CameraSurface {
 	public void onPause() {
 		if( MyDebug.LOG )
 			Log.d(TAG, "onPause()");
-		handler.removeCallbacks(tick);
+		if (tick != null)
+			handler.removeCallbacks(tick);
 	}
 
 	@Override
 	public void onResume() {
 		if( MyDebug.LOG )
 			Log.d(TAG, "onResume()");
-		tick.run();
+		if (tick != null)
+			tick.run();
 	}
 }
