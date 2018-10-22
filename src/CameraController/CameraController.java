@@ -248,7 +248,8 @@ public abstract class CameraController {
 	/** n_images must be an odd number greater than 1.
 	 */
 	public abstract void setExpoBracketingNImages(int n_images);
-	public abstract void setExpoBracketingStops(double stops);
+	public abstract void setExpoBracketingStops(double stops_up, double stops_down);
+	public abstract void setExposureCompensationDelay(int delay);
 	public abstract void setUseExpoFastBurst(boolean use_expo_fast_burst);
 	/** If optimise_ae_for_dro is true, then this is a hint that if in auto-exposure mode and flash/torch
 	 *  is not on, the CameraController should try to optimise for a DRO (dynamic range optimisation) mode.

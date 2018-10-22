@@ -37,7 +37,9 @@ public class CameraController1 extends CameraController {
 	private boolean want_expo_bracketing;
 	private final static int max_expo_bracketing_n_images = 3; // seem to have problems with 5 images in some cases, e.g., images coming out same brightness on OnePlus 3T
 	private int expo_bracketing_n_images = 3;
-	private double expo_bracketing_stops = 2.0;
+	private int exposure_compensation_delay = 1000;
+	private double expo_bracketing_stops_up = 2.0;
+	private double expo_bracketing_stops_down = 2.0;
 
 	// we keep track of some camera settings rather than reading from Camera.getParameters() every time. Firstly this is important
 	// for performance (affects UI rendering times, e.g., see profiling of GPU rendering). Secondly runtimeexceptions from
@@ -713,15 +715,16 @@ public class CameraController1 extends CameraController {
 	}
 
 	@Override
-	public void setExpoBracketingStops(double stops) {
+	public void setExpoBracketingStops(double stops_up, double stops_down) {
 		if( MyDebug.LOG )
-			Log.d(TAG, "setExpoBracketingStops: " + stops);
-		if( stops <= 0.0 ) {
-			if( MyDebug.LOG )
-				Log.e(TAG, "stops should be positive");
-			throw new RuntimeException(); // throw as RuntimeException, as this is a programming error
-		}
-		this.expo_bracketing_stops = stops;
+			Log.d(TAG, "setExpoBracketingStops: " + stops_up + ", " + stops_down);
+		this.expo_bracketing_stops_up = stops_up;
+		this.expo_bracketing_stops_down = stops_down;
+	}
+
+	@Override
+	public void setExposureCompensationDelay(int delay) {
+		this.exposure_compensation_delay = delay;
 	}
 
 	@Override
@@ -1511,7 +1514,7 @@ public class CameraController1 extends CameraController {
 									takePictureNow(shutter, picture, error);
 								}
 						   }
-						}, 1000);
+						}, exposure_compensation_delay);
 					}
 				}
 				else {
@@ -1554,13 +1557,8 @@ public class CameraController1 extends CameraController {
 			if( exposure_step == 0.0f ) // just in case?
 				exposure_step = 1.0f/3.0f; // make up a typical example
 			int exposure_current = getExposureCompensation();
-			double stops_per_image = expo_bracketing_stops / (double)n_half_images;
-			int steps = (int)((stops_per_image+1.0e-5) / exposure_step); // need to add a small amount, otherwise we can round down
-			steps = Math.max(steps, 1);
-			if( MyDebug.LOG ) {
-				Log.d(TAG, "steps: " + steps);
+			if( MyDebug.LOG ) 
 				Log.d(TAG, "exposure_current: " + exposure_current);
-			}
 
 			List<Integer> requests = new ArrayList<>();
 
@@ -1569,6 +1567,10 @@ public class CameraController1 extends CameraController {
 			requests.add(exposure_current);
 
 			// darker images
+			int steps = (int)((expo_bracketing_stops_down / (double)n_half_images+1.0e-5) / exposure_step); // need to add a small amount, otherwise we can round down
+			steps = Math.max(steps, 1);
+			if( MyDebug.LOG )
+				Log.d(TAG, "steps down: " + steps);
 			for(int i=0;i<n_half_images;i++) {
 				int exposure = exposure_current - (n_half_images-i)*steps;
 				exposure = Math.max(exposure, min_exposure);
@@ -1580,6 +1582,8 @@ public class CameraController1 extends CameraController {
 			}
 
 			// lighter images
+			steps = (int)((expo_bracketing_stops_up / (double)n_half_images+1.0e-5) / exposure_step); // need to add a small amount, otherwise we can round down
+			steps = Math.max(steps, 1);
 			for(int i=0;i<n_half_images;i++) {
 				int exposure = exposure_current + (i+1)*steps;
 				exposure = Math.min(exposure, max_exposure);

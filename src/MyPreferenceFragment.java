@@ -359,10 +359,20 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 			removePref("preference_category_photo_modes", "preference_photo_mode_expo_bracketing");
 			removePref(popupGroup, Prefs.POPUP_EXPO_BRACKETING_STOPS);
 		} else {
-			String preference_key = Prefs.EXPO_BRACKETING_USE_ISO + "_" + cameraId;
-			TwoStatePreference p = (TwoStatePreference)findPreference(Prefs.EXPO_BRACKETING_USE_ISO);
-			p.setKey(preference_key);
-			p.setChecked(sharedPreferences.getBoolean(preference_key, true));
+			if (supports_iso_range) {
+				TwoStatePreference p = (TwoStatePreference)findPreference(Prefs.EXPO_BRACKETING_USE_ISO);
+				if (p != null) {
+					String preference_key = Prefs.EXPO_BRACKETING_USE_ISO + "_" + cameraId;
+					p.setKey(preference_key);
+					p.setChecked(sharedPreferences.getBoolean(preference_key, true));
+				}
+			} else {
+				removePref("preference_category_expo_bracketing", Prefs.EXPO_BRACKETING_USE_ISO);
+			}
+
+			if (supports_exposure_time) {
+				removePref("preference_category_expo_bracketing", Prefs.EXPO_BRACKETING_DELAY);
+			}
 		}
 		
 		if (!supports_focus_bracketing) {

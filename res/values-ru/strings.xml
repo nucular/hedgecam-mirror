@@ -516,9 +516,14 @@
 	<string name="preference_expo_bracketing_n_images">Экспобрекетинг</string>
 	<string name="preference_expo_bracketing_n_images_summary">%s\n\nЧисло изображений в режиме экспобрекетинга</string>
 	<string name="preference_expo_bracketing_stops">Ступени экспобрекетинга</string>
-	<string name="preference_expo_bracketing_stops_summary">%s\n\nЧисло ступеней между снимками</string>
+	<string name="preference_expo_bracketing_stops_up">Ступени вверх</string>
+	<string name="preference_expo_bracketing_stops_up_summary">%s\n\nЧисло ступеней между светлыми снимками</string>
+	<string name="preference_expo_bracketing_stops_down">Ступени вниз</string>
+	<string name="preference_expo_bracketing_stops_down_summary">%s\n\nЧисло ступеней между темными снимками</string>
 	<string name="preference_expo_bracketing_use_iso">Использовать ISO</string>
 	<string name="preference_expo_bracketing_use_iso_summary">По возможности использовать регулировку ISO при съемке темных снимков</string>
+	<string name="preference_expo_bracketing_delay">Задержка</string>
+	<string name="preference_expo_bracketing_delay_summary">%s\n\nЗадержка между снимками, необходимая для установки компенсации экспозиции</string>
 	<string name="preference_category_hdr">HDR и DRO</string>
 	<string name="preference_category_hdr_summary">Настройки режимов HDR и DRO</string>
 	<string name="preference_hdr_save_expo">Сохранять изображения HDR</string>

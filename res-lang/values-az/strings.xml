@@ -196,8 +196,6 @@
 	<string name="minutes_abbreviation">m</string>
 	<string name="hours_abbreviation">h</string>
 
-	<string name="dark">Dark</string>
-	<string name="bright">Bright</string>
 	<string name="exposure_shutter_speed">Shutter speed</string>
 -->
 	<string name="focus_distance">Fokus məsafəsi</string>
@@ -617,9 +615,14 @@
 	<string name="preference_expo_bracketing_n_images">Exposure Bracketing</string>
 	<string name="preference_expo_bracketing_n_images_summary">%s\n\nNumber of images for exposure bracketing mode</string>
 	<string name="preference_expo_bracketing_stops">Exposure Bracketing Stops</string>
-	<string name="preference_expo_bracketing_stops_summary">%s\n\nHow many stops to subtract/add for the darkest/brightest image</string>
+	<string name="preference_expo_bracketing_stops_up">Stops Up</string>
+	<string name="preference_expo_bracketing_stops_up_summary">%s\n\nHow many stops to add for the brightest image</string>
+	<string name="preference_expo_bracketing_stops_down">Stops Down</string>
+	<string name="preference_expo_bracketing_stops_down_summary">%s\n\nHow many stops to subtract for the darkest image</string>
 	<string name="preference_expo_bracketing_use_iso">Use ISO</string>
 	<string name="preference_expo_bracketing_use_iso_summary">If possible, use ISO adjustment for creating the darker images</string>
+	<string name="preference_expo_bracketing_delay">Delay</string>
+	<string name="preference_expo_bracketing_delay_summary">%s\n\nThe delay between images is necessary for exposure compensation changing</string>
 	<string name="preference_category_hdr">HDR and DRO</string>
 	<string name="preference_category_hdr_summary">HDR and DRO settings</string>
 	<string name="preference_hdr_save_expo">Save all images for HDR mode</string>

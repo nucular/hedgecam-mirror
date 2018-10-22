@@ -894,8 +894,12 @@ public class MyApplicationInterface implements ApplicationInterface {
 		if( MyDebug.LOG )
 			Log.d(TAG, "cameraInOperation: " + in_operation);
 		if( !in_operation && used_front_screen_flash ) {
-			main_activity.setBrightnessForCamera(false); // ensure screen brightness matches user preference, after using front screen flash
-			main_activity.getMainUI().enableFrontScreenFlasn(false);
+			main_activity.runOnUiThread(new Runnable() {
+				public void run() {
+					main_activity.setBrightnessForCamera(false); // ensure screen brightness matches user preference, after using front screen flash
+					main_activity.getMainUI().enableFrontScreenFlasn(false);
+				}
+			});
 			used_front_screen_flash = false;
 		}
 		drawPreview.cameraInOperation(in_operation);
@@ -908,8 +912,12 @@ public class MyApplicationInterface implements ApplicationInterface {
 		if( MyDebug.LOG )
 			Log.d(TAG, "turnFrontScreenFlashOn");
 		used_front_screen_flash = true;
-		main_activity.setBrightnessForCamera(true); // ensure we have max screen brightness, even if user preference not set for max brightness
-		main_activity.getMainUI().enableFrontScreenFlasn(true);
+		main_activity.runOnUiThread(new Runnable() {
+			public void run() {
+				main_activity.setBrightnessForCamera(true); // ensure we have max screen brightness, even if user preference not set for max brightness
+				main_activity.getMainUI().enableFrontScreenFlasn(true);
+			}
+		});
 	}
 
 	private int n_capture_images = 0; // how many calls to onPictureTaken() since the last call to onCaptureStarted()

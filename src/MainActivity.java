@@ -1370,11 +1370,14 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 				case Prefs.MIN_FOCUS_DISTANCE+"_0":
 				case Prefs.MIN_FOCUS_DISTANCE+"_1":
 				case Prefs.MIN_FOCUS_DISTANCE+"_2":
-				case Prefs.EXPO_BRACKETING_STOPS:
-				case Prefs.HDR_STOPS:
+				case Prefs.EXPO_BRACKETING_STOPS_UP:
+				case Prefs.EXPO_BRACKETING_STOPS_DOWN:
+				case Prefs.HDR_STOPS_UP:
+				case Prefs.HDR_STOPS_DOWN:
 				case Prefs.EXPO_BRACKETING_USE_ISO+"_0":
 				case Prefs.EXPO_BRACKETING_USE_ISO+"_1":
 				case Prefs.EXPO_BRACKETING_USE_ISO+"_2":
+				case Prefs.EXPO_BRACKETING_DELAY:
 				case Prefs.FOCUS_RANGE:
 				case Prefs.PREVIEW_MAX_EXPO:
 				case Prefs.HDR_IGNORE_SMART_FILTER:

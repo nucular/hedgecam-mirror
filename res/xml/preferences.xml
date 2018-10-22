@@ -1500,9 +1500,19 @@
 
 				<!--  if we move this to another PreferenceGroup, we should update code to remove this Preference -->
 				<ListPreference
+					android:key="preference_expo_bracketing_stops_up"
+					android:title="@string/preference_expo_bracketing_stops_up"
+					android:summary="@string/preference_expo_bracketing_stops_up_summary"
+					android:entries="@array/preference_expo_bracketing_stops_values"
+					android:entryValues="@array/preference_expo_bracketing_stops_values"
+					android:defaultValue="2"
+					/>
+
+				<!--  if we move this to another PreferenceGroup, we should update code to remove this Preference -->
+				<ListPreference
 					android:key="preference_expo_bracketing_stops"
-					android:title="@string/preference_expo_bracketing_stops"
-					android:summary="@string/preference_expo_bracketing_stops_summary"
+					android:title="@string/preference_expo_bracketing_stops_down"
+					android:summary="@string/preference_expo_bracketing_stops_down_summary"
 					android:entries="@array/preference_expo_bracketing_stops_values"
 					android:entryValues="@array/preference_expo_bracketing_stops_values"
 					android:defaultValue="2"
@@ -1523,6 +1533,16 @@
 					android:summary="@string/preference_camera2_fast_burst_summary"
 					android:defaultValue="true"
 					/>
+
+				<!--  if we move this to another PreferenceGroup, we should update code to remove this Preference -->
+				<ListPreference
+					android:key="preference_expo_bracketing_delay"
+					android:title="@string/preference_expo_bracketing_delay"
+					android:summary="@string/preference_expo_bracketing_delay_summary"
+					android:entries="@array/preference_fb_focus_time_entries"
+					android:entryValues="@array/preference_fb_focus_time_values"
+					android:defaultValue="1000"
+					/>
 			</PreferenceScreen>
 
 			<PreferenceScreen
@@ -1541,9 +1561,19 @@
 
 				<!--  if we move this to another PreferenceGroup, we should update code to remove this Preference -->
 				<ListPreference
+					android:key="preference_hdr_stops_up"
+					android:title="@string/preference_expo_bracketing_stops_up"
+					android:summary="@string/preference_expo_bracketing_stops_up_summary"
+					android:entries="@array/preference_expo_bracketing_stops_values"
+					android:entryValues="@array/preference_expo_bracketing_stops_values"
+					android:defaultValue="2"
+					/>
+
+				<!--  if we move this to another PreferenceGroup, we should update code to remove this Preference -->
+				<ListPreference
 					android:key="preference_hdr_stops"
-					android:title="@string/preference_expo_bracketing_stops"
-					android:summary="@string/preference_expo_bracketing_stops_summary"
+					android:title="@string/preference_expo_bracketing_stops_down"
+					android:summary="@string/preference_expo_bracketing_stops_down_summary"
 					android:entries="@array/preference_expo_bracketing_stops_values"
 					android:entryValues="@array/preference_expo_bracketing_stops_values"
 					android:defaultValue="2"

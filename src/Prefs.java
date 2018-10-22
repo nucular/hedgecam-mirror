@@ -33,8 +33,10 @@ public class Prefs {
 	public static final String EXPOSURE_TIME = "preference_exposure_time";
 	public static final String RAW = "preference_raw";
 	public static final String EXPO_BRACKETING_N_IMAGES = "preference_expo_bracketing_n_images";
-	public static final String EXPO_BRACKETING_STOPS = "preference_expo_bracketing_stops";
+	public static final String EXPO_BRACKETING_STOPS_UP = "preference_expo_bracketing_stops_up";
+	public static final String EXPO_BRACKETING_STOPS_DOWN = "preference_expo_bracketing_stops";
 	public static final String EXPO_BRACKETING_USE_ISO = "preference_expo_bracketing_use_iso";
+	public static final String EXPO_BRACKETING_DELAY = "preference_expo_bracketing_delay";
 	public static final String VOLUME_KEYS = "preference_volume_keys";
 	public static final String AUDIO_CONTROL = "preference_audio_control";
 	public static final String AUDIO_NOISE_CONTROL_SENSITIVITY = "preference_audio_noise_control_sensitivity";
@@ -140,7 +142,8 @@ public class Prefs {
 	public static final String HDR_LOCAL_CONTRAST = "preference_hdr_local_contrast";
 	public static final String HDR_N_TILES = "preference_hdr_n_tiles";
 	public static final String HDR_IGNORE_SMART_FILTER = "preference_hdr_ignore_sf";
-	public static final String HDR_STOPS = "preference_hdr_stops";
+	public static final String HDR_STOPS_UP = "preference_hdr_stops_up";
+	public static final String HDR_STOPS_DOWN = "preference_hdr_stops";
 
 	public static final String PREVIEW_LOCATION = "preference_preview_location";
 	public static final String PREVIEW_MAX_EXPO = "preference_preview_max_expo";
@@ -435,12 +438,32 @@ public class Prefs {
 		return n_images;
 	}
 
-	public static double getExpoBracketingStopsPref() {
+	public static double getExpoBracketingStopsUpPref() {
 		if( MyDebug.LOG )
-			Log.d(TAG, "getExpoBracketingStopsPref");
+			Log.d(TAG, "getExpoBracketingStopsUpPref");
 		double n_stops;
 
-		String n_stops_s = sharedPreferences.getString(photo_mode == PhotoMode.HDR ? Prefs.HDR_STOPS : Prefs.EXPO_BRACKETING_STOPS, "2");
+		String n_stops_s = sharedPreferences.getString(photo_mode == PhotoMode.HDR ? Prefs.HDR_STOPS_UP : Prefs.EXPO_BRACKETING_STOPS_UP, "2");
+		try {
+			n_stops = Double.parseDouble(n_stops_s);
+		}
+		catch(NumberFormatException exception) {
+			if( MyDebug.LOG )
+				Log.e(TAG, "n_stops_s invalid format: " + n_stops_s);
+			n_stops = 2.0;
+		}
+
+		if( MyDebug.LOG )
+			Log.d(TAG, "n_stops = " + n_stops);
+		return n_stops;
+	}
+
+	public static double getExpoBracketingStopsDownPref() {
+		if( MyDebug.LOG )
+			Log.d(TAG, "getExpoBracketingStopsDownPref");
+		double n_stops;
+
+		String n_stops_s = sharedPreferences.getString(photo_mode == PhotoMode.HDR ? Prefs.HDR_STOPS_DOWN : Prefs.EXPO_BRACKETING_STOPS_DOWN, "2");
 		try {
 			n_stops = Double.parseDouble(n_stops_s);
 		}
@@ -911,6 +934,17 @@ public class Prefs {
 		long value;
 		try {
 			value = (long)Integer.parseInt(sharedPreferences.getString(FB_FOCUS_TIME, "1000"));
+		}
+		catch(NumberFormatException e) {
+			value = 1000;
+		}
+		return value;
+	}
+
+	public static int getExposureCompensationDelayPref() {
+		int value;
+		try {
+			value = Integer.parseInt(sharedPreferences.getString(EXPO_BRACKETING_DELAY, "1000"));
 		}
 		catch(NumberFormatException e) {
 			value = 1000;

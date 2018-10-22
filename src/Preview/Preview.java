@@ -300,6 +300,9 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 	private Runnable reset_continuous_focus_runnable;
 	private boolean autofocus_in_continuous_mode;
 	
+	private final Handler clear_focus_handler = new Handler();
+	private Runnable clear_focus_runnable;
+
 	private String hardware_level;
 	
 	private float[] fb_stack;
@@ -319,6 +322,8 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 	private int toast_radius;
 	private float toast_font_size;
 	private int toast_color;
+	
+	private final float scale;
 
 	public Preview(ApplicationInterface applicationInterface, ViewGroup parent) {
 		if( MyDebug.LOG ) {
@@ -334,6 +339,10 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 			if( MyDebug.LOG )
 				Log.d(TAG, "is_test: " + is_test);
 		}
+
+		this.scale = activity.getResources().getDisplayMetrics().density;
+		if( MyDebug.LOG )
+			Log.d(TAG, "scale: " + this.scale);
 		
 		this.sharedPreferences = ((MainActivity)activity).getSharedPrefs();
 		updateTickInterval();
@@ -499,6 +508,7 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 		if( gestureDetector.onTouchEvent(event) ) {
 			if( MyDebug.LOG )
 				Log.d(TAG, "touch event handled by gestureDetector");
+			clearFocusReset();
 			return true;
 		}
 		if (scaleGestureDetector != null)
@@ -523,6 +533,7 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 		if( event.getPointerCount() != 1 ) {
 			//multitouch_time = System.currentTimeMillis();
 			touch_was_multitouch = true;
+			clearFocusReset();
 			return true;
 		}
 		if( event.getAction() != MotionEvent.ACTION_UP ) {
@@ -534,8 +545,23 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 					if( MyDebug.LOG )
 						Log.d(TAG, "touch down at " + touch_orig_x + " , " + touch_orig_y);
 				}
+				if (has_focus_area || has_metering_area) {
+					clear_focus_runnable = new Runnable() {
+						@Override
+						public void run() {
+							clear_focus_runnable = null;
+							touch_was_multitouch = true;
+							clearFocusAreas();
+						}
+					};
+					clear_focus_handler.postDelayed(clear_focus_runnable, 500);
+				}
+			} else if (clear_focus_runnable != null && (Math.abs(touch_orig_x-event.getX()) > 8*scale || Math.abs(touch_orig_y-event.getY()) > 8*scale)) {
+				clearFocusReset();
 			}
 			return true;
+		} else {
+			clearFocusReset();
 		}
 		// now only have to handle MotionEvent.ACTION_UP from this point onwards
 
@@ -563,7 +589,6 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 			float diff_x = x - touch_orig_x;
 			float diff_y = y - touch_orig_y;
 			float dist2 = diff_x*diff_x + diff_y*diff_y;
-			float scale = getResources().getDisplayMetrics().density;
 			float tol = 31 * scale; // convert dps to pixels (about 0.5cm)
 			if( MyDebug.LOG ) {
 				Log.d(TAG, "touched from " + touch_orig_x + " , " + touch_orig_y + " to " + x + " , " + y);
@@ -629,8 +654,13 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 		return true;
 	}
 	
-	//@SuppressLint("ClickableViewAccessibility") @Override
-
+	public void clearFocusReset() {
+		if( clear_focus_runnable != null ) {
+			clear_focus_handler.removeCallbacks(clear_focus_runnable);
+			clear_focus_runnable = null;
+		}
+	}
+	
 	/** Handle multitouch zoom.
 	 */
 	private class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
@@ -1792,8 +1822,10 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 		if( this.supports_expo_bracketing && Prefs.isExpoBracketingPref() ) {
 			camera_controller.setExpoBracketing(true);
 			camera_controller.setExpoBracketingNImages( Prefs.getExpoBracketingNImagesPref() );
-			camera_controller.setExpoBracketingStops( Prefs.getExpoBracketingStopsPref() );
-			// setUseExpoFastBurst called when taking a photo
+			camera_controller.setExpoBracketingStops( Prefs.getExpoBracketingStopsUpPref(), Prefs.getExpoBracketingStopsDownPref() );
+			if (!this.supports_exposure_time) {
+				camera_controller.setExposureCompensationDelay(Prefs.getExposureCompensationDelayPref());
+			}
 		}
 		else {
 			camera_controller.setExpoBracketing(false);
@@ -6078,7 +6110,6 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 
 			@Override 
 			protected void onDraw(Canvas canvas) {
-				final float scale = Preview.this.getResources().getDisplayMetrics().density;
 				paint.setTextSize(toast_font_size);
 				paint.setShadowLayer(1, 0, 1, Color.BLACK);
 				paint.setAntiAlias(true);
@@ -6369,7 +6400,7 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 	/** Returns the current zoom factor of the camera. Always returns 1.0f if zoom isn't supported.
 	 */
 	public float getZoomRatio() {
-		if( zoom_ratios == null )
+		if( zoom_ratios == null || camera_controller == null )
 			return 1.0f;
 		int zoom_factor = camera_controller.getZoom();
 		return this.zoom_ratios.get(zoom_factor)/100.0f;

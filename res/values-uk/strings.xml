@@ -516,7 +516,10 @@
 	<string name="preference_expo_bracketing_n_images">Брекетинг експозиції</string>
 	<string name="preference_expo_bracketing_n_images_summary">%s\n\nКількість фото</string>
 	<string name="preference_expo_bracketing_stops">Ступені експобрекетингу</string>
-	<string name="preference_expo_bracketing_stops_summary">%s\n\nЧисло ступенів між знімками</string>
+	<string name="preference_expo_bracketing_stops_up">Ступіні вгору</string>
+	<string name="preference_expo_bracketing_stops_up_summary">%s\n\nКількість ступінів між світлими знімками</string>
+	<string name="preference_expo_bracketing_stops_down">Ступіні вниз</string>
+	<string name="preference_expo_bracketing_stops_down_summary">%s\n\nКількість ступінів між темними знімками</string>
 	<string name="preference_expo_bracketing_use_iso">Використовувати ISO</string>
 	<string name="preference_expo_bracketing_use_iso_summary">По можливості використовувати регулювання ISO при зйомці темних знімків</string>
 	<string name="preference_category_hdr">HDR та DRO</string>

@@ -82,7 +82,8 @@ public class PopupView extends LinearLayout {
 	private int burst_mode_index = -1;
 	private int burst_interval_index = -1;
 	private int grid_index = -1;
-	private int stops_index = -1;
+	private int stops_up_index = -1;
+	private int stops_down_index = -1;
 	private int hdr_tonemapping_index = -1;
 	private int hdr_local_contrast_index = -1;
 	private int hdr_n_tiles_index = -1;
@@ -843,31 +844,31 @@ public class PopupView extends LinearLayout {
 
 				if (!preview.isVideo()) {
 					final Prefs.PhotoMode photo_mode = Prefs.getPhotoMode();
-					if (photo_mode == Prefs.PhotoMode.ExpoBracketing || photo_mode == Prefs.PhotoMode.HDR) {
-						final String pref_key;
-						switch (photo_mode) {
-							case HDR:
-								pref_key = Prefs.HDR_STOPS;
-								break;
-							default:
-								pref_key = Prefs.EXPO_BRACKETING_STOPS;
-						}
+					if ((photo_mode == Prefs.PhotoMode.ExpoBracketing || photo_mode == Prefs.PhotoMode.HDR) && sharedPreferences.getBoolean(Prefs.POPUP_EXPO_BRACKETING_STOPS, true)) {
+						final String [] stops_values = getResources().getStringArray(R.array.preference_expo_bracketing_stops_values);
+						{
+							final String pref_key;
+							switch (photo_mode) {
+								case HDR:
+									pref_key = Prefs.HDR_STOPS_UP;
+									break;
+								default:
+									pref_key = Prefs.EXPO_BRACKETING_STOPS_UP;
+							}
 
-						if (sharedPreferences.getBoolean(Prefs.POPUP_EXPO_BRACKETING_STOPS, true)) {
-							final String [] stops_values = getResources().getStringArray(R.array.preference_expo_bracketing_stops_values);
 							String stops_value = sharedPreferences.getString(pref_key, "2");
-							stops_index = Arrays.asList(stops_values).indexOf(stops_value);
-							if( stops_index == -1 ) {
+							stops_up_index = Arrays.asList(stops_values).indexOf(stops_value);
+							if( stops_up_index == -1 ) {
 								if( MyDebug.LOG )
 									Log.d(TAG, "can't find stops_value " + stops_value + " in stops_values!");
-								stops_index = 0;
+								stops_up_index = 0;
 							}
-							addArrayOptionsToPopup(Arrays.asList(stops_values), getResources().getString(R.string.preference_expo_bracketing_stops),
-									false, stops_index, false, false, "STOPS", new ArrayOptionsPopupListener() {
+							addArrayOptionsToPopup(Arrays.asList(stops_values), getResources().getString(R.string.preference_expo_bracketing_stops_up),
+									false, stops_up_index, false, false, "STOPS", new ArrayOptionsPopupListener() {
 								private void update() {
-									if( stops_index == -1 )
+									if( stops_up_index == -1 )
 										return;
-									String new_stops_value = stops_values[stops_index];
+									String new_stops_value = stops_values[stops_up_index];
 									SharedPreferences sharedPreferences = main_activity.getSharedPrefs();
 									SharedPreferences.Editor editor = sharedPreferences.edit();
 									editor.putString(pref_key, new_stops_value);
@@ -877,19 +878,69 @@ public class PopupView extends LinearLayout {
 								}
 								@Override
 								public int onClickPrev() {
-									if( stops_index != -1 && stops_index > 0 ) {
-										stops_index--;
+									if( stops_up_index != -1 && stops_up_index > 0 ) {
+										stops_up_index--;
 										update();
-										return stops_index;
+										return stops_up_index;
 									}
 									return -1;
 								}
 								@Override
 								public int onClickNext() {
-									if( stops_index != -1 && stops_index < stops_values.length-1 ) {
-										stops_index++;
+									if( stops_up_index != -1 && stops_up_index < stops_values.length-1 ) {
+										stops_up_index++;
 										update();
-										return stops_index;
+										return stops_up_index;
+									}
+									return -1;
+								}
+							});
+						}
+						{
+							final String pref_key;
+							switch (photo_mode) {
+								case HDR:
+									pref_key = Prefs.HDR_STOPS_DOWN;
+									break;
+								default:
+									pref_key = Prefs.EXPO_BRACKETING_STOPS_DOWN;
+							}
+
+							String stops_value = sharedPreferences.getString(pref_key, "2");
+							stops_down_index = Arrays.asList(stops_values).indexOf(stops_value);
+							if( stops_down_index == -1 ) {
+								if( MyDebug.LOG )
+									Log.d(TAG, "can't find stops_value " + stops_value + " in stops_values!");
+								stops_down_index = 0;
+							}
+							addArrayOptionsToPopup(Arrays.asList(stops_values), getResources().getString(R.string.preference_expo_bracketing_stops_down),
+									false, stops_down_index, false, false, "STOPS", new ArrayOptionsPopupListener() {
+								private void update() {
+									if( stops_down_index == -1 )
+										return;
+									String new_stops_value = stops_values[stops_down_index];
+									SharedPreferences sharedPreferences = main_activity.getSharedPrefs();
+									SharedPreferences.Editor editor = sharedPreferences.edit();
+									editor.putString(pref_key, new_stops_value);
+									editor.apply();
+
+									preview.setupExpoBracketing(preview.getCameraController());
+								}
+								@Override
+								public int onClickPrev() {
+									if( stops_down_index != -1 && stops_down_index > 0 ) {
+										stops_down_index--;
+										update();
+										return stops_down_index;
+									}
+									return -1;
+								}
+								@Override
+								public int onClickNext() {
+									if( stops_down_index != -1 && stops_down_index < stops_values.length-1 ) {
+										stops_down_index++;
+										update();
+										return stops_down_index;
 									}
 									return -1;
 								}

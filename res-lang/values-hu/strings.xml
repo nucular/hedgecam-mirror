@@ -177,8 +177,6 @@
 	<string name="hours_abbreviation">h</string>
 
 -->
-	<string name="dark">Sötét</string>
-	<string name="bright">Világos</string>
 	<string name="exposure_shutter_speed">Zársebesség</string>
 	<string name="focus_distance">Fókusztávolság</string>
 	<string name="infinite">Végtelen</string>
@@ -606,10 +604,15 @@
 	<string name="preference_expo_bracketing_n_images">Expozíciósorozat</string>
 	<string name="preference_expo_bracketing_n_images_summary">Képek száma az expozíciósorozat módban</string>
 	<string name="preference_expo_bracketing_stops">Expozíciósorozat lépésköz</string>
-	<string name="preference_expo_bracketing_stops_summary">Az egyes képek készítése ennyi fényérték eltéréssel</string>
 <!-- Translate me
+	<string name="preference_expo_bracketing_stops_up">Stops Up</string>
+	<string name="preference_expo_bracketing_stops_up_summary">%s\n\nHow many stops to add for the brightest image</string>
+	<string name="preference_expo_bracketing_stops_down">Stops Down</string>
+	<string name="preference_expo_bracketing_stops_down_summary">%s\n\nHow many stops to subtract for the darkest image</string>
 	<string name="preference_expo_bracketing_use_iso">Use ISO</string>
 	<string name="preference_expo_bracketing_use_iso_summary">If possible, use ISO adjustment for creating the darker images</string>
+	<string name="preference_expo_bracketing_delay">Delay</string>
+	<string name="preference_expo_bracketing_delay_summary">%s\n\nThe delay between images is necessary for exposure compensation changing</string>
 	<string name="preference_category_hdr">HDR and DRO</string>
 	<string name="preference_category_hdr_summary">HDR and DRO settings</string>
 -->

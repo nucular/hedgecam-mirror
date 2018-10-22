@@ -187,16 +187,7 @@ public class ImageSaver {
 			hdrProcessor.onDestroy();
 		}
 	}
-/*
-	@Override
-	public void run() {
-		if( MyDebug.LOG )
-			Log.d(TAG, "starting ImageSaver thread...");
-		while( true ) {
-			Log.d(TAG, "Test thread 2");
-		}
-	}
-*/
+
 	/** Saves a photo.
 	 *  If do_in_background is true, the photo will be saved in a background thread. If the queue is full, the function will wait
 	 *  until it isn't full. Otherwise it will return immediately. The function always returns true for background saving.
