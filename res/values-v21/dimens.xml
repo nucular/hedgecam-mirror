@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<dimen name="seekbar_padding_small"		>6dp</dimen>
+	<dimen name="seekbar_padding_normal"	>8dp</dimen>
+	<dimen name="seekbar_padding_large"		>11dp</dimen>
+	<dimen name="seekbar_padding_xlarge"	>16dp</dimen>
+</resources>

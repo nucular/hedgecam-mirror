@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<merge xmlns:android="http://schemas.android.com/apk/res/android">
+	<RelativeLayout
+		android:id="@+id/bottom_container"
+		android:layout_centerHorizontal="true"
+		android:layout_centerVertical="true"
+		android:layout_width="wrap_content"
+		android:layout_height="match_parent"
+		android:visibility="gone"
+		android:padding="-100dp"
+		><!-- In this fuckin OS i cannot disable auto word wrapping in TextView. But i need it. So, i added this shit (android:padding="-100dp") to force TextView to unsee a borders of it's parent, and stop fuckin auto wrapping. Also, i cannot insert the coment wherever i want in this fuckin format. I'm ready to give it all up because i can not see all this shit anymore   -->
+
+		<!-- alpha set as workaround for Android 7 bug where seekbar doesn't show when rotated -->
+		<SeekBar
+			android:id="@+id/exposure_seekbar"
+			android:contentDescription="@string/exposure_compensation"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_centerHorizontal="true"
+			android:visibility="gone"
+			android:alpha="0.9"
+			/>
+
+		<ZoomControls
+			android:id="@+id/exposure_seekbar_zoom"
+			android:contentDescription="@string/exposure_compensation"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_centerHorizontal="true"
+			/>
+
+		<com.caddish_hedgehog.hedgecam2.IconView
+			android:id="@+id/exposure_seekbar_icon"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:textSize="@dimen/seekbar_icon"
+			android:visibility="gone"
+			android:alpha="0.5"
+			android:text="c"
+			/>
+
+		<SeekBar
+			android:id="@+id/iso_seekbar"
+			android:contentDescription="@string/iso"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_centerHorizontal="true"
+			android:visibility="gone"
+			android:alpha="0.9"
+			/>
+
+		<com.caddish_hedgehog.hedgecam2.IconView
+			android:id="@+id/iso_seekbar_icon"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:textSize="@dimen/seekbar_icon"
+			android:visibility="gone"
+			android:alpha="0.5"
+			android:text="I"
+			/>
+
+		<SeekBar
+			android:id="@+id/exposure_time_seekbar"
+			android:contentDescription="@string/exposure"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_below="@+id/exposure_time_seekbar_text"
+			android:layout_centerHorizontal="true"
+			android:visibility="gone"
+			android:alpha="0.9"
+			/>
+
+		<com.caddish_hedgehog.hedgecam2.IconView
+			android:id="@+id/exposure_time_seekbar_icon"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:textSize="@dimen/seekbar_icon"
+			android:visibility="gone"
+			android:alpha="0.5"
+			android:text="s"
+			/>
+
+		<SeekBar
+			android:id="@+id/white_balance_seekbar"
+			android:contentDescription="@string/white_balance"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_centerHorizontal="true"
+			android:visibility="gone"
+			android:alpha="0.9"
+			/>
+
+		<com.caddish_hedgehog.hedgecam2.IconView
+			android:id="@+id/white_balance_seekbar_icon"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:textSize="@dimen/seekbar_icon"
+			android:visibility="gone"
+			android:alpha="0.5"
+			android:text="W"
+			/>
+
+		<ZoomControls
+			android:id="@+id/zoom"
+			android:contentDescription="@string/zoom"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_centerHorizontal="true"
+			/>
+
+		<SeekBar
+			android:id="@+id/zoom_seekbar"
+			android:contentDescription="@string/zoom"
+			android:layout_width="@dimen/seekbar_width_large"
+			android:layout_height="wrap_content"
+			android:layout_centerHorizontal="true"
+			android:visibility="gone"
+			android:alpha="0.9"
+			/>
+
+		<com.caddish_hedgehog.hedgecam2.IconView
+			android:id="@+id/zoom_seekbar_icon"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:textSize="@dimen/seekbar_icon"
+			android:visibility="gone"
+			android:alpha="0.5"
+			android:text="Z"
+			/>
+
+		<SeekBar
+			android:id="@+id/focus_bracketing_seekbar"
+			android:contentDescription="@string/focus_distance"
+			android:layout_width="@dimen/seekbar_width_large"
+			android:layout_height="wrap_content"
+			android:layout_centerHorizontal="true"
+			android:visibility="gone"
+			android:alpha="0.9"
+			/>
+
+		<com.caddish_hedgehog.hedgecam2.IconView
+			android:id="@+id/focus_bracketing_seekbar_icon"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:textSize="@dimen/seekbar_icon"
+			android:visibility="gone"
+			android:alpha="0.5"
+			android:text="B"
+			/>
+
+		<SeekBar
+			android:id="@+id/focus_seekbar"
+			android:contentDescription="@string/focus_distance"
+			android:layout_width="@dimen/seekbar_width_large"
+			android:layout_height="wrap_content"
+			android:layout_centerHorizontal="true"
+			android:visibility="gone"
+			android:alpha="0.9"
+			/>
+
+		<com.caddish_hedgehog.hedgecam2.IconView
+			android:id="@+id/focus_seekbar_icon"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:textSize="@dimen/seekbar_icon"
+			android:visibility="gone"
+			android:alpha="0.5"
+			android:text="f"
+			/>
+
+		<com.caddish_hedgehog.hedgecam2.SeekbarHint
+			android:id="@+id/seekbar_hint"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:textColor="@android:color/white"
+			android:padding="@dimen/seekbar_hint_padding"
+			android:visibility="gone"
+			android:text=""
+			/>
+	</RelativeLayout>
+</merge>

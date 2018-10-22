@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+	<!-- Material shutter and pause -->
+	<dimen name="default_shutter_shadow"	>10dp</dimen>
+	<dimen name="default_shutter_margin"	>-25dp</dimen>
+
+	<dimen name="shutter_size"				>90dp</dimen>
+	<dimen name="shutter_ring_margin"		>1.5dp</dimen>
+	<dimen name="shutter_ring_thickness"	>7dp</dimen>
+	<dimen name="shutter_circle_margin"		>12dp</dimen>
+	<dimen name="shutter_circle_margin_pressed">14dp</dimen>
+	<dimen name="pause_size"				>55dp</dimen>
+
+	<dimen name="ind_padding"				>10dp</dimen>
+
+	<dimen name="ind_text_small_default"	>14dp</dimen>
+	<dimen name="ind_text_small_video"		>28dp</dimen>
+	<dimen name="ind_text_small_timer"		>120dp</dimen>
+	<dimen name="ind_text_small_icon"		>19dp</dimen>
+
+	<dimen name="ind_text_normal_default"	>16dp</dimen>
+	<dimen name="ind_text_normal_video"		>32dp</dimen>
+	<dimen name="ind_text_normal_timer"		>128dp</dimen>
+	<dimen name="ind_text_normal_icon"		>22dp</dimen>
+
+	<dimen name="ind_text_large_default"	>18dp</dimen>
+	<dimen name="ind_text_large_video"		>36dp</dimen>
+	<dimen name="ind_text_large_timer"		>136dp</dimen>
+	<dimen name="ind_text_large_icon"		>25dp</dimen>
+
+	<dimen name="ind_text_xlarge_default"	>21dp</dimen>
+	<dimen name="ind_text_xlarge_video"		>42dp</dimen>
+	<dimen name="ind_text_xlarge_timer"		>140dp</dimen>
+	<dimen name="ind_text_xlarge_icon"		>28dp</dimen>
+	
+	<dimen name="ind_text_stroke"			>2dp</dimen>
+	
+	<dimen name="ind_stroke_width"			>1dp</dimen>
+	<dimen name="ind_take_photo_border"		>5dp</dimen>
+	<dimen name="ind_focus_min_radius"		>40dp</dimen>
+	<dimen name="ind_focus_max_radius"		>45dp</dimen>
+	<dimen name="ind_focus_thickness"		>3dp</dimen>
+	<dimen name="ind_focus_thickness_old"	>1.5dp</dimen>
+	<dimen name="ind_metering_ring"			>9dp</dimen>
+	<dimen name="ind_metering_ray"			>14dp</dimen>
+	<dimen name="ind_multitouch_zoom_thickness">3dp</dimen>
+
+	<dimen name="ind_grid_thickness"		>1dp</dimen>
+	<dimen name="ind_grid_crosshair"		>20dp</dimen>
+
+	<dimen name="ind_angle_line_thickness"	>0.8dp</dimen>
+	<dimen name="ind_angle_line_size"		>80dp</dimen>
+	<dimen name="ind_line_size_narrow"		>80dp</dimen>
+	<dimen name="ind_line_size_wide"		>100dp</dimen>
+	
+	<dimen name="button_gallery_size"		>68dp</dimen>
+	<dimen name="button_gallery_padding"	>13dp</dimen>
+	
+	<dimen name="ctrl_panel_universal_y_max">175dp</dimen>
+	<dimen name="ctrl_panel_universal_x_start">10dp</dimen>
+	<dimen name="ctrl_button_size"			>50dp</dimen>
+	<dimen name="ctrl_buttons_tablet_min_gap">10dp</dimen>
+	<dimen name="ctrl_buttons_gap_small"	>5dp</dimen>
+	<dimen name="ctrl_buttons_gap_normal"	>15dp</dimen>
+	<dimen name="ctrl_buttons_gap_large"	>25dp</dimen>
+	<dimen name="ctrl_buttons_gap_xlarge"	>40dp</dimen>
+	<dimen name="ctrl_button_shadow"		>6dp</dimen>
+	<dimen name="ctrl_button_text_large"	>38dp</dimen>
+	<dimen name="ctrl_button_text"			>15dp</dimen>
+	
+	<dimen name="seekbar_title_margin"		>10dp</dimen>
+	<dimen name="seekbar_padding_small"		>0dp</dimen>
+	<dimen name="seekbar_padding_normal"	>2dp</dimen>
+	<dimen name="seekbar_padding_large"		>5dp</dimen>
+	<dimen name="seekbar_padding_xlarge"	>10dp</dimen>
+	<dimen name="seekbar_margin_bottom"		>8dp</dimen>
+	<dimen name="seekbar_width_small"		>200dp</dimen>
+	<dimen name="seekbar_width_normal"		>250dp</dimen>
+	<dimen name="seekbar_width_large"		>300dp</dimen>
+	<dimen name="seekbar_width_xlarge"		>400dp</dimen>
+	<dimen name="seekbar_icon"				>28dp</dimen>
+	<dimen name="expo_window_close_button"	>40dp</dimen>
+
+	<dimen name="popup_max_height"			>350dp</dimen>
+	<dimen name="popup_button_min_width"	>40dp</dimen>
+	<dimen name="popup_padding"				>10dp</dimen>
+	<dimen name="popup_elements_gap"		>10dp</dimen>
+	<dimen name="popup_button_height"		>50dp</dimen>
+	<dimen name="popup_arrow_width"			>60dp</dimen>
+	<dimen name="popup_arrow_height"		>30dp</dimen>
+
+	<dimen name="popup_text_small_default"	>14dp</dimen>
+	<dimen name="popup_text_small_title"	>15dp</dimen>
+	<dimen name="popup_text_small_arrow"	>14dp</dimen>
+	<dimen name="popup_text_small_button"	>11dp</dimen>
+	<dimen name="popup_text_small_mode"		>28dp</dimen>
+	<dimen name="popup_text_normal_default"	>16dp</dimen>
+	<dimen name="popup_text_normal_title"	>17dp</dimen>
+	<dimen name="popup_text_normal_arrow"	>16dp</dimen>
+	<dimen name="popup_text_normal_button"	>12dp</dimen>
+	<dimen name="popup_text_normal_mode"	>30dp</dimen>
+	<dimen name="popup_text_large_default"	>18dp</dimen>
+	<dimen name="popup_text_large_title"	>20dp</dimen>
+	<dimen name="popup_text_large_arrow"	>18dp</dimen>
+	<dimen name="popup_text_large_button"	>13dp</dimen>
+	<dimen name="popup_text_large_mode"		>32dp</dimen>
+	<dimen name="popup_text_xlarge_default"	>21dp</dimen>
+	<dimen name="popup_text_xlarge_title"	>23dp</dimen>
+	<dimen name="popup_text_xlarge_arrow"	>21dp</dimen>
+	<dimen name="popup_text_xlarge_button"	>15dp</dimen>
+	<dimen name="popup_text_xlarge_mode"	>36dp</dimen>
+	
+	<dimen name="popup_radio_size"			>20dp</dimen>
+	<dimen name="popup_radio_ring_margin"	>8dp</dimen>
+	<dimen name="popup_radio_ring_thickness">2dp</dimen>
+	<dimen name="popup_radio_circle_margin"	>12dp</dimen>
+
+	<dimen name="toast_padding"				>14dp</dimen>
+	<dimen name="toast_radius"				>24dp</dimen>
+	<dimen name="seekbar_hint_margin"		>5dp</dimen>
+	<dimen name="seekbar_hint_padding"		>10dp</dimen>
+	<dimen name="seekbar_hint_pointer"		>12dp</dimen>
+
+</resources>

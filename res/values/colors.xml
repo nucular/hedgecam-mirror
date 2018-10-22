@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<!-- UI colors -->
+	<color name="main_white"		>#ffffff</color>
+	<color name="main_red"			>#ff5151</color>
+	<color name="main_red_faded"	>#ffa8a8</color>
+	<color name="main_green"		>#4be51c</color>
+	<color name="main_green_faded"	>#a5f28e</color>
+	<color name="main_blue"			>#32b4e4</color>
+	<color name="main_blue_faded"	>#99daf2</color>
+	<color name="main_yellow"		>#ffeb3b</color>
+	<color name="main_bg"			>#3f000000</color>
+
+	<color name="popup_bg_black"	>#000000</color>
+	<color name="popup_bg_dkgray"	>#333333</color>
+	<color name="popup_bg_dkblue"	>#0f3645</color>
+	<color name="popup_bg_ltgray"	>#cccccc</color>
+	<color name="popup_bg_white"	>#ffffff</color>
+
+	<color name="radio_light"		>#7fffffff</color>
+	<color name="radio_light_checked">#ffffff</color>
+	<color name="radio_dark"		>#7f000000</color>
+	<color name="radio_dark_checked">#000000</color>
+
+	<color name="ctrl_button_shadow">#7f000000</color>
+	
+	<color name="toast_color"		>#323232</color>
+
+	<!-- Drawing on photo -->
+	<color name="photo_red"			>#ef5350</color>
+	<color name="photo_green"		>#66bb6a</color>
+	<color name="photo_blue"		>#42a5f5</color>
+	<color name="photo_yellow"		>#ffee58</color>
+	<color name="photo_bg"			>#3f000000</color>
+</resources>

@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+	<item android:state_pressed="true">
+		<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+			<item>
+				<shape android:shape="oval">
+					<solid android:color="@color/main_bg"/>
+				</shape>
+			</item>
+			<item
+				android:top="@dimen/shutter_ring_margin"
+				android:right="@dimen/shutter_ring_margin"
+				android:bottom="@dimen/shutter_ring_margin"
+				android:left="@dimen/shutter_ring_margin"
+			>
+				<shape android:shape="oval">
+					<stroke android:width="@dimen/shutter_ring_thickness" android:color="@color/main_white" />
+				</shape>
+			</item>
+			<item
+				android:top="@dimen/shutter_circle_margin_pressed"
+				android:right="@dimen/shutter_circle_margin_pressed"
+				android:bottom="@dimen/shutter_circle_margin_pressed"
+				android:left="@dimen/shutter_circle_margin_pressed"
+			>
+				<shape android:shape="oval">
+					<solid android:color="@color/main_red"/>
+				</shape>
+			</item>
+		</layer-list>
+	</item>
+	<item android:state_selected="true">
+		<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+			<item>
+				<shape android:shape="oval">
+					<solid android:color="@color/main_bg"/>
+				</shape>
+			</item>
+			<item
+				android:top="@dimen/shutter_ring_margin"
+				android:right="@dimen/shutter_ring_margin"
+				android:bottom="@dimen/shutter_ring_margin"
+				android:left="@dimen/shutter_ring_margin"
+			>
+				<shape android:shape="oval">
+					<stroke android:width="@dimen/shutter_ring_thickness" android:color="@color/main_white" />
+				</shape>
+			</item>
+			<item
+				android:top="@dimen/shutter_circle_margin_pressed"
+				android:right="@dimen/shutter_circle_margin_pressed"
+				android:bottom="@dimen/shutter_circle_margin_pressed"
+				android:left="@dimen/shutter_circle_margin_pressed"
+			>
+				<shape android:shape="oval">
+					<solid android:color="@color/main_red_faded"/>
+				</shape>
+			</item>
+		</layer-list>
+	</item>
+	<item>
+		<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+			<item>
+				<shape android:shape="oval">
+					<solid android:color="@color/main_bg"/>
+				</shape>
+			</item>
+			<item
+				android:top="@dimen/shutter_ring_margin"
+				android:right="@dimen/shutter_ring_margin"
+				android:bottom="@dimen/shutter_ring_margin"
+				android:left="@dimen/shutter_ring_margin"
+			>
+				<shape android:shape="oval">
+					<stroke android:width="@dimen/shutter_ring_thickness" android:color="@color/main_white" />
+				</shape>
+			</item>
+			<item
+				android:top="@dimen/shutter_circle_margin"
+				android:right="@dimen/shutter_circle_margin"
+				android:bottom="@dimen/shutter_circle_margin"
+				android:left="@dimen/shutter_circle_margin"
+			>
+				<shape android:shape="oval">
+					<solid android:color="@color/main_red"/>
+				</shape>
+			</item>
+		</layer-list>
+	</item>
+</selector>

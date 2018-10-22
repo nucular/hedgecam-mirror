@@ -1,0 +1,811 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+
+	<string name="translation_author">Imre Kristoffer Eilertsen</string>
+	<string name="intro_text">Trykk for å fokusere, og trykk på den blå kameraknappen for å ta bilder. For mere hjelp, trykk på Netthjelp i Innstillinger. Open Camera er fullstendig gratis. Hvis du liker appen, så kan du gjerne kjøpe min donasjonsapp 🙂 (Se lenken i Innstillinger, eller Netthjelp).\n\nPrivatlivsretningslinjer: Posisjonstillatelser er nødvendig for geotagging, men dette er deaktivert som standard. Hvis det er aktivert, vil posisjonen din bli kodet inn i de lagrede filene (og brukes kun til dette formålet).</string>
+	<string name="intro_ok">OK (Denne meldingen vil ikke bli vist igjen)</string>
+
+	<string name="answer_yes">Ja</string>
+	<string name="answer_no">Nei</string>
+
+	<string name="on">På</string>
+	<string name="off">Av</string>
+	<string name="auto">Auto</string>
+	<string name="default_str">Standard</string>
+	<string name="none">Ingen</string>
+	<string name="unlimited">Ubegrenset</string>
+	<string name="device_default">Enhetsstandard</string>
+	<string name="sorry">Beklager</string>
+
+	<string name="about_available">Tilgjengelig</string>
+	<string name="about_not_available">Ikke tilgjengelig</string>
+	<string name="about_copy_to_clipboard">Kopier til utklippstavlen</string>
+
+	<string name="choose_save_location">Velg lagringsplasseringen</string>
+	<string name="clear_folder_history">Slett mappehistorikken</string>
+	<string name="clear_folder_history_question">Vil du slette mappehistorikken?</string>
+	<string name="choose_another_folder">Velg en annen mappe</string>
+	<string name="changed_save_location">Endret lagreplasseringen til:</string>
+	<string name="parent_folder">Overmappe</string>
+	<string name="new_folder">Ny mappe</string>
+	<string name="cant_write_folder">Kan ikke skrive til denne mappen.</string>
+	<string name="cant_access_folder">Har ikke tilgang til denne mappen.</string>
+	<string name="enter_new_folder">Skriv inn et nytt mappenavn</string>
+	<string name="failed_create_folder">Klarte ikke å lage mappen.</string>
+	<string name="folder_exists">Mappen eksisterer allerede.</string>
+	<string name="saf_select_save_location">Velg en lagreplassering</string>
+	<string name="saf_cancelled">Lagringstilgangsrammeverket ble avbrutt.</string>
+	<string name="saf_permission_failed">Klarer ikke å lagre til denne mappen</string>
+
+	<string name="angle">Vinkel</string>
+	<string name="direction">Retning</string>
+	<string name="zoom">Forstørr</string>
+	<string name="free_memory">ledig</string>
+
+	<string name="fps"> bilder i sekundet</string>
+<!-- Translate me
+	<string name="iso_manual">Manual mode</string>
+
+-->
+	<string name="camera">Kamera</string>
+	<string name="photo">Foto</string>
+	<string name="video">Video</string>
+
+	<string name="action_popup">Oppsprettsinnstillinger</string>
+	<string name="action_settings">Innstillinger</string>
+	<string name="audio_control_start">Begynn lydlytting</string>
+	<string name="audio_control_stop">Avslutt lydlytting</string>
+	<string name="back_camera">Bakkamera</string>
+<!-- Translate me
+	<string name="disable_face_detection">Disable face detection</string>
+	<string name="enable_face_detection">Enable face detection</string>
+-->
+	<string name="exposure">Eksponering</string>
+	<string name="front_camera">Frontkamera</string>
+	<string name="gallery">Galleri</string>
+	<string name="pause_video">Sett videoopptak på pause</string>
+	<string name="record_video">Videoopptak</string>	
+	<string name="resume_video">Fortsett videoopptak</string>
+<!-- Translate me
+	<string name="selfie_mode_start">Start selfie mode</string>
+	<string name="selfie_mode_stop">Stop selfie mode</string>
+-->
+	<string name="share">Del bilde</string>
+	<string name="start_video">Begynn videoopptak</string>
+<!-- Translate me
+	<string name="stop_timer">Stop timer</string>
+-->
+	<string name="stop_video">Avslutt videoopptak</string>
+	<string name="switch_to_back_camera">Bytt til bakkameraet</string>
+	<string name="switch_to_front_camera">Bytt til frontkameraet</string>
+	<string name="switch_to_photo">Bytt til bildemodus</string>
+	<string name="switch_to_video">Bytt til videomodus</string>
+	<string name="take_photo">Ta bilde</string>
+<!-- Translate me
+	<string name="take_video">Take Video</string>
+-->
+	<string name="trash">Slett det seneste bildet</string>
+
+	<string name="screen_lock_message_1">[LÅST:</string>
+	<string name="screen_lock_message_2">Sveip for å låse opp]</string>
+<!-- Translate me
+	<string name="waiting_for_face">Waiting for face detection…</string>
+-->
+	<string name="audio_disabled">Lyd er deaktivert.</string>
+	<string name="audio_listener_started">Lag en høy lyd</string>
+<!-- Translate me
+	<string name="auto_adjustment_locked">Auto adjustment locked</string>
+	<string name="auto_adjustment_unlocked">Auto adjustment unlocked</string>
+-->
+	<string name="cancelled_burst_mode">Avbrøt seriefotograferingsmodusen</string>
+	<string name="cancelled_timer">Nedtellingen er avbrutt.</string>
+	<string name="capturing">Tar opp…</string>
+	<string name="failed_to_reconnect_camera">Klarte ikke å koble til kameraet igjen.</string>
+	<string name="location_not_available">GPS-posisjonen er ikke tilgjengelig.</string>
+	<string name="max_duration">Maks varighet</string>
+	<string name="max_filesize">Maks filstørrelse</string>
+	<string name="no_gallery_app">Ingen galleriapper er tilgjengelige</string>
+	<string name="photo_deleted">Bildet ble slettet</string>
+	<string name="repeats_to_go">omspillinger igjen</string>
+	<string name="screen_is_locked">Skjermen er låst.\nSveip skjermen for å låse opp.</string>
+	<string name="speech_recognizer_started">Si \"Smil!\"</string>
+	<string name="started_recording_video">Opptak av video har begynt.</string>
+	<string name="started_timer">Startet nedtelling</string>
+	<string name="stopped_recording_video">Avsluttet videoopptaket.</string>
+	<string name="taking_photo">Tar bilde</string>
+	<string name="unlocked">Låst opp.</string>
+	<string name="video_max_duration">Videoen har nådd maksvarigheten.</string>
+	<string name="video_max_filesize">Videoen har nådd maksfilstørrelsen.</string>
+	<string name="video_pause">Videoen ble pauset</string>
+	<string name="video_resume">Video ble fortsatt</string>
+
+	<string name="failed_to_open_camera_1">KLARTE IKKE Å ÅPNE KAMERAET.</string>
+	<string name="failed_to_open_camera_2">ER KANSKJE KAMERAET I BRUK</string>
+	<string name="failed_to_open_camera_3">AV EN ANNEN APP?</string>
+	<string name="audio_listener_failed">Klarte ikke å begynne lydlytting.</string>
+	<string name="auto_stabilise_not_supported">Beklager, men auto-vater støttes\nikke på denne enheten.</string>
+	<string name="camera_error">Stor kamerafeil</string>
+	<string name="failed_to_auto_stabilise">Klarte ikke å auto-stabilisere.</string>
+	<string name="failed_to_record_video">Klarte ikke å ta opp video.</string>
+	<string name="failed_to_save_photo">Klarte ikke å lagre bildet.</string>
+	<string name="failed_to_save_photo_raw">Klarte ikke å lagre RAW-bildet.</string>
+	<string name="failed_to_save_video">Klarte ikke å lagre videofilen.</string>
+	<string name="failed_to_stamp">Klarte ikke å stemple infoen på bildet.</string>
+	<string name="failed_to_start_camera_preview">Klarte ikke å starte kameraforhåndsvisningen.</string>
+	<string name="failed_to_process_hdr">Klarte ikke å lage et HDR-bilde.</string>
+	<string name="failed_to_take_picture">Klarte ikke å ta et bilde.</string>
+	<string name="not_supported">støttes ikke på enheten din.</string>
+	<string name="video_error_server_died">Tjeneren har kollapset, videoen har stoppet.</string>
+	<string name="video_error_unknown">Ukjent feil, videoen har stoppet.</string>
+	<string name="video_may_be_corrupted">En feil har oppstått. Videofilen din kan være korrumpert.</string>
+	<string name="video_no_free_space">Ikke nok ledig plass til å ta opp video</string>
+	<string name="video_power_critical">Videoen ble stoppet.\nBatterinivået er kritisk lavt.</string>
+<!-- Translate me
+	<string name="focus_bracketing_range_not_defined">Focus bracketing range not defined</string>
+
+-->
+	<string name="no_permission">TILLATELSER ER IKKE TILGJENGELIGE</string>
+
+	<string name="permission_record_audio_not_available">Mikrofon-tillatelser er ikke tilgjengelige</string>
+	<string name="permission_location_not_available">Posisjonstillatelser er ikke tilgjengelige</string>
+	<string name="permission_rationale_title">Tillatelse er påkrevd</string>
+	<string name="permission_rationale_camera">Kameratillatelse er påkrevd for å kunne bruke kameraet.</string>
+	<string name="permission_rationale_storage">Skrive-/lese-lagringstillatelse er påkrevd for å kunne lagre bilder.</string>
+	<string name="permission_rationale_record_audio">Mikrofontillatelse er påkrevd for å kunne ta opp videoer med lyd.</string>
+	<string name="permission_rationale_location">Posisjonstillatelse er påkrevd for geotagging.</string>
+
+	<string name="auto_stabilise_info">Auto-vater vil automatisk rotere bildene dine slik at de ser ut til å være i vater. \n\nBemerk at dette betyr at bilder automatisk vil litt lavere oppløsning (på grunn av roteringen og klippingen som er påkrevd).</string>
+	<string name="raw_info">DNG-filer inneholder de fulle ukomprimerte og uprosesserte informasjonene fra ditt kamera.\n\nDe fleste galleriapper vil ikke kjenne igjen DNG, og de bør istedet brukes med spesialiserende apper som Snapseed eller Lightroom.\n\nBemerk at diverse prosesseringsinnstillinger som "Stemple bilder" og "Auto-stabiliser" kun gjelder for JPEG-bildene, og ikke for DNG-bildene.\n\nDNG-filer tar opp veldig mye plass; en filutforsker-app kan være nyttig for å overføre eller slette dem.\n\nDNG-filer lagres kun i Standard- og DRO-fotomodusene.</string>
+	<string name="hdr_info">HDR-modus er nyttig for takninger som har stor variasjon i lysstyrke. Det virker ved at man tar flere bilder med forskjellige eksponeringer, og kombinerer dem til å forme ett endelig bilde.\n\n Bemerk at HDR ikke er egnet for scener med raske bevegelser, og kan føre til mindre nøyaktig fargerepresentasjon.\n\nÅ ta bilder i HDR-modus vil være tregere.</string>
+	<string name="preference_reset_question">Er du sikker på at du vil tilbakestille alle Open Camera-innstillinger til sine standarder?</string>
+	<string name="dont_show_again">Ikke vis igjen</string>
+
+	<string name="mb_abbreviation">MB</string>
+	<string name="gb_abbreviation">GB</string>
+	<string name="metres_abbreviation">m</string>
+<!-- Translate me
+	<string name="centimetres_abbreviation">cm</string>
+-->
+	<string name="seconds_abbreviation">s</string>
+<!-- Translate me
+	<string name="minutes_abbreviation">m</string>
+	<string name="hours_abbreviation">h</string>
+
+-->
+	<string name="dark">Mørke</string>
+	<string name="bright">Lys</string>
+	<string name="exposure_shutter_speed">Lukkerhastighet</string>
+	<string name="focus_distance">Fokusdistanse</string>
+	<string name="infinite">Uendelig</string>
+
+	<string name="photo_mode">Fotomodus</string>
+	<string name="photo_mode_standard">Std</string>
+	<string name="photo_mode_dro">DRO</string>
+	<string name="photo_mode_hdr">HDR</string>
+	<string name="photo_mode_expo_bracketing">Exposure Bracketing</string>
+<!-- Translate me
+	<string name="photo_mode_focus_bracketing">Focus Bracketing</string>
+	<string name="photo_mode_fast_burst">Fast Burst</string>
+-->
+	<string name="photo_mode_noise_reduction">Støyreduksjon</string>
+
+	<string name="flash_mode">Blitsmodus</string>
+	<string name="f_torch">Fakkel</string>
+	<string name="f_red_eye">Rødt øye</string>
+	<string name="f_screen_auto">Auto-skjermblits</string>
+	<string name="f_screen_on">Skjermblits på</string>
+
+	<string name="focus_mode">Fokusmodus</string>
+	<string name="fm_auto">Auto-fokus</string>
+	<string name="fm_infinity">Uendelig fokus</string>
+	<string name="fm_macro">Makrofokus</string>
+	<string name="fm_locked">Låst fokus</string>
+	<string name="fm_manual">Menuell fokus</string>
+	<string name="fm_fixed">Fastsatt fokus</string>
+	<string name="fm_edof">EDOF-fokus</string>
+	<string name="fm_continuous">Kontinuerlig bildefokus</string>
+
+	<string name="scene_mode">Scenemodus</string>
+	<string name="sm_action">Action</string>
+	<string name="sm_barcode">Strekkode</string>
+	<string name="sm_backlight">Bakgrunnsbelysning</string>
+	<string name="sm_beach">Strand</string>
+	<string name="sm_candlelight">Levende lys</string>
+	<string name="sm_fireworks">Fyrverkeri</string>
+	<string name="sm_flowers">Blomster</string>
+
+	<string name="sm_landscape">Landskap</string>
+	<string name="sm_night">Natt</string>
+	<string name="sm_night_portrait">Nattportrett</string>
+	<string name="sm_normal">Normal</string>
+	<string name="sm_party">Fest</string>
+	<string name="sm_portrait">Portrett</string>
+	<string name="sm_snow">Snø</string>
+	<string name="sm_sports">Sport</string>
+	<string name="sm_steadyphoto">Stabilt bilde</string>
+	<string name="sm_sunset">Solnedgang</string>
+	<string name="sm_theatre">Teater</string>
+
+	<string name="white_balance">Hvitbalanse</string>
+<!-- Translate me
+	<string name="wb_manual">Manual</string>
+-->
+	<string name="wb_cloudy_daylight">Overskyet</string>
+	<string name="wb_daylight">Dagslys</string>
+	<string name="wb_fluorescent">Fluorescerende</string>
+	<string name="wb_incandescent">Hvitglødende</string>
+<!-- Translate me
+	<string name="wb_shade">Shade</string>
+	<string name="wb_twilight">Twilight</string>
+	<string name="wb_warm_fluorescent">Warm fluorescent</string>
+	<string name="wb_tungsten">Tungsten</string>
+
+-->
+	<string name="color_effect">Fargeffekt</string>
+	<string name="ce_aqua">Aqua</string>
+<!-- Translate me
+	<string name="ce_antique">Antique</string>
+	<string name="ce_blackboard">Blackboard</string>
+	<string name="ce_cold">Cold</string>
+-->
+	<string name="ce_mono">Mono</string>
+	<string name="ce_negative">Negativ</string>
+	<string name="ce_none">Ingen</string>
+	<string name="ce_posterize">Juster fargetoner</string>
+	<string name="ce_sepia">Sepia</string>
+<!-- Translate me
+	<string name="ce_sepiablue">Sepia blue</string>
+-->
+	<string name="ce_solarize">Solarize</string>
+	<string name="ce_whiteboard">Tavle</string>
+
+	<string name="preference_category_camera_controls">Kamerakontrollere</string>
+	<string name="preference_face_detection">Ansiktsoppdagelse</string>
+	<string name="preference_face_detection_summary">Bruk ansikstsoppdagelse istedet for fokusområder.</string>
+	<string name="preference_touch_capture">Trykk for å ta bilde</string>
+	<string name="preference_touch_capture_summary">Ta et foto kun ved å trykke på dobbelt-tappe på forhåndsvisningen.</string>
+
+<!-- Translate me
+	<string name="preference_category_main_settings">Main settings</string>
+
+	<string name="preference_screen_selfie_mode">Selfie mode</string>
+	<string name="preference_selfie_mode_summary">Enable selfie mode</string>
+-->
+	<string name="preference_timer">Nedtelling</string>
+	<string name="preference_burst_mode">Seriefoto</string>
+	<string name="burst_unlimited">Ubegrenset</string>
+	<string name="preference_burst_interval">Seriefotograferingsintervall</string>
+<!-- Translate me
+	<string name="no_delay">No delay</string>
+	<string name="preference_burst_low_brightness">Set min brightness on burst</string>
+	<string name="preference_burst_low_brightness_summary">Set minimal display brightness when burst mode is active</string>
+	<string name="preference_burst_lock">Lock screen</string>
+	<string name="preference_burst_lock_summary">Lock the screen when timer or burst is running</string>
+	<string name="preference_wait_face">Wait for face</string>
+	<string name="preference_wait_face_summary">Start capture or timer after the face is detected. Don\'n forget to enable face detection before using this mode.</string>
+-->
+	<string name="preference_audio_control">Lydkontrollalternativer</string>
+	<string name="vc_loud_noise">Høy støy</string>
+	<string name="vc_cheese">Stemmekommando: \"cheese\"</string>
+	<string name="preference_audio_noise_control_sensitivity">Lydkontrollsensitivitet</string>
+	<string name="preference_audio_noise_control_sensitivity_summary">Innstillingen for støynivåsensitiviteten for lyd (Høy støy)</string>
+	<string name="vc_high_sensitivity">+3 (høy sensitivitet)</string>
+	<string name="vc_default_sensitivity">0 (default)</string>
+	<string name="vc_low_sensitivity">-2 (lav sensitivitet)</string>
+
+	<string name="preference_screen_sounds">Lyder</string>
+	<string name="preference_shutter_sound">Lukkerlyd</string>
+	<string name="preference_shutter_sound_summary">Spill av en lyd når du tar et bilde.</string>
+<!-- Translate me
+	<string name="preference_shutter_sound_select">Choose shutter sound</string>
+	<string name="shutter_android_2">Android 2</string>
+	<string name="shutter_android_4">Android 4</string>
+	<string name="shutter_1">Shutter 1 (short)</string>
+	<string name="shutter_2">Shutter 2 (short)</string>
+	<string name="shutter_3">Shutter 3 (long)</string>
+	<string name="shutter_4">Shutter 4 (long)</string>
+	<string name="shutter_unlock">Unlock sound</string>
+-->
+	<string name="preference_timer_beep">Nedtellingsbipp</string>
+	<string name="preference_timer_beep_summary">Bipp når nedtellingen teller ned, eller under seriefotograferingsforsinkelse</string>
+	<string name="preference_timer_speak">Stemmenedtelling</string>
+	<string name="preference_timer_speak_summary">Si nedtellingen eller seriefotograferingsmodusforsinkelsen (fra 60 sekunder)</string>
+<!-- Translate me
+	<string name="preference_timer_start_sound">Timer start/stop sound</string>
+	<string name="preference_timer_start_sound_summary">If timer beep disabled, play a sound when timer started or stopped</string>
+	<string name="preference_face_detection_sound">Face detection sound</string>
+	<string name="preference_face_detection_sound_summary">Play sound when face detected</string>
+	<string name="preference_sound_volume">Sounds volume</string>
+	<string name="sv_max">Max</string>
+	<string name="sv_high">High</string>
+	<string name="sv_medium">Medium</string>
+	<string name="sv_low">Low</string>
+	<string name="sv_min">Min</string>
+	<string name="preference_audio_stream">Audio stream</string>
+	<string name="preference_audio_stream_summary">%s\n\nAudio stream for playing camera sounds</string>
+-->
+	<string name="ss_system">"System"</string>
+	<string name="ss_notification">"Varsler"</string>
+	<string name="ss_music">"Musikk"</string>
+
+	<string name="preference_screen_gui">Grensesnittet på skjermen…</string>
+<!-- Translate me
+	<string name="preference_gui_type">GUI type</string>
+	<string name="preference_gui_type_portrait">GUI type in portrait orientation</string>
+	<string name="gui_as_in_landscape">As in landscape mode</string>
+	<string name="gui_phone">Phone</string>
+	<string name="gui_phone_2">Phone 2</string>
+	<string name="gui_tablet">Tablet</string>
+	<string name="gui_universal">Universal</string>
+	<string name="gui_classic">Classic</string>
+	<string name="preference_ctrl_panel_margin">Buttons margin</string>
+	<string name="preference_ctrl_panel_margin_summary">%s\n\nA space between control panel buttons and shutter button for \"Phone 2\", \"Tablet\" and \"Universal\" GUI type</string>
+-->
+	<string name="preference_ui_left_handed">Venstrehendt grensesnitt</string>
+<!-- Translate me
+	<string name="preference_ui_left_handed_summary">Interface for left-handed users</string>
+
+	<string name="preference_screen_ctrl_panel">Control panel</string>
+	<string name="preference_screen_ctrl_panel_buttons">Control panel buttons</string>
+	<string name="preference_ctrl_panel_switch_camera">Switch camera</string>
+-->
+	<string name="exposure_compensation">Eksponeringskompensasjon</string>
+<!-- Translate me
+	<string name="auto_adjustment_lock">Auto adjustment lock</string>
+	<string name="expo_metering_area">Exposure metering area</string>
+
+	<string name="preference_screen_mode_panel">Mode panel</string>
+	<string name="preference_screen_mode_panel_buttons">Mode panel buttons</string>
+	
+	<string name="preference_screen_sliders">Sliders</string>
+	<string name="preference_sliders_location">Sliders location</string>
+	<string name="sl_on_widest_side">On the widest side</string>
+	<string name="sl_near_shutter_button">Near the shutter button</string>
+	<string name="preference_sliders_size">Sliders size</string>
+	<string name="preference_sliders_gap">Gap between a sliders</string>
+	<string name="preference_sliders_auto_switch">Auto-switch</string>
+	<string name="preference_sliders_auto_switch_summary">Automatically switch sliders visibility when changing measuring mode</string>
+	<string name="preference_show_exposure_buttons">Exposure buttons</string>
+	<string name="preference_show_exposure_buttons_summary">Show exposure compensation buttons</string>
+-->
+	<string name="preference_show_zoom_controls">Vis -/+—forstørringskontrollere</string>
+	<string name="preference_show_zoom_controls_summary">Vis -/+—knappene for forstørringskontrollering.</string>
+	<string name="preference_show_zoom_slider_controls">Vis forstørringsgliderkontrolleren</string>
+	<string name="preference_show_zoom_slider_controls_summary">Vis glideren for forstørringskontroll.</string>
+<!-- Translate me
+	<string name="preference_iso_steps">ISO steps</string>
+	<string name="preference_iso_steps_summary">Use step ISO adjustment</string>
+
+	<string name="preference_screen_popup">Popup menu</string>
+	<string name="preference_font_size">Font size</string>
+-->
+	<string name="fs_small">"Liten"</string>
+	<string name="fs_normal">"Middels"</string>
+	<string name="fs_large">"Stor"</string>
+<!-- Translate me
+	<string name="fs_xlarge">Extra large</string>
+	<string name="preference_popup_size">Popup width</string>
+-->
+	<string name="preference_popup_color">"Farge"</string>
+	<string name="black">"Svart"</string>
+<!-- Translate me
+	<string name="dark_gray">Dark gray</string>
+	<string name="dark_blue">Dark blue</string>
+	<string name="light_gray">Light gray</string>
+	<string name="preference_popup_expanded_lists">Expanded lists</string>
+	<string name="preference_category_popup_elements">Items</string>
+	<string name="preference_category_popup_elements_summary">In this section you can select the items that are displayed in main popup menu.</string>
+	<string name="preference_popup_modes">Modes</string>
+	<string name="preference_popup_modes_summary">In this section you can disable unused or malfunctioning modes. The settings are saved separately for each camera.</string>
+-->
+	<string name="preference_resolution">Kameraoppløsning</string>
+	<string name="grid">Netting</string>
+
+	<string name="preference_screen_shutter_button">Lukker</string>
+	<string name="preference_show_take_photo">Vis "Ta bilde"-ikon</string>
+	<string name="preference_show_take_photo_summary">Vis ikonet for å ta bilder og å ta opp videoer. Nyttig dersom enheten din har en maskinvarelukkerknapp og at du heller ville brukt den.</string>
+<!-- Translate me
+	<string name="preference_shutter_button_style">Shutter button style</string>
+	<string name="preference_shutter_button_size">Shutter button size</string>
+
+-->
+	<string name="preference_immersive_mode">Oppslukkende modus</string>
+	<string name="preference_immersive_mode_summary">Innstillinger for \"Oppslukende modus\" sin oppførsel.</string>
+<!-- Translate me
+	<string name="im_fullscreen">Fullscreen mode</string>
+	<string name="im_sticky">Sticky</string>
+-->
+	<string name="im_hide_nav_buttons">Skjul bare de virtuelle navigasjonsknappene</string>
+	<string name="im_hide_gui">Skjul grensesnittet</string>
+	<string name="im_hide_everything">Skjul alt</string>
+	<string name="preference_show_toasts">Vis oppsprettsbeskjeder</string>
+	<string name="preference_show_toasts_summary">Hvorvidt oppsprettsbeskjedene skal vises.</string>
+	<string name="preference_thumbnail_animation">Vis forhåndsvisningsanimasjon</string>
+	<string name="preference_thumbnail_animation_summary">Vis en bevegende forhåndsvisningsanimasjon når du tar et bilde.</string>
+	<string name="preference_take_photo_border">Vis kanter når du tar et bilde</string>
+	<string name="preference_take_photo_border_summary">Vis kanter på skjermen når du tar et bilde.</string>
+<!-- Translate me
+	<string name="preference_gui_orientation">GUI orientation</string>
+	<string name="preference_gui_orientation_summary">%s</string>
+-->
+	<string name="preference_keep_display_on">Hold skjermen skrudd på</string>
+	<string name="preference_keep_display_on_summary">Hvis dette er valgt, vil skjermen ikke skru seg av mens Open Cameras hovedgrensesnitt er aktivt.</string>
+	<string name="preference_max_brightness">Fremtving makslysstyrke</string>
+	<string name="preference_max_brightness_summary">Tving skjermvisningen til å ha maks lysstyrke, og ikke enhetsstandarden.</string>
+
+	<string name="preference_screen_preview">"Forhåndsvisning"</string>
+<!-- Translate me
+	<string name="preference_preview_max_size">Max preview size</string>
+	<string name="preference_preview_max_size_summary">Maximal preview size</string>
+	<string name="preference_preview_location">Preview location</string>
+	<string name="preference_preview_location_summary">%s</string>
+	<string name="left_gap_for_buttons">Left, gap for buttons</string>
+-->
+	<string name="preference_rotate_preview">Rotér forhåndsvisningen</string>
+	<string name="preference_rotate_preview_summary">Innstilling for å rotere forhåndsvisningen (Påvirker ikke de resulterende bildene/videoene).</string>
+	<string name="dont_rotate">Ikke rotér</string>
+	<string name="rotate_180_degrees">Rotér 180°</string>
+<!-- Translate me
+	<string name="preference_preview_max_expo">Maximum exposure</string>
+	<string name="preference_preview_max_expo_summary">Maximum preview exposure in manual mode (won\'t affect resultant photos/videos)</string>
+	<string name="preference_preview_surface">Preview surface</string>
+	<string name="preference_preview_surface_summary">%s\n\nSurface for displaying preview. Switch this option only if you know what you do</string>
+
+	<string name="preference_screen_osd">Indication</string>
+-->
+	<string name="preference_show_zoom">Vis forstørring</string>
+	<string name="preference_show_zoom_summary">Vis det nåværende kameraforstørringsnivået på skjermen (under forstørring)</string>
+	<string name="preference_show_iso">Vis ISO</string>
+	<string name="preference_show_iso_summary">Viser det nåværende ISO-nivået. I autoblitsmodus, vil et blitssymbol også fortelle når blitsen går av (Krever Camera2-API).</string>
+<!-- Translate me
+	<string name="preference_show_white_balance">Show white balance</string>
+	<string name="preference_show_white_balance_summary">Display the current white balance temperature</string>
+-->
+	<string name="preference_free_memory">Vis ledig lagring</string>
+	<string name="preference_free_memory_summary">Vis den gjenværende enhetslagringsplassen på skjermen.</string>
+	<string name="preference_show_angle">Vis vinkelen</string>
+	<string name="preference_show_angle_summary">Vis den nåværende enhetsroteringsvinkelen på skjermen.</string>
+	<string name="preference_show_angle_line">Vis vinkellinjen</string>
+	<string name="preference_show_angle_line_summary">Vis en vannrett vaterlinje.</string>
+	<string name="preference_angle_highlight_color">Vinkel/høyde-fremhevingsfarge</string>
+	<string name="preference_angle_highlight_color_summary">Fremhevingsfarge for når kameraet er nesten i vater.</string>
+	<string name="preference_show_pitch_lines">Vis linjer</string>
+	<string name="preference_show_pitch_lines_summary">Vis vannrette linjer</string>
+	<string name="preference_show_geo_direction">Vis kompassretningen</string>
+	<string name="preference_show_geo_direction_summary">Vis kompassretningen til enheten på skjermen.</string>
+	<string name="preference_show_geo_direction_lines">Vis kompassretnings-linjer</string>
+	<string name="preference_show_geo_direction_lines_summary">Vis kompassretnings-linjer.</string>
+	<string name="preference_show_time">Vis klokken</string>
+	<string name="preference_show_time_summary">Vis det nåværende klokkeslettet på skjermen.</string>
+	<string name="preference_show_battery">Vis batterinivå</string>
+	<string name="preference_show_battery_summary">Vis det nåværende batterinivået på skjermen.</string>
+<!-- Translate me
+	<string name="preference_alt_indication">Alternative indication</string>
+	<string name="preference_alt_indication_summary">Alternative focus and metering zone indication</string>
+-->
+	<string name="preference_grid">Vis netting</string>
+	<string name="g_phi_3x3">Phi 3x3</string>
+	<string name="g_crosshair">Retikkel</string>
+	<string name="g_golden_1">Gyldent (1)</string>
+	<string name="g_golden_2">Gyldent (2)</string>
+	<string name="g_golden_3">Gyldent (3)</string>
+	<string name="g_golden_4">Gyldent (4)</string>
+	<string name="g_triangle_1">Trekant (1)</string>
+	<string name="g_triangle_2">Trekant (2)</string>
+	<string name="g_diagonals">Diagonalt</string>
+<!-- Translate me
+	<string name="preference_grid_alpha">Grid alpha</string>
+-->
+	<string name="preference_crop_guide">Vis en klippingsveiviser</string>
+	<string name="preference_crop_guide_summary">En klippeveiviser viser et rektangel som vis hva det bestemte skjermforholdet ser ut som — Nyttig dersom du planlegger å klippe bildet/videoen etterpå til et annet skjermforhold. Krever WYSIWYG-fotomodus, eller å være i videomodus.</string>
+<!-- Translate me
+	<string name="preference_osd_frequency">Update frequency</string>
+	<string name="preference_osd_frequency_summary">OSD update frequency. Increasing this value will will make the indication smoother, but the battery will discharge faster</string>
+	<string name="freq_low">Low</string>
+	<string name="freq_normal">Normal</string>
+	<string name="freq_high">High</string>
+	<string name="preference_osd_slow_if_busy">Slow if busy</string>
+	<string name="preference_osd_slow_if_busy_summary">Decrease the OSD frequency when taking a photo or recording a video</string>
+
+-->
+	<string name="preference_screen_buttons">"Fysisk tastatur"</string>
+	<string name="preference_button_headset">"Hodetelefoner"</string>
+<!-- Translate me
+	<string name="preference_button_vol_up">Volume+</string>
+	<string name="preference_button_vol_down">Volume-</string>
+-->
+	<string name="preference_button_prev">"Forrige"</string>
+	<string name="preference_button_next">"Neste"</string>
+	<string name="preference_button_play">"Spill av / sett på pause"</string>
+	<string name="preference_button_stop">"Stopp"</string>
+	<string name="preference_button_camera">"Kamera"</string>
+<!-- Translate me
+	<string name="preference_button_focus">Focus button</string>
+	<string name="preference_button_zoom_in">Zoom+</string>
+	<string name="preference_button_zoom_out">Zoom-</string>
+-->
+	<string name="preference_button_search">"Søk"</string>
+	<string name="ba_shutter">Ta bilde (eller begynn/stopp videoopptak)</string>
+	<string name="ba_pause">Sett videoopptak på pause</string>
+<!-- Translate me
+	<string name="ba_zoom_plus">Zoom+</string>
+	<string name="ba_zoom_minus">Zoom-</string>
+-->
+	<string name="ba_autofocus">Fokuser</string>
+<!-- Translate me
+	<string name="ba_focus_plus">Focus+</string>
+	<string name="ba_focus_minus">Focus-</string>
+	<string name="ba_exposure_plus">Exposure+</string>
+	<string name="ba_exposure_minus">Exposure-</string>
+	<string name="ba_capture_only">Capture only</string>
+-->
+	<string name="ba_nothing">Ikke gjør noe</string>
+
+	<string name="preference_screen_camera_controls_more">Flere kamerakontrollere…</string>
+	<string name="preference_pause_preview">Pause etter å ha tatt et bilde</string>
+	<string name="preference_pause_preview_summary">Sett skjermen på pause etter å ha tatt et bilde, med valgene om å dele eller slette bildet.</string>
+	<string name="preference_lock_orientation">Lås foto-/video-roteringen</string>
+	<string name="no_lock">Ingen lås</string>
+	<string name="lock_landscape">Lås fast til landskap</string>
+	<string name="lock_portrait">Lås fast til portrett</string>
+	<string name="preference_lock_orientation_summary">Hvis dette er valgt, vil enhetens rotering bli ignorert, og bildets/videoens rotering vil samsvare med den bestemte roteringen.</string>
+	<string name="preference_show_when_locked">Vis kameraet når mobilen er låstShow camera when locked</string>
+	<string name="preference_show_when_locked_summary">Hvis dette er aktivert, vil Open Camera fortsett vises over enhver låseskjerm (Du vil fortsatt måtte låse opp for å få tilgang til Innstillinger, Galleri, osv.).</string>
+<!-- Translate me
+	<string name="preference_multitouch_zoom">Multitouch zoom</string>
+	<string name="preference_multitouch_zoom_summary">You must restart the application to apply this option</string>
+	<string name="preference_focus_range">Focus range</string>
+	<string name="preference_focus_range_summary">Manual focus range limit for for more precise control</string>
+	<string name="fr_room">Room</string>
+	<string name="fr_group">Group photo</string>
+	<string name="preference_level_angle_calibration">Level angle calibration</string>
+	<string name="preference_level_angle_calibration_summary">Calibration value of level angle</string>
+
+	<string name="preference_screen_bug_fix">Bug fixes</string>
+-->
+	<string name="preference_startup_focus">Utfør auto-fokusering ved oppstart</string>
+	<string name="preference_startup_focus_summary">Hvorvidt det skal auto-fokuseres når Open Camera startes opp. Hvis du har problemer med at blitsen skrur seg på ved oppstart, skru av denne innstillingen.</string>
+<!-- Translate me
+	<string name="preference_force_face_focus">Force focus on face</string>
+	<string name="preference_force_face_focus_summary">Force focus when face detected in autofocus mode. Only one face supported.</string>
+	<string name="preference_center_focus">Center focus</string>
+	<string name="preference_center_focus_summary">Set focus zone in the center of the frame at startup</string>
+	<string name="preference_min_focus_distance">Minimum focus distance</string>
+	<string name="preference_update_focus_for_video">Update focus mode</string>
+	<string name="preference_update_focus_for_video_summary">Workaround for bug on Samsung Galaxy S5 with UHD, where if the user switches to another (non-continuous-video) focus mode, then goes to Settings, then returns and records video, the preview freezes and the video is corrupted</string>
+-->
+	<string name="preference_camera2_fake_flash">Bruk alternativ blitsmetode</string>
+	<string name="preference_camera2_fake_flash_summary">Aktiver dette dersom enheten har trøbbel med blitsen i Camera2-APIen. this if your device has buggy flash behaviour with Camera2 API</string>
+<!-- Translate me
+	<string name="preference_use_1920x1088">Use 1920x1088 resolution</string>
+	<string name="preference_use_1920x1088_summary">Use 1920x1088 video resolution instead of 1920x1080. This option fix the green stripe bug on some MediaTek devices</string>
+	<string name="preference_speed_up_sensors">Speed up sensors</string>
+	<string name="preference_speed_up_sensors_summary">Increase accelerometer and magnetic sensor update speed</string>
+
+-->
+	<string name="preference_category_camera_quality">Foto- og video-innstillinger</string>
+
+	<string name="preference_screen_photo_settings">Fotoinnstillinger…</string>
+	<string name="preference_quality">Bildekvalitet</string>
+	<string name="preference_auto_stabilise">Auto-stabiliser</string>
+	<string name="preference_auto_stabilise_summary">Bilder vil bli rotert slik at automatisk er stabilisert (Kun bilder) (Tregere å ta bilder, og kan mislykkes på enheter med for lite lagring).</string>
+	<string name="preference_raw">RAW</string>
+	<string name="preference_raw_summary">Hvorvidt det skal lagres i RAW (DNG)-formatet.</string>
+	<string name="jpeg_only">Kun JPEG</string>
+	<string name="jpeg_and_dng">JPEG og DNG (RAW)</string>
+<!-- Translate me
+	<string name="preference_flip_front_facing">Flip photo</string>
+	<string name="preference_flip_front_facing_summary">Flip horizontally photos from front camera</string>
+	<string name="preference_category_expo_bracketing_summary">Expobracketing settings. Most of the options in this section also apply to HDR.</string>
+-->
+	<string name="preference_expo_bracketing_n_images">Eksponeringsbrakett</string>
+	<string name="preference_expo_bracketing_n_images_summary">Antall bilder i eksponeringsbrakettmodusen.</string>
+	<string name="preference_expo_bracketing_stops">Eksponeringsbrakett-stopper</string>
+	<string name="preference_expo_bracketing_stops_summary">Hvor mange stopp som skal legges til / fjernes fra, for det mørkeste/lyseste bildet.</string>
+<!-- Translate me
+	<string name="preference_expo_bracketing_use_iso">Use ISO</string>
+	<string name="preference_expo_bracketing_use_iso_summary">If possible, use ISO adjustment for creating the darker images</string>
+	<string name="preference_category_hdr">HDR and DRO</string>
+	<string name="preference_category_hdr_summary">HDR and DRO settings</string>
+-->
+	<string name="preference_hdr_save_expo">Lagre alle bilder i HDR-modus</string>
+	<string name="preference_hdr_save_expo_summary">Hvis dette er aktivert, vil det i HDR-fotomodus være tre eskponeringsgrunnbilder som vil bli lagret, i tillegg til det endelige HDR-bildet. Bemerk at dette vil gjøre lagring tregere, spesielt hvis innstillinger som \"Stemple bilder\" eller Auto-vater også er brukt.</string>
+<!-- Translate me
+	<string name="preference_hdr_tonemapping">Tone mapping</string>
+	<string name="preference_hdr_tonemapping_summary">%s\n\nAlgorithm to use for HDR tonemapping</string>
+	<string name="preference_hdr_local_contrast">Local contrast</string>
+	<string name="preference_hdr_local_contrast_summary">%s\n\nLevel of the local contrast enhancement during processing HDR and DRO</string>
+	<string name="preference_hdr_n_tiles">Number of tiles</string>
+	<string name="preference_hdr_n_tiles_summary">%s</string>
+	<string name="preference_hdr_ignore_sf">Ignore smart filtering</string>
+	<string name="preference_hdr_ignore_sf_summary">If smart filtering is enabled, ignore it, and don\'t disable noise reduction and edge enhancement when illumination is good in HDR photo mode</string>
+	<string name="preference_category_fb_summary">Focus bracketing settings</string>
+	<string name="preference_photos_count">Number of photos</string>
+	<string name="preference_fb_focus_time">Focus time</string>
+	<string name="preference_fb_focus_time_summary">%s</string>
+	<string name="preference_category_fast_burst_summary">Fast burst settings</string>
+	<string name="preference_fast_burst_disable_filters">Disable filters</string>
+	<string name="preference_fast_burst_disable_filters_summary">Disable noise reduction and edge enhancement when capturing a burst</string>
+	<string name="preference_category_nr_summary">Noise reduction photo mode settings</string>
+	<string name="preference_adjust_levels">Adjust levels</string>
+	<string name="al_highlights">Highlights</string>
+	<string name="al_highlights_and_shadows">Highlights and shadows</string>
+-->
+	<string name="preference_category_stamp">Fotostempel</string>
+<!-- Translate me
+	<string name="preference_category_stamp_summary">Adding stamps to photos</string>
+-->
+	<string name="preference_stamp">Stemple bilder</string>
+	<string name="preference_stamp_summary">Stemple bilder med dato og klokkeslett; og også GPS-info dersom posisjons-/retnings-dataer er aktivert.</string>
+<!-- Translate me
+	<string name="preference_stamp_location_x">Horizontal location</string>
+	<string name="left">Left</string>
+	<string name="center">Center</string>
+	<string name="right">Right</string>
+	<string name="preference_stamp_location_y">Vetrical location</string>
+	<string name="top">Top</string>
+	<string name="bottom">Bottom</string>
+-->
+	<string name="preference_stamp_dateformat">Datostemplingsformat</string>
+	<string name="yyyy_mm_dd">åååå/mm/dd</string>
+	<string name="dd_mm_yyyy">dd/mm/åååå</string>
+	<string name="mm_dd_yyyy">mm/dd/åååå</string>
+	<string name="preference_stamp_timeformat">Klokkeslettsstemplingsformat</string>
+	<string name="tf_12_hour">12 timer</string>
+	<string name="tf_24_hour">24 timer</string>
+	<string name="preference_stamp_gpsformat">GPS-stemplingsformat</string>
+	<string name="degrees_minutes_seconds">Grader/minutter/sekunder</string>
+	<string name="preference_textstamp">Tilpasset tekst</string>
+	<string name="preference_textstamp_summary">Stemple bilder med tilpasset tekst.</string>
+	<string name="preference_stamp_font_color">"Farge"</string>
+	<string name="white">"Hvit"</string>
+	<string name="yellow">"Gul"</string>
+	<string name="red">"Rød"</string>
+	<string name="green">"Grønn"</string>
+	<string name="blue">"Blå"</string>
+<!-- Translate me
+	<string name="preference_stamp_background">Text with background</string>
+	<string name="preference_stamp_background_summary">Draw text with background</string>
+-->
+	<string name="preference_camera2_fast_burst">Aktiver rask HDR-/ekspongerings-blits</string>
+	<string name="preference_camera2_fast_burst_summary">Tillater raskere takning av HDR-/eksponerings-bilder. Deaktiver dette dersom enheten din har problemer når du tar bilder med HDR- eller eksponerings-fotomodusene.</string>
+	<string name="preference_background_photo_saving">Bruk bakgrunnstråd</string>
+	<string name="preference_background_photo_saving_summary">Hvorvidt det skal lagres bilder på en bakgrunnstråd (for å kunne kjøre raskere)</string>
+
+	<string name="preference_screen_video_settings">Videoinnstillinger…</string>
+	<string name="video_quality">Videooppløsning</string>
+	<string name="preference_video_stabilization">Aktiver videovater</string>
+	<string name="preference_video_stabilization_summary">Videovater reduserer ristingen fra kamerabevegelsene, både i forhåndsvisningen og i opptatte videoer.</string>
+	<string name="preference_video_bitrate">Videobitfrekvens (Omtrentlig)</string>
+	<string name="preference_video_bitrate_summary">Bestem den omtrentlige bitfrekvensen til videoene (Høyere betyr bedre kvalitet, men tar opp mere diskplass; Det kan få videoopptak til å mislykkes dersom bitfrekvensen ikke er støttet).</string>
+	<string name="preference_video_fps">Video-bildefrekvens (Omtrentlig)</string>
+	<string name="preference_video_fps_summary">Bestem antall bilder i sekundet (FPS) i videoer (Kan være omtrentlig, er ikke garantert å lykkes, og kan få videotopptakt til å mislykkes dersom bildefrekvensen ikke er støttet).</string>
+	<string name="preference_video_max_duration">Maksvarigheten til videoer</string>
+	<string name="preference_video_max_duration_summary">Videoopptakene vil stoppes etter den bestemte tidslengden.</string>
+	<string name="preference_video_restart">Start videoen på nytt etter maksvarigheten</string>
+	<string name="dont_restart">Ikke gjenta</string>
+	<string name="repeat_1_time">Gjenta 1 time</string>
+	<string name="repeat_2_times">Gjenta 2 ganger</string>
+	<string name="repeat_3_times">Gjenta 3 ganger</string>
+	<string name="repeat_4_times">Gjenta 4 ganger</string>
+	<string name="repeat_5_times">Gjenta 5 ganger</string>
+	<string name="repeat_6_times">Gjenta 6 ganger</string>
+	<string name="repeat_7_times">Gjenta 7 ganger</string>
+	<string name="repeat_8_times">Gjenta 8 ganger</string>
+	<string name="repeat_9_times">Gjenta 9 ganger</string>
+	<string name="repeat_10_times">Gjenta 10 ganger</string>
+	<string name="preference_video_restart_summary">Dersom videoen har stoppet etter å ha truffet maksvarighetene (om den er valgt), vil denne innstillingen få videoen til å starte på nytt, frem til det bestemte antall ganger.</string>
+	<string name="preference_video_max_filesize">Maksfilstørrelsen til videoen</string>
+	<string name="preference_video_max_filesize_summary">Videoopptaket vil stoppes og/eller startes på nytt (Se innstillingen nedenfor), når den omtrentlige maksfilstørrelsen har blitt nådd. Bemerk at nesten alle Android enheter har en maksfilstørrelse for videoen (Vanligvis omkring 2GB eller 4GB), men denne innstillingen tillater å velge en bestemt verdi.</string>
+	<string name="preference_video_restart_max_filesize">Start på nytt ved maks filstørrelse</string>
+	<string name="preference_video_restart_max_filesize_summary">Hvorvidt det skal automatisk startes på nytt når maksfilstørrelsen har blitt nådd (Hvorvidt det skal være enhetens maksfilstørrelse, eller en brukerbestemt verdi).</string>
+	<string name="preference_record_audio">Ta opp lyd</string>
+	<string name="preference_record_audio_summary">Ta opp lyd under videoopptak.</string>
+	<string name="preference_record_audio_src">Lydkilde</string>
+	<string name="as_camcorder">Kameraopptaker</string>
+	<string name="as_external_mic">Ekstern mikrofon (hvis det er en)</string>
+	<string name="as_default_source">Standardlydkilden</string>
+	<string name="as_voice_optimized">Optimalisert for stemmer</string>
+	<string name="preference_record_audio_channels">Lydkanaler</string>
+	<string name="preference_record_audio_channels_summary">Velg mono eller stereo for opptak av lyd (Stereo støttes kun på noen enheter).</string>
+	<string name="am_mono">Mono</string>
+	<string name="am_stereo">Stereo (Støttes kun av noen enheter)</string>
+	<string name="preference_lock_video">Lås skjermen under videoopptak</string>
+	<string name="preference_lock_video_summary">Under opptak av video, vil brukergrensesnitt bli låst for unngå at opptaket blir stoppet ved et uhell. Sveip skjermen for å låse opp. Bemerk at opptak alltid vil bli stoppet sersom appen går inn i bakgrunnen eller at skjermen blir blank.</string>
+	<string name="preference_video_subtitle">Videoundertekster</string>
+	<string name="preference_video_subtitle_summary">Lag en undertekstfil (.SRT) som lagrer dato og klokkeslett; og også GPS-info dersom plassering-/retnings-dataer er aktivert.</string>
+	<string name="no_subtitles">Ingen undertekster</string>
+	<string name="record_subtitles">Ta opp undertekster</string>
+	<string name="preference_force_video_4k">Tving frem 4K/UHD-oppløsning (Virker kun på noen enheter)</string>
+	<string name="preference_force_video_4k_summary">Aktiver 3840x2160-oppløsning for videoopptak på bakkameraet — Denne innstillingen er en hack som kanskje kan tillate 4K-kameraer på 4K-enheter som ikke vanligvis lar tredjepartsapper bruke dette. Det er ikke garantert å virke, så vennligst test det ut før du bruker det.</string>
+	<string name="preference_video_low_power_check">Sjekk for kritisk batteri</string>
+	<string name="preference_video_low_power_check_summary">Avslutt videoopptak dersom batterinivået er kritisk lavt. Dette hjelper til med å redusere sjansen for at videoer blir korrumpert dersom enheten din plutselig skrur seg av fordi den gikk tom for strøm.</string>
+	<string name="preference_video_flash">Blits under videoopptak</string>
+	<string name="preference_video_flash_summary">Hvis dette er aktivert, vil blitsen skru seg av/på under videoopptak (Kan brukes til å se på avstand om kameraet fortsatt tar opp).</string>
+
+<!-- Translate me
+	<string name="preference_screen_filtering">Filtering</string>
+-->
+	<string name="preference_antibanding">Antibanding</string>
+<!-- Translate me
+	<string name="preference_antibanding_summary">%s\n\nCompensate flickering at the rate of the power supply frequency</string>
+-->
+	<string name="preference_noise_reduction">Støyreduksjon</string>
+<!-- Translate me
+	<string name="preference_noise_reduction_summary">%s</string>
+-->
+	<string name="preference_edge">Skarphet</string>
+<!-- Translate me
+	<string name="preference_edge_summary">%s</string>
+	<string name="preference_smart_filter">Smart filtering</string>
+	<string name="preference_smart_filter_summary">%s\n\nDisable noise reduction and edge enhancement when illumination is good. The filters will be disabled if current ISO value is less or equal to the selected value.</string>
+	<string name="preference_optical_stabilization">Optical stabilization</string>
+	<string name="preference_optical_stabilization_summary">%s</string>
+-->
+	<string name="nr_fast">Rask</string>
+	<string name="nr_high_quality">Høy kvalitet</string>
+<!-- Translate me
+	<string name="nr_minimal">Minimal</string>
+-->
+	<string name="nr_zero_shutter_lag">Ingen lukkerforsinkelse</string>
+
+<!-- Translate me
+	<string name="preference_screen_files">Files</string>
+-->
+	<string name="preference_save_location">Lagringsplasseringen</string>
+	<string name="preference_save_location_summary">Mappen som bildene/videoen skal lagres i.</string>
+	<string name="preference_using_saf">Bruk lagringstilgangsrammeverket</string>
+	<string name="preference_using_saf_summary">Hvorvidt Android 5.x sin lagringstilgangsrammeverk skal brukes til å lagre bilder og videoer.</string>
+	<string name="preference_save_photo_prefix">Forstavelsen til fotolagring</string>
+	<string name="preference_save_photo_prefix_summary">Forstavelsen som skal brukes til lagringsfilnavnene til bildene.</string>
+	<string name="preference_save_video_prefix">Forstavelsen til videolagring</string>
+	<string name="preference_save_video_prefix_summary">Forstavelsen som skal brukes til lagringsfilnavnene til bildene.</string>
+	<string name="preference_save_zulu_time">Tidsformatet til filnavnene</string>
+	<string name="preference_save_zulu_time_summary">Hvorvidt lokal tid eller UTC (Coordinated Universal Time) skal brukes under navngiving av bilder og videoer.</string>
+	<string name="t_local_time">Lokal tid</string>
+	<string name="t_utc_zulu">UTC</string>
+	<string name="preference_screen_location_settings">Posisjonsinnstillinger…</string>
+	<string name="preference_location">Lagre posisjonsdata (Geotagging)</string>
+	<string name="preference_location_summary">Lagre GPS-posisjonsdata i bildene/videoene.</string>
+	<string name="preference_gps_direction">Lagre kompassretning</string>
+	<string name="preference_gps_direction_summary">Vis GPS-kompassretningen i bildene.</string>
+	<string name="preference_require_location">Krever posisjonsdata</string>
+	<string name="preference_require_location_summary">Dersom posisjonsdataer er aktiver, så ta kun (opp) bilder/videoer dersom posisjonsdataer er tilgjengelige.</string>
+
+	<string name="preference_category_online">Diverse</string>
+	<string name="preference_online_help">Netthjelp</string>
+	<string name="preference_online_help_summary">Gå til Open Camera-nettsiden i nettleseren din.</string>
+	<string name="preference_donate">Doner for å støtte utviklingen.</string>
+	<string name="preference_donate_summary">Hvis du liker denne appen, så tenk gjerne på om du vil gi meg en donasjon for å støtte utviklingen. Du kan gjøre dette ved å kjøpe min "donasjonsapp" — Klikk på denne innstillingen for å gå til siden for min donasjonsapp. Takk!</string>
+	<string name="preference_use_camera2">Bruk Camera2-APIen</string>
+	<string name="preference_use_camera2_summary">Aktiverer Android 5.x sin Camera2-API - Den tilbyr ekstra egenskaper, men kan kanskje ikke virke riktig på alle enheter (Vil føre til en omstart).</string>
+	<string name="preference_about">Om Open Camera</string>
+	<string name="preference_info">App- og avlusings-informasjon</string>
+	<string name="preference_reset">Tilbakestill innstillinger</string>
+	<string name="preference_reset_summary">Tilbakestill alle Open Camera-innstillinger til sine standarder.</string>
+	<string name="preference_advanced">Avanserte funksjoner</string>
+
+	<string name="time_1_second">1 sekund</string>
+	<string name="time_2_seconds">2 sekunder</string>
+	<string name="time_3_seconds">3 sekunder</string>
+	<string name="time_5_seconds">5 sekunder</string>
+	<string name="time_10_seconds">10 sekunder</string>
+	<string name="time_15_seconds">15 sekunder</string>
+	<string name="time_20_seconds">20 sekunder</string>
+	<string name="time_30_seconds">0,5 minutter</string>
+	<string name="time_1_minute">1 minutt</string>
+	<string name="time_2_minutes">2 minutter</string>
+	<string name="time_3_minutes">3 minutter</string>
+	<string name="time_5_minutes">5 minutter</string>
+	<string name="time_7_minutes">7 minutter</string>
+	<string name="time_10_minutes">10 minutter</string>
+	<string name="time_12_minutes">12 minutter</string>
+	<string name="time_15_minutes">15 minutter</string>
+	<string name="time_20_minutes">20 minutter</string>
+	<string name="time_25_minutes">25 minutter</string>
+	<string name="time_30_minutes">0,5 timer</string>
+	<string name="time_45_minutes">45 minutter</string>
+	<string name="time_1_hour">1 time</string>
+	<string name="time_2_hours">2 timer</string>
+</resources>

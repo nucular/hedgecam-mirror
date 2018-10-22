@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+	<item android:state_checked="false">
+		<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+			<item
+				android:top="@dimen/popup_radio_ring_margin"
+				android:right="@dimen/popup_radio_ring_margin"
+				android:bottom="@dimen/popup_radio_ring_margin"
+				android:left="@dimen/popup_radio_ring_margin"
+			>
+				<shape android:shape="oval">
+					<stroke android:width="@dimen/popup_radio_ring_thickness" android:color="@color/radio_dark" />
+					<size android:width="@dimen/popup_radio_size" android:height="@dimen/popup_radio_size"/>
+				</shape>
+			</item>
+		</layer-list>
+	</item>
+	<item android:state_checked="true">
+		<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+			<item
+				android:top="@dimen/popup_radio_ring_margin"
+				android:right="@dimen/popup_radio_ring_margin"
+				android:bottom="@dimen/popup_radio_ring_margin"
+				android:left="@dimen/popup_radio_ring_margin"
+			>
+				<shape android:shape="oval">
+					<stroke android:width="@dimen/popup_radio_ring_thickness" android:color="@color/radio_dark_checked" />
+					<size android:width="@dimen/popup_radio_size" android:height="@dimen/popup_radio_size"/>
+				</shape>
+			</item>
+			<item
+				android:top="@dimen/popup_radio_circle_margin"
+				android:right="@dimen/popup_radio_circle_margin"
+				android:bottom="@dimen/popup_radio_circle_margin"
+				android:left="@dimen/popup_radio_circle_margin"
+			>
+				<shape android:shape="oval">
+					<solid android:color="@color/radio_dark_checked"/>
+				</shape>
+			</item>
+		</layer-list>
+	</item>
+</selector>

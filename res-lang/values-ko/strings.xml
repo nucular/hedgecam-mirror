@@ -1,0 +1,841 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+
+	<string name="translation_author">Halcyonest</string>
+	<string name="intro_text">터치해서 초점을 맞추고 파란색 카메라 버튼을 눌러서 사진을 찍습니다. 더 많은 도움이 필요하시면, 설정에서 온라인 도움말을 선택하세요. 오픈 카메라는 완전 무료입니다. 앱이 마음에 드시면 기부용 앱을 구매해보세요 (온라인 도움말 혹은 설정에서 링크를 선택).\n\n개인정보 정책: 위치 퍼미션은 지오태깅을 위해 필요합니다. 하지만 비활성화가 기본값입니다. 만약 활성화되면, 당신의 위치는 저장된 파일에 기록됩니다 (이것은 오직 지오태깅 용도로만 사용됩니다).</string>
+	<string name="intro_ok">확인 (이 메세지는 더이상 표시되지 않습니다)</string>
+
+	<string name="answer_yes">예</string>
+	<string name="answer_no">아니오</string>
+
+	<string name="on">켜짐</string>
+	<string name="off">꺼짐</string>
+	<string name="auto">자동</string>
+<!-- Translate me
+	<string name="default_str">Default</string>
+-->
+	<string name="none">없음</string>
+	<string name="unlimited">무제한</string>
+<!-- Translate me
+	<string name="device_default">Device default</string>
+-->
+	<string name="sorry">죄송합니다</string>
+
+	<string name="about_available">가능</string>
+	<string name="about_not_available">불가능</string>
+	<string name="about_copy_to_clipboard">클립보드로 복사</string>
+
+	<string name="choose_save_location">저장 위치 선택:</string>
+	<string name="clear_folder_history">폴더 기록 지우기</string>
+	<string name="clear_folder_history_question">폴더 기록을 지울까요?</string>
+	<string name="choose_another_folder">다른 폴더 선택</string>
+	<string name="changed_save_location">저장 위치를 다음으로 변경함:</string>
+	<string name="parent_folder">상위 폴더</string>
+	<string name="new_folder">새 폴더</string>
+	<string name="cant_write_folder">이 폴더에 쓸 수 없음</string>
+	<string name="cant_access_folder">이 폴더에 접근할 수 없음</string>
+	<string name="enter_new_folder">새 폴더 이름 입력</string>
+	<string name="failed_create_folder">폴더 생성 실패</string>
+	<string name="folder_exists">폴더가 이미 존재함</string>
+<!-- Translate me
+	<string name="saf_select_save_location">Select a save location</string>
+	<string name="saf_cancelled">Storage Access Framework cancelled</string>
+	<string name="saf_permission_failed">Can\'t save to this folder</string>
+
+-->
+	<string name="angle">각도</string>
+	<string name="direction">방향</string>
+	<string name="zoom">줌</string>
+	<string name="free_memory">남은 용량</string>
+
+	<string name="fps">FPS</string>
+<!-- Translate me
+	<string name="iso_manual">Manual mode</string>
+
+	<string name="camera">Camera</string>
+-->
+	<string name="photo">사진</string>
+	<string name="video">동영상</string>
+
+	<string name="action_popup">팝업 설정</string>
+	<string name="action_settings">설정</string>
+<!-- Translate me
+	<string name="audio_control_start">Start audio listening</string>
+	<string name="audio_control_stop">Stop audio listening</string>
+-->
+	<string name="back_camera">후면 카메라</string>
+<!-- Translate me
+	<string name="disable_face_detection">Disable face detection</string>
+	<string name="enable_face_detection">Enable face detection</string>
+-->
+	<string name="exposure">노출</string>
+	<string name="front_camera">전면 카메라</string>
+	<string name="gallery">갤러리</string>
+<!-- Translate me
+	<string name="pause_video">Pause video recording</string>
+	<string name="record_video">Record video</string>	
+	<string name="resume_video">Resume video recording</string>
+	<string name="selfie_mode_start">Start selfie mode</string>
+	<string name="selfie_mode_stop">Stop selfie mode</string>
+-->
+	<string name="share">사진 공유</string>
+<!-- Translate me
+	<string name="start_video">Start recording video</string>
+	<string name="stop_timer">Stop timer</string>
+	<string name="stop_video">Stop recording video</string>
+	<string name="switch_to_back_camera">Switch to back camera</string>
+	<string name="switch_to_front_camera">Switch to front camera</string>
+	<string name="switch_to_photo">Switch to photo mode</string>
+	<string name="switch_to_video">Switch to video mode</string>
+-->
+	<string name="take_photo">사진 촬영</string>
+<!-- Translate me
+	<string name="take_video">Take Video</string>
+-->
+	<string name="trash">마지막 사진 삭제</string>
+
+	<string name="screen_lock_message_1">[잠김:</string>
+	<string name="screen_lock_message_2">밀어서 잠금해제]</string>
+<!-- Translate me
+	<string name="waiting_for_face">Waiting for face detection…</string>
+-->
+	<string name="audio_disabled">오디오 비활성화</string>
+<!-- Translate me
+	<string name="audio_listener_started">Make a loud noise</string>
+	<string name="auto_adjustment_locked">Auto adjustment locked</string>
+	<string name="auto_adjustment_unlocked">Auto adjustment unlocked</string>
+-->
+	<string name="cancelled_burst_mode">연사 모드 취소</string>
+	<string name="cancelled_timer">타이머 취소</string>
+<!-- Translate me
+	<string name="capturing">Capturing…</string>
+-->
+	<string name="failed_to_reconnect_camera">카메라 재접속 실패</string>
+	<string name="location_not_available">GPS 위치가 존재하지 않음</string>
+	<string name="max_duration">최장 녹화 시간</string>
+<!-- Translate me
+	<string name="max_filesize">Max file size</string>
+-->
+	<string name="no_gallery_app">사용 가능한 갤러리 앱 없음</string>
+	<string name="photo_deleted">사진 삭제됨</string>
+	<string name="repeats_to_go">회 반복</string>
+	<string name="screen_is_locked">화면이 잠겨있습니다\n화면을 밀어 잠금을 해제하세요</string>
+<!-- Translate me
+	<string name="speech_recognizer_started">Say \"cheese\"</string>
+-->
+	<string name="started_recording_video">동영상 녹화 시작</string>
+	<string name="started_timer">타이머 시작</string>
+	<string name="stopped_recording_video">동영상 촬영 중지</string>
+	<string name="taking_photo">사진 촬영중</string>
+	<string name="unlocked">잠금 해제됨</string>
+	<string name="video_max_duration">동영상이 최장 녹화 시간에 도달했습니다</string>
+	<string name="video_max_filesize">동영상이 최대 파일 크기에 도달했습니다</string>
+<!-- Translate me
+	<string name="video_pause">Video paused</string>
+	<string name="video_resume">Video resumed</string>
+
+-->
+	<string name="failed_to_open_camera_1">카메라를 여는 데 실패했습니다.</string>
+	<string name="failed_to_open_camera_2">아마도 다른 앱에서 카메라를</string>
+	<string name="failed_to_open_camera_3">이미 사용중인 것 같습니다.</string>
+<!-- Translate me
+	<string name="audio_listener_failed">Failed to initalise audio listening</string>
+-->
+	<string name="auto_stabilise_not_supported">죄송합니다 이 기기에서는\n자동 안정화가 지원되지 않습니다</string>
+<!-- Translate me
+	<string name="camera_error">Serious camera error</string>
+-->
+	<string name="failed_to_auto_stabilise">자동 안정화 실패</string>
+	<string name="failed_to_record_video">동영상 녹화 실패</string>
+	<string name="failed_to_save_photo">사진 저장 실패</string>
+<!-- Translate me
+	<string name="failed_to_save_photo_raw">Failed to save RAW photo</string>
+-->
+	<string name="failed_to_save_video">동영상 파일 저장 실패</string>
+	<string name="failed_to_stamp">사진에 정보 새기기 실패</string>
+	<string name="failed_to_start_camera_preview">카메라 미리보기 시작 실패</string>
+<!-- Translate me
+	<string name="failed_to_process_hdr">Failed to create HDR image</string>
+-->
+	<string name="failed_to_take_picture">사진 촬영 실패</string>
+	<string name="not_supported">: 이 기기에서 지원되지 않습니다</string>
+	<string name="video_error_server_died">서버 오류: 동영상 중지</string>
+	<string name="video_error_unknown">알 수 없는 오류: 동영상 중지</string>
+	<string name="video_may_be_corrupted">오류 발생: 동영상 파일이 손상되었을 수 있습니다</string>
+<!-- Translate me
+	<string name="video_no_free_space">Not enough free space to record video</string>
+	<string name="video_power_critical">Video stopped\nBattery level critically low</string>
+	<string name="focus_bracketing_range_not_defined">Focus bracketing range not defined</string>
+
+	<string name="no_permission">PERMISSIONS NOT AVAILABLE</string>
+
+	<string name="permission_record_audio_not_available">Microphone permission is not available</string>
+	<string name="permission_location_not_available">Location permission is not available</string>
+	<string name="permission_rationale_title">Permission required</string>
+	<string name="permission_rationale_camera">Camera permission is required to enable the camera</string>
+	<string name="permission_rationale_storage">Storage read/write permission is required to save photos</string>
+	<string name="permission_rationale_record_audio">Microphone permission is required to record video with audio</string>
+	<string name="permission_rationale_location">Location permission is required for geotagging</string>
+
+	<string name="auto_stabilise_info">Auto-level will automatically rotate photos so that they appear level.\n\nNote that this means images will come out a slightly lower resolution (due to the rotation and cropping that\'s required).</string>
+	<string name="raw_info">DNG files contain the full uncompressed and unprocessed information from your camera.\n\nMost gallery apps won\'t recognise DNG, instead they should be used with specialised apps like Snapseed or Lightroom.\n\nNote that various processing options such as "Stamp photos" and "Auto-level" will only apply to the JPEG images, and not the DNG images.\n\nDNG files take up a lot of space; a file explorer app may be useful for transferring or deleting them.\n\nDNG files are only saved in Standard or DRO photo modes.</string>
+	<string name="hdr_info">HDR mode is useful for shots with a large variation in brightness. It works by taking multiple shots at different exposures, and combining them to create the final image.\n\nNote that HDR is not suitable for scenes with fast movement, and may result in less accurate colour reproduction.\n\nTaking photos in HDR mode will be slower.</string>
+-->
+	<string name="preference_reset_question">모든 오픈 카메라 설정을 초기화할까요?</string>
+<!-- Translate me
+	<string name="dont_show_again">Don\'t show again</string>
+
+	<string name="mb_abbreviation">MB</string>
+	<string name="gb_abbreviation">GB</string>
+-->
+	<string name="metres_abbreviation">m</string>
+<!-- Translate me
+	<string name="centimetres_abbreviation">cm</string>
+	<string name="seconds_abbreviation">s</string>
+	<string name="minutes_abbreviation">m</string>
+	<string name="hours_abbreviation">h</string>
+
+	<string name="dark">Dark</string>
+	<string name="bright">Bright</string>
+	<string name="exposure_shutter_speed">Shutter speed</string>
+-->
+	<string name="focus_distance">초점 거리</string>
+	<string name="infinite">무한</string>
+
+<!-- Translate me
+	<string name="photo_mode">Photo Mode</string>
+	<string name="photo_mode_standard">Standard</string>
+	<string name="photo_mode_dro">DRO</string>
+	<string name="photo_mode_hdr">HDR</string>
+	<string name="photo_mode_expo_bracketing">Exposure Bracketing</string>
+	<string name="photo_mode_focus_bracketing">Focus Bracketing</string>
+	<string name="photo_mode_fast_burst">Fast Burst</string>
+	<string name="photo_mode_noise_reduction">Noise reduction</string>
+
+-->
+	<string name="flash_mode">플래시 모드</string>
+	<string name="f_torch">플래시 항상 켜짐</string>
+	<string name="f_red_eye">적목 현상 감소 플래시</string>
+	<string name="f_screen_auto">Screen Flash Auto</string>
+	<string name="f_screen_on">Screen Flash On</string>
+
+	<string name="focus_mode">초점 모드</string>
+	<string name="fm_auto">자동 초점</string>
+	<string name="fm_infinity">무한 초점</string>
+	<string name="fm_macro">접사 모드</string>
+	<string name="fm_locked">초점 잠금</string>
+	<string name="fm_manual">수동 초점</string>
+	<string name="fm_fixed">고정 초점</string>
+	<string name="fm_edof">EDOF 초점</string>
+	<string name="fm_continuous">연속 초점</string>
+
+	<string name="scene_mode">장면 모드</string>
+	<string name="sm_action">액션</string>
+	<string name="sm_barcode">바코드</string>
+	<string name="sm_backlight">역광</string>
+	<string name="sm_beach">해변</string>
+	<string name="sm_candlelight">촛불</string>
+	<string name="sm_fireworks">불꽃놀이</string>
+	<string name="sm_flowers">꽃</string>
+
+	<string name="sm_landscape">풍경</string>
+	<string name="sm_night">밤</string>
+	<string name="sm_night_portrait">야간 인물</string>
+	<string name="sm_normal">일반</string>
+	<string name="sm_party">파티</string>
+	<string name="sm_portrait">인물</string>
+	<string name="sm_snow">눈</string>
+	<string name="sm_sports">스포츠</string>
+	<string name="sm_steadyphoto">안정된 사진</string>
+	<string name="sm_sunset">일몰</string>
+	<string name="sm_theatre">극장</string>
+
+	<string name="white_balance">화이트 밸런스</string>
+<!-- Translate me
+	<string name="wb_manual">Manual</string>
+-->
+	<string name="wb_cloudy_daylight">흐림</string>
+	<string name="wb_daylight">일광</string>
+	<string name="wb_fluorescent">형광</string>
+	<string name="wb_incandescent">백열</string>
+<!-- Translate me
+	<string name="wb_shade">Shade</string>
+	<string name="wb_twilight">Twilight</string>
+	<string name="wb_warm_fluorescent">Warm fluorescent</string>
+	<string name="wb_tungsten">Tungsten</string>
+
+-->
+	<string name="color_effect">색상 효과</string>
+	<string name="ce_aqua">아쿠아</string>
+<!-- Translate me
+	<string name="ce_antique">Antique</string>
+	<string name="ce_blackboard">Blackboard</string>
+	<string name="ce_cold">Cold</string>
+-->
+	<string name="ce_mono">모노</string>
+	<string name="ce_negative">네거티브</string>
+	<string name="ce_none">없음</string>
+	<string name="ce_posterize">포스터</string>
+	<string name="ce_sepia">세피아</string>
+<!-- Translate me
+	<string name="ce_sepiablue">Sepia blue</string>
+-->
+	<string name="ce_solarize">과다노출</string>
+	<string name="ce_whiteboard">화이트보드</string>
+
+	<string name="preference_category_camera_controls">카메라 조작 설정</string>
+	<string name="preference_face_detection">얼굴 감지</string>
+	<string name="preference_face_detection_summary">초점 영역 대신 얼굴 감지를 사용합니다</string>
+<!-- Translate me
+	<string name="preference_touch_capture">Touch to capture</string>
+	<string name="preference_touch_capture_summary">Take a photo just by touching the preview</string>
+
+	<string name="preference_category_main_settings">Main settings</string>
+
+	<string name="preference_screen_selfie_mode">Selfie mode</string>
+	<string name="preference_selfie_mode_summary">Enable selfie mode</string>
+-->
+	<string name="preference_timer">타이머</string>
+	<string name="preference_burst_mode">연사 모드</string>
+	<string name="burst_unlimited">무제한</string>
+	<string name="preference_burst_interval">연사 모드 간격</string>
+<!-- Translate me
+	<string name="no_delay">No delay</string>
+	<string name="preference_burst_low_brightness">Set min brightness on burst</string>
+	<string name="preference_burst_low_brightness_summary">Set minimal display brightness when burst mode is active</string>
+	<string name="preference_burst_lock">Lock screen</string>
+	<string name="preference_burst_lock_summary">Lock the screen when timer or burst is running</string>
+	<string name="preference_wait_face">Wait for face</string>
+	<string name="preference_wait_face_summary">Start capture or timer after the face is detected. Don\'n forget to enable face detection before using this mode.</string>
+	<string name="preference_audio_control">Audio control options</string>
+	<string name="vc_loud_noise">Loud noise</string>
+	<string name="vc_cheese">Voice command: \"cheese\"</string>
+	<string name="preference_audio_noise_control_sensitivity">Audio control sensitivity</string>
+	<string name="preference_audio_noise_control_sensitivity_summary">%s\n\nNoise level sensitivity for audio (loud noise) option</string>
+	<string name="vc_high_sensitivity">+3 (high sensitivity)</string>
+	<string name="vc_default_sensitivity">0 (default)</string>
+	<string name="vc_low_sensitivity">-2 (low sensitivity)</string>
+
+-->
+	<string name="preference_screen_sounds">사운드 팩</string>
+	<string name="preference_shutter_sound">셔터 소리</string>
+	<string name="preference_shutter_sound_summary">사진을 촬영할때 소리를 재생합니다 (해제하려면 안드로이드 4.2 혹은 이후 버전이 필요합니다)</string>
+<!-- Translate me
+	<string name="preference_shutter_sound_select">Choose shutter sound</string>
+	<string name="shutter_android_2">Android 2</string>
+	<string name="shutter_android_4">Android 4</string>
+	<string name="shutter_1">Shutter 1 (short)</string>
+	<string name="shutter_2">Shutter 2 (short)</string>
+	<string name="shutter_3">Shutter 3 (long)</string>
+	<string name="shutter_4">Shutter 4 (long)</string>
+	<string name="shutter_unlock">Unlock sound</string>
+-->
+	<string name="preference_timer_beep">타이머 알림음</string>
+	<string name="preference_timer_beep_summary">타이머가 작동중이거나 연사 모드 지연시 알림음을 재생합니다</string>
+<!-- Translate me
+	<string name="preference_timer_speak">Voice timer countdown</string>
+	<string name="preference_timer_speak_summary">Speak the countdown for timer or burst mode delay (from 60 seconds)</string>
+	<string name="preference_timer_start_sound">Timer start/stop sound</string>
+	<string name="preference_timer_start_sound_summary">If timer beep disabled, play a sound when timer started or stopped</string>
+	<string name="preference_face_detection_sound">Face detection sound</string>
+	<string name="preference_face_detection_sound_summary">Play sound when face detected</string>
+	<string name="preference_sound_volume">Sounds volume</string>
+	<string name="sv_max">Max</string>
+	<string name="sv_high">High</string>
+	<string name="sv_medium">Medium</string>
+	<string name="sv_low">Low</string>
+	<string name="sv_min">Min</string>
+	<string name="preference_audio_stream">Audio stream</string>
+	<string name="preference_audio_stream_summary">%s\n\nAudio stream for playing camera sounds</string>
+-->
+	<string name="ss_system">"시스템"</string>
+	<string name="ss_notification">"알림"</string>
+	<string name="ss_music">"음악"</string>
+
+	<string name="preference_screen_gui">화면상의 인터페이스</string>
+<!-- Translate me
+	<string name="preference_gui_type">GUI type</string>
+	<string name="preference_gui_type_portrait">GUI type in portrait orientation</string>
+	<string name="gui_as_in_landscape">As in landscape mode</string>
+	<string name="gui_phone">Phone</string>
+	<string name="gui_phone_2">Phone 2</string>
+	<string name="gui_tablet">Tablet</string>
+	<string name="gui_universal">Universal</string>
+	<string name="gui_classic">Classic</string>
+	<string name="preference_ctrl_panel_margin">Buttons margin</string>
+	<string name="preference_ctrl_panel_margin_summary">%s\n\nA space between control panel buttons and shutter button for \"Phone 2\", \"Tablet\" and \"Universal\" GUI type</string>
+-->
+	<string name="preference_ui_left_handed">왼손잡이 사용자 인터페이스</string>
+<!-- Translate me
+	<string name="preference_ui_left_handed_summary">Interface for left-handed users</string>
+
+	<string name="preference_screen_ctrl_panel">Control panel</string>
+	<string name="preference_screen_ctrl_panel_buttons">Control panel buttons</string>
+	<string name="preference_ctrl_panel_switch_camera">Switch camera</string>
+-->
+	<string name="exposure_compensation">노출 보정</string>
+<!-- Translate me
+	<string name="auto_adjustment_lock">Auto adjustment lock</string>
+	<string name="expo_metering_area">Exposure metering area</string>
+
+	<string name="preference_screen_mode_panel">Mode panel</string>
+	<string name="preference_screen_mode_panel_buttons">Mode panel buttons</string>
+	
+	<string name="preference_screen_sliders">Sliders</string>
+	<string name="preference_sliders_location">Sliders location</string>
+	<string name="sl_on_widest_side">On the widest side</string>
+	<string name="sl_near_shutter_button">Near the shutter button</string>
+	<string name="preference_sliders_size">Sliders size</string>
+	<string name="preference_sliders_gap">Gap between a sliders</string>
+	<string name="preference_sliders_auto_switch">Auto-switch</string>
+	<string name="preference_sliders_auto_switch_summary">Automatically switch sliders visibility when changing measuring mode</string>
+	<string name="preference_show_exposure_buttons">Exposure buttons</string>
+	<string name="preference_show_exposure_buttons_summary">Show exposure compensation buttons</string>
+-->
+	<string name="preference_show_zoom_controls">줌 -/+ 조작계 표시</string>
+	<string name="preference_show_zoom_controls_summary">줌 조작을 위한 -/+ 버튼을 표시합니다</string>
+	<string name="preference_show_zoom_slider_controls">줌 슬라이더 조작계 표시</string>
+	<string name="preference_show_zoom_slider_controls_summary">줌 조작을 위한 슬라이더를 표시합니다</string>
+<!-- Translate me
+	<string name="preference_iso_steps">ISO steps</string>
+	<string name="preference_iso_steps_summary">Use step ISO adjustment</string>
+
+	<string name="preference_screen_popup">Popup menu</string>
+	<string name="preference_font_size">Font size</string>
+-->
+	<string name="fs_small">"작게"</string>
+	<string name="fs_normal">"보통"</string>
+	<string name="fs_large">"크게"</string>
+<!-- Translate me
+	<string name="fs_xlarge">Extra large</string>
+	<string name="preference_popup_size">Popup width</string>
+-->
+	<string name="preference_popup_color">"색상"</string>
+	<string name="black">"검은색"</string>
+<!-- Translate me
+	<string name="dark_gray">Dark gray</string>
+	<string name="dark_blue">Dark blue</string>
+	<string name="light_gray">Light gray</string>
+	<string name="preference_popup_expanded_lists">Expanded lists</string>
+	<string name="preference_category_popup_elements">Items</string>
+	<string name="preference_category_popup_elements_summary">In this section you can select the items that are displayed in main popup menu.</string>
+	<string name="preference_popup_modes">Modes</string>
+	<string name="preference_popup_modes_summary">In this section you can disable unused or malfunctioning modes. The settings are saved separately for each camera.</string>
+-->
+	<string name="preference_resolution">카메라 해상도</string>
+	<string name="grid">격자</string>
+
+	<string name="preference_screen_shutter_button">셔터</string>
+<!-- Translate me
+	<string name="preference_show_take_photo">Show take photo icon</string>
+	<string name="preference_show_take_photo_summary">Show the icon for taking photos and recording videos. Useful if your device has a hardware shutter button and you\'d rather use that.</string>
+	<string name="preference_shutter_button_style">Shutter button style</string>
+	<string name="preference_shutter_button_size">Shutter button size</string>
+
+-->
+	<string name="preference_immersive_mode">전체화면 모드</string>
+	<string name="preference_immersive_mode_summary">전체화면(몰입) 모드에서의 동작을 설정합니다</string>
+<!-- Translate me
+	<string name="im_fullscreen">Fullscreen mode</string>
+	<string name="im_sticky">Sticky</string>
+-->
+	<string name="im_hide_nav_buttons">화면상의 가상 탐색 버튼만 숨기기</string>
+	<string name="im_hide_gui">GUI 숨기기</string>
+	<string name="im_hide_everything">모두 숨기기</string>
+<!-- Translate me
+	<string name="preference_show_toasts">Show \"toast\" messages</string>
+	<string name="preference_show_toasts_summary">Whether to display the popup \"toast\" messages</string>
+-->
+	<string name="preference_thumbnail_animation">썸네일 애니메이션 표시</string>
+	<string name="preference_thumbnail_animation_summary">사진을 촬영할 때 움직이는 썸네일 애니메이션을 표시합니다</string>
+<!-- Translate me
+	<string name="preference_take_photo_border">Show border when taking photo</string>
+	<string name="preference_take_photo_border_summary">Display a border on the display to indicate taking a photo</string>
+	<string name="preference_gui_orientation">GUI orientation</string>
+	<string name="preference_gui_orientation_summary">%s</string>
+-->
+	<string name="preference_keep_display_on">화면 항상 켜기</string>
+	<string name="preference_keep_display_on_summary">만약 활성화되면 오픈 카메라 인터페이스가 작동중일때 화면이 꺼지지 않습니다</string>
+	<string name="preference_max_brightness">강제 최대 밝기</string>
+	<string name="preference_max_brightness_summary">기기 기본값 대신 화면을 최대 밝기로 고정합니다</string>
+
+	<string name="preference_screen_preview">"미리보기"</string>
+<!-- Translate me
+	<string name="preference_preview_max_size">Max preview size</string>
+	<string name="preference_preview_max_size_summary">Maximal preview size</string>
+	<string name="preference_preview_location">Preview location</string>
+	<string name="preference_preview_location_summary">%s</string>
+	<string name="left_gap_for_buttons">Left, gap for buttons</string>
+-->
+	<string name="preference_rotate_preview">미리보기 회전</string>
+	<string name="preference_rotate_preview_summary">미리보기 회전 설정 (사진/동영상 촬영 결과에는 영향을 미치지 않습니다)</string>
+	<string name="dont_rotate">회전하지 않음</string>
+	<string name="rotate_180_degrees">180도 회전</string>
+<!-- Translate me
+	<string name="preference_preview_max_expo">Maximum exposure</string>
+	<string name="preference_preview_max_expo_summary">Maximum preview exposure in manual mode (won\'t affect resultant photos/videos)</string>
+	<string name="preference_preview_surface">Preview surface</string>
+	<string name="preference_preview_surface_summary">%s\n\nSurface for displaying preview. Switch this option only if you know what you do</string>
+
+	<string name="preference_screen_osd">Indication</string>
+-->
+	<string name="preference_show_zoom">줌 배율 표시</string>
+	<string name="preference_show_zoom_summary">현재 카메라 줌 배율을 화면에 표시합니다 (확대시)</string>
+	<string name="preference_show_iso">ISO 표시</string>
+	<string name="preference_show_iso_summary">현재 ISO 수준을 표시합니다 (Camera2 API가 필요합니다)</string>
+<!-- Translate me
+	<string name="preference_show_white_balance">Show white balance</string>
+	<string name="preference_show_white_balance_summary">Display the current white balance temperature</string>
+-->
+	<string name="preference_free_memory">남은 메모리 표시</string>
+	<string name="preference_free_memory_summary">현재 남은 저장소 공간을 화면에 표시합니다</string>
+	<string name="preference_show_angle">각도 표시</string>
+	<string name="preference_show_angle_summary">현재 기기 방향 각도를 화면에 표시합니다</string>
+	<string name="preference_show_angle_line">각도 수준기 표시</string>
+	<string name="preference_show_angle_line_summary">가로 평형선을 표시합니다</string>
+<!-- Translate me
+	<string name="preference_angle_highlight_color">Angle/altitude highlight color</string>
+	<string name="preference_angle_highlight_color_summary">%s\n\nHighlight color for when camera is nearly level</string>
+	<string name="preference_show_pitch_lines">Show pitch lines</string>
+	<string name="preference_show_pitch_lines_summary">Display horizontal pitch lines</string>
+-->
+	<string name="preference_show_geo_direction">나침반 방향 표시</string>
+	<string name="preference_show_geo_direction_summary">기기의 나침반 방향을 화면에 표시합니다</string>
+<!-- Translate me
+	<string name="preference_show_geo_direction_lines">Show compass direction lines</string>
+	<string name="preference_show_geo_direction_lines_summary">Display compass direction lines</string>
+-->
+	<string name="preference_show_time">시간 표시</string>
+	<string name="preference_show_time_summary">현재 시간을 화면에 표시합니다</string>
+	<string name="preference_show_battery">배터리 표시</string>
+	<string name="preference_show_battery_summary">현재 배터리 잔량을 화면에 표시합니다</string>
+<!-- Translate me
+	<string name="preference_alt_indication">Alternative indication</string>
+	<string name="preference_alt_indication_summary">Alternative focus and metering zone indication</string>
+-->
+	<string name="preference_grid">격자 표시</string>
+	<string name="g_phi_3x3">Phi 3x3</string>
+	<string name="g_crosshair">Crosshair</string>
+	<string name="g_golden_1">Golden (1)</string>
+	<string name="g_golden_2">Golden (2)</string>
+	<string name="g_golden_3">Golden (3)</string>
+	<string name="g_golden_4">Golden (4)</string>
+	<string name="g_triangle_1">Triangle (1)</string>
+	<string name="g_triangle_2">Triangle (2)</string>
+	<string name="g_diagonals">Diagonals</string>
+<!-- Translate me
+	<string name="preference_grid_alpha">Grid alpha</string>
+-->
+	<string name="preference_crop_guide">크롭 안내선 표시</string>
+	<string name="preference_crop_guide_summary">크롭 안내선은 특정한 종횡비가 어떤 식으로 보이는지를 사각형으로 보여줍니다 - 사진이나 동영상을 나중에 다른 종횡비로 잘라낼 예정이라면 활용할 수 있습니다. 동영상 촬영 모드 혹은 WYSIWYG 사진 모드가 필요합니다</string>
+<!-- Translate me
+	<string name="preference_osd_frequency">Update frequency</string>
+	<string name="preference_osd_frequency_summary">OSD update frequency. Increasing this value will will make the indication smoother, but the battery will discharge faster</string>
+	<string name="freq_low">Low</string>
+	<string name="freq_normal">Normal</string>
+	<string name="freq_high">High</string>
+	<string name="preference_osd_slow_if_busy">Slow if busy</string>
+	<string name="preference_osd_slow_if_busy_summary">Decrease the OSD frequency when taking a photo or recording a video</string>
+
+-->
+	<string name="preference_screen_buttons">"물리적 키보드"</string>
+	<string name="preference_button_headset">"헤드셋"</string>
+<!-- Translate me
+	<string name="preference_button_vol_up">Volume+</string>
+	<string name="preference_button_vol_down">Volume-</string>
+-->
+	<string name="preference_button_prev">"이전"</string>
+	<string name="preference_button_next">"다음"</string>
+	<string name="preference_button_play">"재생/일시중지"</string>
+	<string name="preference_button_stop">"중지"</string>
+	<string name="preference_button_camera">"카메라"</string>
+<!-- Translate me
+	<string name="preference_button_focus">Focus button</string>
+	<string name="preference_button_zoom_in">Zoom+</string>
+	<string name="preference_button_zoom_out">Zoom-</string>
+-->
+	<string name="preference_button_search">"검색"</string>
+	<string name="ba_shutter">사진 촬영 (혹은 동영상 촬영 시작/중지)</string>
+<!-- Translate me
+	<string name="ba_pause">Pause</string>
+	<string name="ba_zoom_plus">Zoom+</string>
+	<string name="ba_zoom_minus">Zoom-</string>
+-->
+	<string name="ba_autofocus">초점</string>
+<!-- Translate me
+	<string name="ba_focus_plus">Focus+</string>
+	<string name="ba_focus_minus">Focus-</string>
+	<string name="ba_exposure_plus">Exposure+</string>
+	<string name="ba_exposure_minus">Exposure-</string>
+	<string name="ba_capture_only">Capture only</string>
+-->
+	<string name="ba_nothing">아무것도 하지 않기</string>
+
+	<string name="preference_screen_camera_controls_more">추가적인 카메라 조작 설정</string>
+	<string name="preference_pause_preview">사진 촬영 후 일시정지</string>
+	<string name="preference_pause_preview_summary">사진 촬영 후 화면을 일시정지하고 사진을 공유하거나 삭제하는 옵션을 보여줍니다</string>
+	<string name="preference_lock_orientation">사진/동영상 방향 고정</string>
+	<string name="no_lock">잠그지 않음</string>
+	<string name="lock_landscape">가로로 잠금</string>
+	<string name="lock_portrait">세로로 잠금</string>
+	<string name="preference_lock_orientation_summary">만약 활성화되면 기기의 가로 세로 방향은 무시되며 사진과 동영상이 정해진 방향을 따르게 됩니다</string>
+	<string name="preference_show_when_locked">잠겼을때 카메라 표시</string>
+	<string name="preference_show_when_locked_summary">만약 활성화되면 어떠한 잠금화면이 있더라도 그 위에 오픈 카메라를 표시합니다 (설정이나 갤러리 등에 접근하려면 여전히 잠금을 해제해야 합니다)</string>
+<!-- Translate me
+	<string name="preference_multitouch_zoom">Multitouch zoom</string>
+	<string name="preference_multitouch_zoom_summary">You must restart the application to apply this option</string>
+	<string name="preference_focus_range">Focus range</string>
+	<string name="preference_focus_range_summary">Manual focus range limit for for more precise control</string>
+	<string name="fr_room">Room</string>
+	<string name="fr_group">Group photo</string>
+	<string name="preference_level_angle_calibration">Level angle calibration</string>
+	<string name="preference_level_angle_calibration_summary">Calibration value of level angle</string>
+
+	<string name="preference_screen_bug_fix">Bug fixes</string>
+	<string name="preference_startup_focus">Perform auto-focus on startup</string>
+	<string name="preference_startup_focus_summary">Whether to auto-focus when application is started. If you have the problem of flash turning on when starting, disable this option</string>
+	<string name="preference_force_face_focus">Force focus on face</string>
+	<string name="preference_force_face_focus_summary">Force focus when face detected in autofocus mode. Only one face supported.</string>
+	<string name="preference_center_focus">Center focus</string>
+	<string name="preference_center_focus_summary">Set focus zone in the center of the frame at startup</string>
+	<string name="preference_min_focus_distance">Minimum focus distance</string>
+	<string name="preference_update_focus_for_video">Update focus mode</string>
+	<string name="preference_update_focus_for_video_summary">Workaround for bug on Samsung Galaxy S5 with UHD, where if the user switches to another (non-continuous-video) focus mode, then goes to Settings, then returns and records video, the preview freezes and the video is corrupted</string>
+	<string name="preference_camera2_fake_flash">Use alternative flash method</string>
+	<string name="preference_camera2_fake_flash_summary">Enable this if your device has buggy flash behaviour with Camera2 API</string>
+	<string name="preference_use_1920x1088">Use 1920x1088 resolution</string>
+	<string name="preference_use_1920x1088_summary">Use 1920x1088 video resolution instead of 1920x1080. This option fix the green stripe bug on some MediaTek devices</string>
+	<string name="preference_speed_up_sensors">Speed up sensors</string>
+	<string name="preference_speed_up_sensors_summary">Increase accelerometer and magnetic sensor update speed</string>
+
+-->
+	<string name="preference_category_camera_quality">사진 및 동영상 설정</string>
+
+	<string name="preference_screen_photo_settings">사진 설정</string>
+	<string name="preference_quality">이미지 화질</string>
+	<string name="preference_auto_stabilise">자동 안정화</string>
+	<string name="preference_auto_stabilise_summary">이미지가 회전되어 자동적으로 수평을 맞추게 됩니다 (사진 전용) (촬영이 느려질 수 있으며 메모리가 적은 기기에서는 실패할 수 있습니다)</string>
+<!-- Translate me
+	<string name="preference_raw">RAW</string>
+	<string name="preference_raw_summary">%s\n\nWhether to save in RAW (DNG) format</string>
+	<string name="jpeg_only">JPEG only</string>
+	<string name="jpeg_and_dng">JPEG and DNG (RAW)</string>
+	<string name="preference_flip_front_facing">Flip photo</string>
+	<string name="preference_flip_front_facing_summary">Flip horizontally photos from front camera</string>
+	<string name="preference_category_expo_bracketing_summary">Expobracketing settings. Most of the options in this section also apply to HDR.</string>
+	<string name="preference_expo_bracketing_n_images">Exposure Bracketing</string>
+	<string name="preference_expo_bracketing_n_images_summary">%s\n\nNumber of images for exposure bracketing mode</string>
+	<string name="preference_expo_bracketing_stops">Exposure Bracketing Stops</string>
+	<string name="preference_expo_bracketing_stops_summary">%s\n\nHow many stops to subtract/add for the darkest/brightest image</string>
+	<string name="preference_expo_bracketing_use_iso">Use ISO</string>
+	<string name="preference_expo_bracketing_use_iso_summary">If possible, use ISO adjustment for creating the darker images</string>
+	<string name="preference_category_hdr">HDR and DRO</string>
+	<string name="preference_category_hdr_summary">HDR and DRO settings</string>
+	<string name="preference_hdr_save_expo">Save all images for HDR mode</string>
+	<string name="preference_hdr_save_expo_summary">If enabled, when using HDR photo mode, the three base exposure images will be saved as well as the final HDR photo. Note this will make saving slower, especially if options like \"Stamp photos\" or Auto-level are also used.</string>
+	<string name="preference_hdr_tonemapping">Tone mapping</string>
+	<string name="preference_hdr_tonemapping_summary">%s\n\nAlgorithm to use for HDR tonemapping</string>
+	<string name="preference_hdr_local_contrast">Local contrast</string>
+	<string name="preference_hdr_local_contrast_summary">%s\n\nLevel of the local contrast enhancement during processing HDR and DRO</string>
+	<string name="preference_hdr_n_tiles">Number of tiles</string>
+	<string name="preference_hdr_n_tiles_summary">%s</string>
+	<string name="preference_hdr_ignore_sf">Ignore smart filtering</string>
+	<string name="preference_hdr_ignore_sf_summary">If smart filtering is enabled, ignore it, and don\'t disable noise reduction and edge enhancement when illumination is good in HDR photo mode</string>
+	<string name="preference_category_fb_summary">Focus bracketing settings</string>
+	<string name="preference_photos_count">Number of photos</string>
+	<string name="preference_fb_focus_time">Focus time</string>
+	<string name="preference_fb_focus_time_summary">%s</string>
+	<string name="preference_category_fast_burst_summary">Fast burst settings</string>
+	<string name="preference_fast_burst_disable_filters">Disable filters</string>
+	<string name="preference_fast_burst_disable_filters_summary">Disable noise reduction and edge enhancement when capturing a burst</string>
+	<string name="preference_category_nr_summary">Noise reduction photo mode settings</string>
+	<string name="preference_adjust_levels">Adjust levels</string>
+	<string name="al_highlights">Highlights</string>
+	<string name="al_highlights_and_shadows">Highlights and shadows</string>
+	<string name="preference_category_stamp">Photo Stamp</string>
+	<string name="preference_category_stamp_summary">Adding stamps to photos</string>
+-->
+	<string name="preference_stamp">사진 스탬프</string>
+	<string name="preference_stamp_summary">사진에 날짜와 시간을 새깁니다; 만약 위치/방향 데이터가 활성화된 경우에는 GPS 정보도 기록합니다</string>
+<!-- Translate me
+	<string name="preference_stamp_location_x">Horizontal location</string>
+	<string name="left">Left</string>
+	<string name="center">Center</string>
+	<string name="right">Right</string>
+	<string name="preference_stamp_location_y">Vetrical location</string>
+	<string name="top">Top</string>
+	<string name="bottom">Bottom</string>
+	<string name="preference_stamp_dateformat">Datestamp format</string>
+	<string name="yyyy_mm_dd">yyyy/mm/dd</string>
+	<string name="dd_mm_yyyy">dd/mm/yyyy</string>
+	<string name="mm_dd_yyyy">mm/dd/yyyy</string>
+	<string name="preference_stamp_timeformat">Timestamp format</string>
+	<string name="tf_12_hour">12 hour</string>
+	<string name="tf_24_hour">24 hour</string>
+	<string name="preference_stamp_gpsformat">GPS stamp format</string>
+	<string name="degrees_minutes_seconds">Degrees/minutes/seconds</string>
+-->
+	<string name="preference_textstamp">임의 텍스트</string>
+	<string name="preference_textstamp_summary">사진에 임의의 텍스트를 새깁니다</string>
+	<string name="preference_stamp_font_color">"색상"</string>
+	<string name="white">"흰색"</string>
+	<string name="yellow">"노란색"</string>
+	<string name="red">"빨간색"</string>
+	<string name="green">"녹색"</string>
+	<string name="blue">"파란색"</string>
+<!-- Translate me
+	<string name="preference_stamp_background">Text with background</string>
+	<string name="preference_stamp_background_summary">Draw text with background</string>
+	<string name="preference_camera2_fast_burst">Enable fast HDR/expo burst</string>
+	<string name="preference_camera2_fast_burst_summary">Allows faster capture of the HDR/expo shots. Disable this if your device has problems when taking photos with HDR or Expo photo modes.</string>
+	<string name="preference_background_photo_saving">Use background thread</string>
+	<string name="preference_background_photo_saving_summary">Whether to save photos on a background thread (for faster operation)</string>
+
+-->
+	<string name="preference_screen_video_settings">동영상 설정</string>
+	<string name="video_quality">동영상 해상도</string>
+	<string name="preference_video_stabilization">비디오 안정화 사용</string>
+	<string name="preference_video_stabilization_summary">비디오 안정화는 미리보기 및 동영상 촬영시 카메라의 움직임으로 인해 발생하는 흔들림을 줄여줍니다</string>
+	<string name="preference_video_bitrate">비디오 비트레이트 (근사치)</string>
+	<string name="preference_video_bitrate_summary">동영상의 비트레이트 근사치를 설정합니다 (높을수록 고화질이지만 용량을 더 차지합니다; 비트레이트가 지원되지 않을 경우 동영상 녹화가 실패할 수 있습니다)</string>
+	<string name="preference_video_fps">비디오 프레임 비율 (근사치)</string>
+	<string name="preference_video_fps_summary">동영상의 프레임 비율(FPS)을 설정합니다 (근사치이므로 보장되지 않습니다; 프레임 비율이 지원되지 않을 경우 동영상 녹화가 실패할 수 있습니다)</string>
+	<string name="preference_video_max_duration">동영상 최장 녹화 시간</string>
+	<string name="preference_video_max_duration_summary">정해진 시간이 지나면 동영상 촬영을 멈추게 됩니다</string>
+	<string name="preference_video_restart">최장 녹화 시간 이후 재시작</string>
+	<string name="dont_restart">반복하지 않음</string>
+	<string name="repeat_1_time">1회 반복</string>
+	<string name="repeat_2_times">2회 반복</string>
+	<string name="repeat_3_times">3회 반복</string>
+	<string name="repeat_4_times">4회 반복</string>
+	<string name="repeat_5_times">5회 반복</string>
+	<string name="repeat_6_times">6회 반복</string>
+	<string name="repeat_7_times">7회 반복</string>
+	<string name="repeat_8_times">8회 반복</string>
+	<string name="repeat_9_times">9회 반복</string>
+	<string name="repeat_10_times">10회 반복</string>
+	<string name="preference_video_restart_summary">만약 (설정된 경우에) 최장 녹화 시간 이후 동영상 촬영이 중지되면, 이 옵션은 정해진 횟수만큼 동영상 녹화를 재개시킵니다</string>
+<!-- Translate me
+	<string name="preference_video_max_filesize">Maximum file size of video</string>
+	<string name="preference_video_max_filesize_summary">%s\n\nThe video recording will stop and/or restart (see option below) when the (approximate) maximum file size is reached. Note that almost all Android devices have a maximum file size for videos (typically around 2GB or 4GB), but this option allows setting a specific value</string>
+	<string name="preference_video_restart_max_filesize">Restart on maximum file size</string>
+	<string name="preference_video_restart_max_filesize_summary">Whether to automatically restart when the maximum file size is reached (whether the device default max file size, or user specified)</string>
+-->
+	<string name="preference_record_audio">오디오 녹음</string>
+	<string name="preference_record_audio_summary">동영상 녹화시 오디오를 녹음합니다</string>
+	<string name="preference_record_audio_src">오디오 음원</string>
+	<string name="as_camcorder">캠코더</string>
+	<string name="as_external_mic">외부 마이크(존재할 경우)</string>
+	<string name="as_default_source">기본 음원</string>
+	<string name="as_voice_optimized">목소리 녹음 최적화</string>
+<!-- Translate me
+	<string name="preference_record_audio_channels">Audio channels</string>
+	<string name="preference_record_audio_channels_summary">%s\n\nSpecify mono or stereo for recording audio (stereo only supported on some devices)</string>
+	<string name="am_mono">Mono</string>
+	<string name="am_stereo">Stereo (only supported on some devices)</string>
+-->
+	<string name="preference_lock_video">동영상 촬영시 화면 잠금</string>
+	<string name="preference_lock_video_summary">동영상 촬영시 우발적으로 녹화를 중지하는 것을 방지하기 위해 인터페이스를 잠급니다. 밀어서 잠금을 해제하세요. 다만 앱이 백그라운드로 가거나 화면이 비워지면 녹화는 언제나 중지됩니다.</string>
+<!-- Translate me
+	<string name="preference_video_subtitle">Video subtitles</string>
+	<string name="preference_video_subtitle_summary">%s\n\nCreate a subtitles (.SRT) file storing date and time; and also GPS info if location/direction data is enabled</string>
+	<string name="no_subtitles">No subtitles</string>
+	<string name="record_subtitles">Record subtitles</string>
+-->
+	<string name="preference_force_video_4k">강제 4K UHD 비디오 (실험적)</string>
+	<string name="preference_force_video_4k_summary">후면 카메라로 동영상 촬영시 3840x2160 해상도를 사용합니다 - 기기가 지원하는 경우에만 작동하며 아닐 경우 충돌이 발생할 수 있습니다</string>
+<!-- Translate me
+	<string name="preference_video_low_power_check">Critical battery check</string>
+	<string name="preference_video_low_power_check_summary">Stop video recording if battery level is critically low. This helps reduce the risk of videos being corrupted if your device suddenly switches off due to running out of power.</string>
+-->
+	<string name="preference_video_flash">동영상 녹화시 깜빡임</string>
+	<string name="preference_video_flash_summary">만약 활성화되면 동영상 촬영시 플래시가 깜빡입니다 (원거리에서 카메라가 촬영중임을 알리는 데 사용됩니다)</string>
+
+<!-- Translate me
+	<string name="preference_screen_filtering">Filtering</string>
+-->
+	<string name="preference_antibanding">밴딩 방지</string>
+<!-- Translate me
+	<string name="preference_antibanding_summary">%s\n\nCompensate flickering at the rate of the power supply frequency</string>
+	<string name="preference_noise_reduction">Noise reduction</string>
+	<string name="preference_noise_reduction_summary">%s</string>
+-->
+	<string name="preference_edge">선명도</string>
+<!-- Translate me
+	<string name="preference_edge_summary">%s</string>
+	<string name="preference_smart_filter">Smart filtering</string>
+	<string name="preference_smart_filter_summary">%s\n\nDisable noise reduction and edge enhancement when illumination is good. The filters will be disabled if current ISO value is less or equal to the selected value.</string>
+	<string name="preference_optical_stabilization">Optical stabilization</string>
+	<string name="preference_optical_stabilization_summary">%s</string>
+	<string name="nr_fast">Fast</string>
+	<string name="nr_high_quality">High quality</string>
+	<string name="nr_minimal">Minimal</string>
+-->
+	<string name="nr_zero_shutter_lag">제로 셔터 랙</string>
+
+<!-- Translate me
+	<string name="preference_screen_files">Files</string>
+-->
+	<string name="preference_save_location">저장 위치</string>
+	<string name="preference_save_location_summary">사진/동영상 파일을 저장할 폴더를 선택합니다</string>
+<!-- Translate me
+	<string name="preference_using_saf">Use Storage Access Framework</string>
+	<string name="preference_using_saf_summary">Whether to use Android 5\'s Storage Access Framework for saving photos and videos</string>
+-->
+	<string name="preference_save_photo_prefix">사진 저장 접두사</string>
+	<string name="preference_save_photo_prefix_summary">저장시 사진 파일명에 사용할 접두사를 설정합니다</string>
+	<string name="preference_save_video_prefix">동영상 저장 접두사</string>
+	<string name="preference_save_video_prefix_summary">저장시 동영상 파일명에 사용할 접두사를 설정합니다</string>
+<!-- Translate me
+	<string name="preference_save_zulu_time">Time format for filename</string>
+	<string name="preference_save_zulu_time_summary">%s\n\nWhether to use local or UTC (Coordinated Universal Time) time for naming photos and videos</string>
+	<string name="t_local_time">Local Time</string>
+	<string name="t_utc_zulu">UTC (Zulu)</string>
+-->
+	<string name="preference_screen_location_settings">위치 설정</string>
+	<string name="preference_location">위치 데이터 저장 (지오태깅)</string>
+	<string name="preference_location_summary">GPS 위치 데이터를 사진/동영상에 저장합니다</string>
+	<string name="preference_gps_direction">나침반 방향 저장</string>
+	<string name="preference_gps_direction_summary">GPS 나침반 방향을 사진에 저장합니다</string>
+	<string name="preference_require_location">위치 데이터 요청</string>
+	<string name="preference_require_location_summary">위치 데이터가 활성화된 경우 위치 데이터가 존재할때만 사진/동영상을 촬영합니다</string>
+
+	<string name="preference_category_online">기타</string>
+	<string name="preference_online_help">온라인 도움말</string>
+<!-- Translate me
+	<string name="preference_online_help_summary">Launch program website in your browser</string>
+-->
+	<string name="preference_donate">개발을 지원하기 위해 기부하기</string>
+	<string name="preference_donate_summary">앱이 마음에 드시면 기부를 고려해보세요. 기부용 앱을 구매하시면 됩니다 - 여기를 선택하시면 기부용 앱 관련 페이지가 열립니다. 감사합니다!</string>
+	<string name="preference_use_camera2">Camera2 API 사용</string>
+	<string name="preference_use_camera2_summary">안드로이드 5 버전의 Camera2 API - 부가 기능들을 지원하지만 아직 실험적입니다 (재시작됨)</string>
+	<string name="preference_about">오픈 카메라에 대해서</string>
+	<string name="preference_info">앱 및 디버그 정보</string>
+	<string name="preference_reset">설정 초기화</string>
+	<string name="preference_reset_summary">모든 오픈 카메라 설정을 초기화합니다</string>
+	<string name="preference_advanced">고급 기능</string>
+
+	<string name="time_1_second">1초</string>
+	<string name="time_2_seconds">2초</string>
+	<string name="time_3_seconds">3초</string>
+	<string name="time_5_seconds">5초</string>
+	<string name="time_10_seconds">10초</string>
+	<string name="time_15_seconds">15초</string>
+	<string name="time_20_seconds">20초</string>
+	<string name="time_30_seconds">0.5분</string>
+	<string name="time_1_minute">1분</string>
+	<string name="time_2_minutes">2분</string>
+	<string name="time_3_minutes">3분</string>
+	<string name="time_5_minutes">5분</string>
+	<string name="time_7_minutes">7분</string>
+	<string name="time_10_minutes">10분</string>
+	<string name="time_12_minutes">12분</string>
+	<string name="time_15_minutes">15분</string>
+	<string name="time_20_minutes">20분</string>
+	<string name="time_25_minutes">25분</string>
+	<string name="time_30_minutes">0.5시간</string>
+	<string name="time_45_minutes">45분</string>
+	<string name="time_1_hour">1시간</string>
+	<string name="time_2_hours">2시간</string>
+</resources>
