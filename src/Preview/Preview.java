@@ -4,6 +4,7 @@ import com.caddish_hedgehog.hedgecam2.MainActivity;
 import com.caddish_hedgehog.hedgecam2.MyDebug;
 import com.caddish_hedgehog.hedgecam2.Prefs;
 import com.caddish_hedgehog.hedgecam2.R;
+import com.caddish_hedgehog.hedgecam2.Sound;
 import com.caddish_hedgehog.hedgecam2.TakePhoto;
 import com.caddish_hedgehog.hedgecam2.TakeVideo;
 import com.caddish_hedgehog.hedgecam2.ToastBoxer;
@@ -417,6 +418,9 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 		if( canvasView != null ) {
 			((FrameLayout)(activity.findViewById(R.id.overlay_container))).addView(canvasView);
 		}
+		
+		Sound.setSharedPreferences(this.sharedPreferences);
+		Sound.init(this.getContext(), using_camera_2);
 	}
 	
 	public boolean isUsingCanvasView() {
@@ -878,8 +882,16 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 		if( this.using_camera_2 ) configureTransform();
 	}
 
+//	private long last_texture_update = 0;
 	@Override
 	public void onSurfaceTextureUpdated(SurfaceTexture arg0) {
+/*		if( MyDebug.LOG ) {
+			Log.d(TAG, "onSurfaceTextureUpdated()");
+			if (last_texture_update != 0) {
+				Log.d(TAG, "texture update time: " + (System.currentTimeMillis() - last_texture_update));
+			}
+			last_texture_update = System.currentTimeMillis();
+		}*/
 	}
 
 	private void configureTransform() {
@@ -1004,6 +1016,10 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 		reconnectCamera(false); // n.b., if something went wrong with video, then we reopen the camera - which may fail (or simply not reopen, e.g., if app is now paused)
 		applicationInterface.stoppedVideo(videoFileInfo.video_method, videoFileInfo.video_uri, videoFileInfo.video_filename);
 		videoFileInfo = new VideoFileInfo();
+
+		// if we change where we play the STOP_VIDEO_RECORDING sound, make sure it can't be heard in resultant video
+		if (using_camera_2)
+			Sound.playVideoStopSound();
 	}
 
 	private Context getContext() {
@@ -2944,9 +2960,6 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 			video_profile = cam_profile != null ? new VideoProfile(cam_profile) : new VideoProfile();
 		}
 
-		//video_profile.fileFormat = MediaRecorder.OutputFormat.MPEG_4;
-		//video_profile.videoCodec = MediaRecorder.VideoEncoder.H264;
-
 		if( !fps_value.equals("default") ) {
 			try {
 				int fps = Integer.parseInt(fps_value);
@@ -3086,37 +3099,38 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 				video_profile.audioChannels = 2;
 			}
 			// else keep with the value already stored in VideoProfile (set from the CamcorderProfile)
-		}
 
-		/*
-		String pref_video_output_format = applicationInterface.getRecordVideoOutputFormatPref();
-		if( MyDebug.LOG )
-			Log.d(TAG, "pref_video_output_format: " + pref_video_output_format);
-		if( pref_video_output_format.equals("output_format_default") ) {
-			// n.b., although there is MediaRecorder.OutputFormat.DEFAULT, we don't explicitly set that - rather stick with what is default in the CamcorderProfile
+			int audio_bitrate = Prefs.getRecordAudioBitRatePref();
+			if (audio_bitrate > 0)
+				video_profile.audioBitRate = audio_bitrate;
+
+			int audio_sample_rate = Prefs.getRecordAudioSampleRatePref();
+			if (audio_sample_rate > 0)
+				video_profile.audioSampleRate = audio_sample_rate;
 		}
-		else if( pref_video_output_format.equals("output_format_aac_adts") ) {
-			profile.fileFormat = MediaRecorder.OutputFormat.AAC_ADTS;
+		
+		switch (sharedPreferences.getString(Prefs.VIDEO_FORMAT, "default")) {
+			case "mpeg4_h264":
+				video_profile.fileFormat = MediaRecorder.OutputFormat.MPEG_4;
+				video_profile.videoCodec = MediaRecorder.VideoEncoder.H264;
+				video_profile.audioCodec = MediaRecorder.AudioEncoder.AAC;
+				break;
+			case "mpeg4_hevc":
+				video_profile.fileFormat = MediaRecorder.OutputFormat.MPEG_4;
+				video_profile.videoCodec = MediaRecorder.VideoEncoder.HEVC;
+				video_profile.audioCodec = MediaRecorder.AudioEncoder.AAC;
+				break;
+			case "webm":
+				video_profile.fileFormat = MediaRecorder.OutputFormat.WEBM;
+				video_profile.videoCodec = MediaRecorder.VideoEncoder.VP8;
+				video_profile.audioCodec = MediaRecorder.AudioEncoder.VORBIS;
+				video_profile.fileExtension = "webm";
+				break;
+			case "3gpp":
+				video_profile.fileFormat = MediaRecorder.OutputFormat.THREE_GPP;
+				video_profile.fileExtension = "3gp";
+				break;
 		}
-		else if( pref_video_output_format.equals("output_format_amr_nb") ) {
-			profile.fileFormat = MediaRecorder.OutputFormat.AMR_NB;
-		}
-		else if( pref_video_output_format.equals("output_format_amr_wb") ) {
-			profile.fileFormat = MediaRecorder.OutputFormat.AMR_WB;
-		}
-		else if( pref_video_output_format.equals("output_format_mpeg4") ) {
-			profile.fileFormat = MediaRecorder.OutputFormat.MPEG_4;
-			//video_recorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264 );
-			//video_recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC );
-		}
-		else if( pref_video_output_format.equals("output_format_3gpp") ) {
-			profile.fileFormat = MediaRecorder.OutputFormat.THREE_GPP;
-		}
-		else if( pref_video_output_format.equals("output_format_webm") ) {
-			profile.fileFormat = MediaRecorder.OutputFormat.WEBM;
-			profile.videoCodec = MediaRecorder.VideoEncoder.VP8;
-			profile.audioCodec = MediaRecorder.AudioEncoder.VORBIS;
-		}*/
 
 		if( MyDebug.LOG )
 			Log.d(TAG, "returning video_profile: " + video_profile);
@@ -3127,6 +3141,8 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 		final int i=(int)f;
 		if( f == i )
 			return Integer.toString(i);
+		if ( f >= 10.0f)
+			return String.format(Locale.getDefault(), "%.1f", f);
 		return String.format(Locale.getDefault(), "%.2f", f);
 	}
 
@@ -3149,7 +3165,7 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 		return width + ":" + height;
 	}
 	
-	private static String getMPString(int width, int height) {
+	public static String getMPString(int width, int height) {
 		float mp = (width*height)/1000000.0f;
 		return formatFloatToString(mp) + "MP";
 	}
@@ -3167,14 +3183,24 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 		return profile.videoFrameWidth + "x" + profile.videoFrameHeight;
 	}
 
+	public String getCamcorderProfileDescriptionAR(String quality) {
+		if( camera_controller == null )
+			return "";
+		CamcorderProfile profile = getCamcorderProfile(quality);
+		return profile.videoFrameWidth + "x" + profile.videoFrameHeight + " (" + getAspectRatio(profile.videoFrameWidth, profile.videoFrameHeight) + ")";
+	}
+
+	public String getCamcorderProfileDescriptionMedium(String quality) {
+		if( camera_controller == null )
+			return "";
+		CamcorderProfile profile = getCamcorderProfile(quality);
+		return profile.videoFrameWidth + "x" + profile.videoFrameHeight + " " + getAspectRatioMPString(profile.videoFrameWidth, profile.videoFrameHeight);
+	}
+
 	public String getCamcorderProfileDescription(String quality) {
 		if( camera_controller == null )
 			return "";
 		CamcorderProfile profile = getCamcorderProfile(quality);
-		String highest = "";
-		if( profile.quality == CamcorderProfile.QUALITY_HIGH ) {
-			highest = "Highest: ";
-		}
 		String type = "";
 		if( profile.videoFrameWidth == 3840 && profile.videoFrameHeight == 2160 ) {
 			type = "4K Ultra HD ";
@@ -3200,46 +3226,11 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 		else if( profile.videoFrameWidth == 176 && profile.videoFrameHeight == 144 ) {
 			type = "QCIF ";
 		}
-		return highest + type + profile.videoFrameWidth + "x" + profile.videoFrameHeight + " " + getAspectRatioMPString(profile.videoFrameWidth, profile.videoFrameHeight);
+		return type + profile.videoFrameWidth + "x" + profile.videoFrameHeight + " " + getAspectRatioMPString(profile.videoFrameWidth, profile.videoFrameHeight);
 	}
 
 	public double getTargetRatio() {
 		return preview_targetRatio;
-	}
-
-	private double calculateTargetRatioForPreview(Point display_size) {
-		double targetRatio;
-		// should always use wysiwig for video mode, otherwise we get incorrect aspect ratio shown when recording video (at least on Galaxy Nexus, e.g., at 640x480)
-		// also not using wysiwyg mode with video caused corruption on Samsung cameras (tested with Samsung S3, Android 4.3, front camera, infinity focus)
-		if( !Prefs.getPreviewMaxSizePref() /*|| this.is_video*/ ) {
-			if( this.is_video ) {
-				if( MyDebug.LOG )
-					Log.d(TAG, "set preview aspect ratio from video size (wysiwyg)");
-				VideoProfile profile = getVideoProfile();
-				if( MyDebug.LOG )
-					Log.d(TAG, "video size: " + profile.videoFrameWidth + " x " + profile.videoFrameHeight);
-				targetRatio = ((double)profile.videoFrameWidth) / (double)profile.videoFrameHeight;
-			}
-			else {
-				if( MyDebug.LOG )
-					Log.d(TAG, "set preview aspect ratio from photo size (wysiwyg)");
-				CameraController.Size picture_size = camera_controller.getPictureSize();
-				if( MyDebug.LOG )
-					Log.d(TAG, "picture_size: " + picture_size.width + " x " + picture_size.height);
-				targetRatio = ((double)picture_size.width) / (double)picture_size.height;
-			}
-		}
-		else {
-			if( MyDebug.LOG )
-				Log.d(TAG, "set preview aspect ratio from display size");
-			// base target ratio from display size - means preview will fill the device's display as much as possible
-			// but if the preview's aspect ratio differs from the actual photo/video size, the preview will show a cropped version of what is actually taken
-			targetRatio = ((double)display_size.x) / (double)display_size.y;
-		}
-		this.preview_targetRatio = targetRatio;
-		if( MyDebug.LOG )
-			Log.d(TAG, "targetRatio: " + targetRatio);
-		return targetRatio;
 	}
 
 	/** Returns the size in sizes that is the closest aspect ratio match to targetRatio, but (if max_size is non-null) is not
@@ -3270,15 +3261,57 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 		final double ASPECT_TOLERANCE = 0.05;
 		if( sizes == null )
 			return null;
-		if( is_video && video_high_speed ) {
-			VideoProfile profile = getVideoProfile();
-			if( MyDebug.LOG )
-				Log.d(TAG, "video size: " + profile.videoFrameWidth + " x " + profile.videoFrameHeight);
-			// preview size must match video resolution for high speed, see doc for CameraDevice.createConstrainedHighSpeedCaptureSession()
-			return new CameraController.Size(profile.videoFrameWidth, profile.videoFrameHeight);
-		}
+			
 		CameraController.Size optimalSize = null;
-		double minDiff = Double.MAX_VALUE;
+		String resolution = sharedPreferences.getString(Prefs.getPreviewResolutionPreferenceKey(), "auto");
+		
+		if ((is_video && video_high_speed) || resolution.equals("match_target")) {
+			if (is_video) {
+				VideoProfile profile = getVideoProfile();
+				if( MyDebug.LOG )
+					Log.d(TAG, "video size: " + profile.videoFrameWidth + " x " + profile.videoFrameHeight);
+				// preview size must match video resolution for high speed, see doc for CameraDevice.createConstrainedHighSpeedCaptureSession()
+				optimalSize = new CameraController.Size(profile.videoFrameWidth, profile.videoFrameHeight);
+			} else {
+				CameraController.Size picture_size = camera_controller.getPictureSize();
+				if( MyDebug.LOG )
+					Log.d(TAG, "picture_size: " + picture_size.width + " x " + picture_size.height);
+				optimalSize = new CameraController.Size(picture_size.width, picture_size.height);
+			}
+		} else if (!resolution.equals("auto")) {
+			int index = resolution.indexOf(' ');
+			if( index == -1 ) {
+				if( MyDebug.LOG )
+					Log.d(TAG, "resolution invalid format, can't find space");
+			}
+			else {
+				String resolution_w_s = resolution.substring(0, index);
+				String resolution_h_s = resolution.substring(index+1);
+				if( MyDebug.LOG ) {
+					Log.d(TAG, "resolution_w_s: " + resolution_w_s);
+					Log.d(TAG, "resolution_h_s: " + resolution_h_s);
+				}
+				try {
+					int resolution_w = Integer.parseInt(resolution_w_s);
+					if( MyDebug.LOG )
+						Log.d(TAG, "resolution_w: " + resolution_w);
+					int resolution_h = Integer.parseInt(resolution_h_s);
+					if( MyDebug.LOG )
+						Log.d(TAG, "resolution_h: " + resolution_h);
+					optimalSize = new CameraController.Size(resolution_w, resolution_h);
+				}
+				catch(NumberFormatException exception) {
+					if( MyDebug.LOG )
+						Log.d(TAG, "resolution invalid format, can't parse w or h to int");
+				}
+			}
+		}
+		
+		if (optimalSize != null) {
+			this.preview_targetRatio = ((double)optimalSize.width) / ((double)optimalSize.height);
+			return optimalSize;
+		}
+
 		Point display_size = new Point();
 		Activity activity = (Activity)this.getContext();
 		{
@@ -3300,13 +3333,52 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 			if( MyDebug.LOG )
 				Log.d(TAG, "display_size: " + display_size.x + " x " + display_size.y);
 		}
-		double targetRatio = calculateTargetRatioForPreview(display_size);
+
+		double targetRatio;
+		// should always use wysiwig for video mode, otherwise we get incorrect aspect ratio shown when recording video (at least on Galaxy Nexus, e.g., at 640x480)
+		// also not using wysiwyg mode with video caused corruption on Samsung cameras (tested with Samsung S3, Android 4.3, front camera, infinity focus)
+		if( !Prefs.getPreviewMaxSizePref() ) {
+			if( this.is_video ) {
+				if( MyDebug.LOG )
+					Log.d(TAG, "set preview aspect ratio from video size (wysiwyg)");
+				VideoProfile profile = getVideoProfile();
+				if( MyDebug.LOG )
+					Log.d(TAG, "video size: " + profile.videoFrameWidth + " x " + profile.videoFrameHeight);
+				targetRatio = ((double)profile.videoFrameWidth) / (double)profile.videoFrameHeight;
+			}
+			else {
+				if( MyDebug.LOG )
+					Log.d(TAG, "set preview aspect ratio from photo size (wysiwyg)");
+				CameraController.Size picture_size = camera_controller.getPictureSize();
+				if( MyDebug.LOG )
+					Log.d(TAG, "picture_size: " + picture_size.width + " x " + picture_size.height);
+				targetRatio = ((double)picture_size.width) / (double)picture_size.height;
+			}
+		} else {
+			if( MyDebug.LOG )
+				Log.d(TAG, "set preview aspect ratio from display size");
+
+			// base target ratio from display size - means preview will fill the device's display as much as possible
+			// but if the preview's aspect ratio differs from the actual photo/video size, the preview will show a cropped version of what is actually taken
+			targetRatio = ((double)display_size.x) / (double)display_size.y;
+		}
+		this.preview_targetRatio = targetRatio;
+		if( MyDebug.LOG )
+			Log.d(TAG, "targetRatio: " + targetRatio);
+
 		int targetHeight = Math.min(display_size.y, display_size.x);
 		if( targetHeight <= 0 ) {
 			targetHeight = display_size.y;
 		}
+
+		double minDiff = Double.MAX_VALUE;
 		// Try to find the size which matches the aspect ratio, and is closest match to display height
 		for(CameraController.Size size : sizes) {
+			if( size.width > display_size.x || size.height > display_size.y ) {
+				// Nexus 6 returns these, even though not supported?! (get green corruption lines if we allow these)
+				// Google Camera filters anything larger than height 1080, with a todo saying to use device's measurements
+				continue;
+			}
 			if( MyDebug.LOG )
 				Log.d(TAG, "	supported preview size: " + size.width + ", " + size.height);
 			double ratio = (double)size.width / size.height;
@@ -4149,6 +4221,9 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 					}
 				}
 			}
+			
+			if (sharedPreferences.getString(Prefs.SAVE_VIDEO_FOLDER, "same_as_photo").equals("folder"))
+				((MainActivity)this.getContext()).updateGalleryIcon();
 		}
 	}
 	
@@ -4166,7 +4241,7 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 			updateFocus("focus_mode_manual2", true, false, false);
 			return;
 		}
-		String focus_value = Prefs.getFocusPref(is_video);
+		String focus_value = Prefs.getFocusPref();
 		if( focus_value.length() > 0 ) {
 			if( MyDebug.LOG )
 				Log.d(TAG, "found existing focus_value: " + focus_value);
@@ -4433,7 +4508,7 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 
 			if( save ) {
 				// now save
-				Prefs.setFocusPref(focus_value, is_video);
+				Prefs.setFocusPref(focus_value);
 			}
 		}
 	}
@@ -4729,7 +4804,7 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 			long remaining_time = timer_delay;
 			public void run() {
 				if( remaining_time > 0 ) { // check in case this isn't cancelled by time we take the photo
-					applicationInterface.timerBeep(remaining_time);
+					Sound.timerBeep(remaining_time);
 				}
 				remaining_time -= 1000;
 			}
@@ -4885,7 +4960,7 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 			Log.d(TAG, "takePicture exit");
 	}
 	
-	private VideoFileInfo createVideoFile() {
+	private VideoFileInfo createVideoFile(String extension) {
 		if( MyDebug.LOG )
 			Log.d(TAG, "createVideoFile");
 		try {
@@ -4899,7 +4974,7 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 			if( method == ApplicationInterface.VIDEOMETHOD_FILE ) {
 				/*if( true )
 					throw new IOException(); // test*/
-				File videoFile = applicationInterface.createOutputVideoFile(prefix);
+				File videoFile = applicationInterface.createOutputVideoFile(prefix, extension);
 				video_filename = videoFile.getAbsolutePath();
 				if( MyDebug.LOG )
 					Log.d(TAG, "save to: " + video_filename);
@@ -4907,7 +4982,7 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 			else {
 				Uri uri;
 				if( method == ApplicationInterface.VIDEOMETHOD_SAF ) {
-					uri = applicationInterface.createOutputVideoSAF(prefix);
+					uri = applicationInterface.createOutputVideoSAF(prefix, extension);
 				}
 				else {
 					uri = applicationInterface.createOutputVideoUri();
@@ -4935,7 +5010,8 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 		if( MyDebug.LOG )
 			Log.d(TAG, "startVideoRecording");
 		focus_success = FOCUS_DONE; // clear focus rectangle (don't do for taking photos yet)
-		VideoFileInfo info = createVideoFile();
+		final VideoProfile profile = getVideoProfile();
+		VideoFileInfo info = createVideoFile(profile.fileExtension);
 		if( info == null ) {
 			videoFileInfo = new VideoFileInfo();
 			applicationInterface.onFailedCreateVideoFileError();
@@ -4943,7 +5019,6 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 		}
 		else {
 			videoFileInfo = info;
-			final VideoProfile profile = getVideoProfile();
 			if( MyDebug.LOG ) {
 				Log.d(TAG, "current_video_quality: " + this.video_quality_handler.getCurrentVideoQualityIndex());
 				if (this.video_quality_handler.getCurrentVideoQualityIndex() != -1)
@@ -4951,11 +5026,6 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 				Log.d(TAG, "resolution " + profile.videoFrameWidth + " x " + profile.videoFrameHeight);
 				Log.d(TAG, "bit rate " + profile.videoBitRate);
 			}
-
-			boolean enable_sound = Prefs.getShutterSoundPref();
-			if( MyDebug.LOG )
-				Log.d(TAG, "enable_sound? " + enable_sound);
-			camera_controller.enableShutterSound(enable_sound); // Camera2 API can disable video sound too
 
 			MediaRecorder local_video_recorder = new MediaRecorder();
 			this.camera_controller.unlock();
@@ -4993,6 +5063,11 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 			});
 
 			camera_controller.initVideoRecorderPrePrepare(local_video_recorder);
+
+			// if we change where we play the START_VIDEO_RECORDING sound, make sure it can't be heard in resultant video
+			if (using_camera_2)
+				Sound.playVideoStartSound();
+
 			if( profile.no_audio_permission ) {
 				showToast(null, R.string.permission_record_audio_not_available);
 			}
@@ -5527,7 +5602,7 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 			public void onShutter() {
 				if( MyDebug.LOG )
 					Log.d(TAG, "onShutter");
-				applicationInterface.shutterSound();
+				Sound.playShutterSound();
 			}
 		};
 
@@ -5658,9 +5733,6 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 				else {
 					success = true;
 				}
-				if ((android.os.Build.VERSION.SDK_INT<android.os.Build.VERSION_CODES.JELLY_BEAN_MR1 || !can_disable_shutter_sound) && !Prefs.getShutterSoundPref()){
-					applicationInterface.restoreSound();
-				}
 			}
 
 			public void onRawPictureTaken(DngCreator dngCreator, Image image) {
@@ -5707,16 +5779,13 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 		{
 			camera_controller.setRotation(getImageVideoRotation());
 
-			boolean enable_sound = Prefs.getShutterSoundPref();
+			boolean enable_sound = true;
 			if( is_video && isVideoRecording() )
 				enable_sound = false; // always disable shutter sound if we're taking a photo while recording video
 			if( MyDebug.LOG )
 				Log.d(TAG, "enable_sound? " + enable_sound);
-			if (android.os.Build.VERSION.SDK_INT>=android.os.Build.VERSION_CODES.JELLY_BEAN_MR1 && can_disable_shutter_sound){
-				camera_controller.enableShutterSound(enable_sound);
-			} else if (!enable_sound) {
-				applicationInterface.disableSound();
-			}
+			Sound.enableShutterSound(enable_sound, camera_controller);
+
 			if( using_camera_2 ) {
 				boolean use_camera2_fast_burst = Prefs.useCamera2FastBurst();
 				if( MyDebug.LOG )
@@ -6708,6 +6777,8 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 				Log.e(TAG, "onResume: state is CAMERAOPENSTATE_CLOSING, but close_camera_task is null");
 			}
 		}
+		
+		Sound.release();
 	}
 
 	public void onSaveInstanceState(Bundle state) {
@@ -6728,6 +6799,11 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 	}
 
 	private void showToast(final ToastBoxer clear_toast, final String message, final int offset_y_dp) {
+		if (((MainActivity)this.getContext()).isSettingsOpened()) {
+			Toast.makeText(this.getContext(), message, Toast.LENGTH_LONG).show();
+			return;
+		}
+		
 		if( !Prefs.getShowToastsPref() ) {
 			return;
 		}

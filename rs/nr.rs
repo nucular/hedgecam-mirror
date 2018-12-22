@@ -23,17 +23,19 @@ void init_max_min() {
 }
 
 void __attribute__((kernel)) calc_max(ushort3 pixel, uint32_t x, uint32_t y) {
-	ushort pixel_max = max(pixel.r, pixel.g);
-	pixel_max = max(pixel_max, pixel.b);
+	uint3 pixel_i = convert_uint3(pixel);
+	uint32_t pixel_max = max(pixel_i.r, pixel_i.g);
+	pixel_max = max(pixel_max, pixel_i.b);
 	
-	rsAtomicMax(&max_min[0], (uint32_t)pixel_max);
+	rsAtomicMax(&max_min[0], pixel_max);
 }
 
 void __attribute__((kernel)) calc_min_max(ushort3 pixel, uint32_t x, uint32_t y) {
-	ushort pixel_min = min(pixel.r, pixel.g);
-	pixel_min = min(pixel_min, pixel.b);
+	uint3 pixel_i = convert_uint3(pixel);
+	uint32_t pixel_min = min(pixel_i.r, pixel_i.g);
+	pixel_min = min(pixel_min, pixel_i.b);
 	
-	rsAtomicMin(&max_min[1], (uint32_t)pixel_min);
+	rsAtomicMin(&max_min[1], pixel_min);
 	
 	calc_max(pixel, x, y);
 }
@@ -41,35 +43,35 @@ void __attribute__((kernel)) calc_min_max(ushort3 pixel, uint32_t x, uint32_t y)
 uchar4 __attribute__((kernel)) finish_l(uint32_t x, uint32_t y) {
 	float3 pixel = convert_float3(rsGetElementAt_ushort3(alloc_avg, x, y));
 
-	uchar4 out;
-    out.r = (uchar)clamp(pixel.r/fDivider, 0.0f, 255.0f);
-    out.g = (uchar)clamp(pixel.g/fDivider, 0.0f, 255.0f);
-    out.b = (uchar)clamp(pixel.b/fDivider, 0.0f, 255.0f);
-    out.a = 255;
+	float4 out;
+    out.r = clamp(pixel.r/fDivider, 0.0f, 255.0f);
+    out.g = clamp(pixel.g/fDivider, 0.0f, 255.0f);
+    out.b = clamp(pixel.b/fDivider, 0.0f, 255.0f);
+    out.a = 255.0f;
 
-	return out;
+	return convert_uchar4(out);
 }
 
 uchar4 __attribute__((kernel)) finish_ls(uint32_t x, uint32_t y) {
 	float3 pixel = convert_float3(rsGetElementAt_ushort3(alloc_avg, x, y));
 
-	uchar4 out;
-    out.r = (uchar)clamp((pixel.r-fMin)/fDivider, 0.0f, 255.0f);
-    out.g = (uchar)clamp((pixel.g-fMin)/fDivider, 0.0f, 255.0f);
-    out.b = (uchar)clamp((pixel.b-fMin)/fDivider, 0.0f, 255.0f);
-    out.a = 255;
+	float4 out;
+    out.r = clamp((pixel.r-fMin)/fDivider, 0.0f, 255.0f);
+    out.g = clamp((pixel.g-fMin)/fDivider, 0.0f, 255.0f);
+    out.b = clamp((pixel.b-fMin)/fDivider, 0.0f, 255.0f);
+    out.a = 255.0f;
 
-	return out;
+	return convert_uchar4(out);
 }
 
 uchar4 __attribute__((kernel)) finish(uint32_t x, uint32_t y) {
 	ushort3 pixel = rsGetElementAt_ushort3(alloc_avg, x, y);
 
-	uchar4 out;
-    out.r = (uchar)clamp(pixel.r/divider, 0, 255);
-    out.g = (uchar)clamp(pixel.g/divider, 0, 255);
-    out.b = (uchar)clamp(pixel.b/divider, 0, 255);
+	ushort4 out;
+    out.r = clamp(pixel.r/divider, 0, 255);
+    out.g = clamp(pixel.g/divider, 0, 255);
+    out.b = clamp(pixel.b/divider, 0, 255);
     out.a = 255;
 
-	return out;
+	return convert_uchar4(out);
 }

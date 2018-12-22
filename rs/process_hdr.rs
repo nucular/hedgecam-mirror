@@ -3,9 +3,11 @@
 #pragma rs_fp_relaxed
 
 rs_allocation bitmap0;
+rs_allocation bitmap1;
 rs_allocation bitmap2;
 
 int offset_x0 = 0, offset_y0 = 0;
+int offset_x1 = 0, offset_y1 = 0;
 int offset_x2 = 0, offset_y2 = 0;
 
 float parameter_A0 = 1.0f;
@@ -91,14 +93,6 @@ static uchar4 tonemap(float3 hdr) {
             out.g = (uchar)(scale * hdr.g + 0.5f);
             out.b = (uchar)(scale * hdr.b + 0.5f);
             out.a = 255;
-            /*int test_r = (int)(scale * hdr.r + 0.5f);
-            int test_g = (int)(scale * hdr.g + 0.5f);
-            int test_b = (int)(scale * hdr.b + 0.5f);
-            if( test_r > 255 || test_g > 255 || test_b > 255 ) {
-                out.r = 255;
-                out.g = 0;
-                out.b = 255;
-            }*/
             break;
         }
 	    case tonemap_algorithm_reinhard_new_c:
@@ -148,25 +142,10 @@ static uchar4 tonemap(float3 hdr) {
 	    }
 	}
 
-    /*
-    // test
-	if( x+offset_x0 < 0 || y+offset_y0 < 0 || x+offset_x0 >= rsAllocationGetDimX(bitmap0) || y+offset_y0 >= rsAllocationGetDimY(bitmap0) ) {
-    	out.r = 255;
-    	out.g = 0;
-    	out.b = 255;
-    	out.a = 255;
-	}
-	else if( x+offset_x2 < 0 || y+offset_y2 < 0 || x+offset_x2 >= rsAllocationGetDimX(bitmap2) || y+offset_y2 >= rsAllocationGetDimY(bitmap2) ) {
-    	out.r = 255;
-    	out.g = 255;
-    	out.b = 0;
-    	out.a = 255;
-	}
-	*/
     return out;
 }
 
-uchar4 __attribute__((kernel)) hdr(uchar4 in, uint32_t x, uint32_t y) {
+uchar4 __attribute__((kernel)) hdr(uint32_t x, uint32_t y) {
     int32_t ix = x;
     int32_t iy = y;
     const int max_bitmaps_c = 3;
@@ -174,76 +153,14 @@ uchar4 __attribute__((kernel)) hdr(uchar4 in, uint32_t x, uint32_t y) {
 	const int mid_indx = (n_bitmaps-1)/2;
 	uchar4 pixels[max_bitmaps_c];
 
-	float parameter_A[max_bitmaps_c];
-	float parameter_B[max_bitmaps_c];
-
-    parameter_A[0] = parameter_A0;
-    parameter_B[0] = parameter_B0;
-    parameter_A[1] = parameter_A1;
-    parameter_B[1] = parameter_B1;
-    parameter_A[2] = parameter_A2;
-    parameter_B[2] = parameter_B2;
-
-	if( ix+offset_x0 >= 0 && iy+offset_y0 >= 0 && ix+offset_x0 < rsAllocationGetDimX(bitmap0) && iy+offset_y0 < rsAllocationGetDimY(bitmap0) ) {
-    	pixels[0] = rsGetElementAt_uchar4(bitmap0, x+offset_x0, y+offset_y0);
-	}
-	else {
-    	pixels[0] = in;
-        parameter_A[0] = parameter_A[mid_indx];
-        parameter_B[0] = parameter_B[mid_indx];
-	}
-
-    // middle image is not offset
-    pixels[1] = in;
-
- 	if( ix+offset_x2 >= 0 && iy+offset_y2 >= 0 && ix+offset_x2 < rsAllocationGetDimX(bitmap2) && iy+offset_y2 < rsAllocationGetDimY(bitmap2) ) {
-    	pixels[2] = rsGetElementAt_uchar4(bitmap2, x+offset_x2, y+offset_y2);
-	}
-	else {
-    	pixels[2] = in;
-        parameter_A[2] = parameter_A[mid_indx];
-        parameter_B[2] = parameter_B[mid_indx];
-	}
+    pixels[0] = rsGetElementAt_uchar4(bitmap0, x+offset_x0, y+offset_y0);
+    pixels[1] = rsGetElementAt_uchar4(bitmap1, x+offset_x1, y+offset_y1);
+    pixels[2] = rsGetElementAt_uchar4(bitmap2, x+offset_x2, y+offset_y2);
 
 	float3 hdr = (float3){0.0f, 0.0f, 0.0f};
 	float sum_weight = 0.0f;
 
 	// calculateHDR
-	if( false )
-	{
-        for(int i=0;i<n_bitmaps;i++) {
-            float3 rgb = convert_float3(pixels[i].rgb);
-            /*if( pixels[i].r == 255 || pixels[i].g == 255 || pixels[i].b == 255 ) {
-                // images should be ordered from dark to bright
-                // if we reach a saturated pixel, then don't want any contribution from it; also we
-                // assume that all brighter images have saturated pixels (if they don't, it must be noise)
-                // if this is the first image, all pixels are saturated
-                if( i == 0 ) {
-                    // response function
-                    rgb = parameter_A[1] * rgb + parameter_B[1];
-                    hdr = rgb;
-                    sum_weight = 1.0f;
-                }
-                break;
-            }*/
-            float avg = (rgb.r+rgb.g+rgb.b) / 3.0f;
-            // weight_scale_c chosen so that 0 and 255 map to a non-zero weight of 1.0/127.5
-            float weight = 1.0f - weight_scale_c * fabs( 127.5f - avg );
-            /*const float safe_range_c = 96.0f;
-            float diff = fabs( avg - 127.5f );
-            float weight = 1.0f;
-            if( diff > safe_range_c ) {
-                // scaling chosen so that 0 and 255 map to a non-zero weight of 0.01
-                weight = 1.0f - 0.99f * (diff - safe_range_c) / (127.5f - safe_range_c);
-            }*/
-
-            // response function
-            rgb = parameter_A[i] * rgb + parameter_B[i];
-
-            hdr += weight * rgb;
-            sum_weight += weight;
-        }
-	}
 	// assumes 3 bitmaps, with middle bitmap being the "base" exposure, and first image being darker, third image being brighter
 	{
 		//const float safe_range_c = 64.0f;
@@ -258,7 +175,7 @@ uchar4 __attribute__((kernel)) hdr(uchar4 in, uint32_t x, uint32_t y) {
 		}
 
 		// response function
-		rgb = parameter_A[mid_indx] * rgb + parameter_B[mid_indx];
+		rgb = parameter_A1 * rgb + parameter_B1;
 
 		hdr += weight * rgb;
 		sum_weight += weight;
@@ -285,7 +202,7 @@ uchar4 __attribute__((kernel)) hdr(uchar4 in, uint32_t x, uint32_t y) {
 					weight *= 1.0f - 0.99f * (diff - safe_range_c) / (127.5f - safe_range_c);
 				}*/
 
-				rgb = parameter_A[mid_indx+1] * rgb + parameter_B[mid_indx+1];
+				rgb = parameter_A2 * rgb + parameter_B2;
 			}
 			else {
                 rgb = convert_float3(pixels[mid_indx-1].rgb);
@@ -297,7 +214,7 @@ uchar4 __attribute__((kernel)) hdr(uchar4 in, uint32_t x, uint32_t y) {
 					weight *= 1.0f - 0.99f * (diff - safe_range_c) / (127.5f - safe_range_c);
 				}*/
 
-				rgb = parameter_A[mid_indx-1] * rgb + parameter_B[mid_indx-1];
+				rgb = parameter_A0 * rgb + parameter_B0;
 			}
 
             float value = fmax(rgb.r, rgb.g);

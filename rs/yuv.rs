@@ -11,7 +11,7 @@ rs_allocation inY,inU,inV;
 uchar4 __attribute__((kernel)) YUV420ToRGB(uint32_t x, uint32_t y) {
 	uint uvIndex = uv_pixel_stride * (x/2) + uv_row_stride * (y/2);
 
-	float Y = (float)rsGetElementAt_uchar(inY, x, y);
+	float Y = (float)rsGetElementAt_uchar(inY, y_pixel_stride * x + y_row_stride * y);
 	float U = (float)rsGetElementAt_uchar(inU, uvIndex)-128;
 	float V = (float)rsGetElementAt_uchar(inV, uvIndex)-128;
 
@@ -31,7 +31,7 @@ uchar4 __attribute__((kernel)) YUV420ToRGB(uint32_t x, uint32_t y) {
 uchar4 __attribute__((kernel)) YUV420ToRGB_wide_range(uint32_t x, uint32_t y) {
 	uint uvIndex = uv_pixel_stride * (x/2) + uv_row_stride * (y/2);
 
-	float Y = (float)rsGetElementAt_uchar(inY, x, y);
+	float Y = (float)rsGetElementAt_uchar(inY, y_pixel_stride * x + y_row_stride * y);
 	float U = (float)rsGetElementAt_uchar(inU, uvIndex)-128;
 	float V = (float)rsGetElementAt_uchar(inV, uvIndex)-128;
 
@@ -49,7 +49,7 @@ uchar4 __attribute__((kernel)) YUV420ToRGB_wide_range(uint32_t x, uint32_t y) {
 uchar4 __attribute__((kernel)) YUV420ToRGB_saturated(uint32_t x, uint32_t y) {
 	uint uvIndex = uv_pixel_stride * (x/2) + uv_row_stride * (y/2);
 
-	float Y = (float)rsGetElementAt_uchar(inY, x, y);
+	float Y = (float)rsGetElementAt_uchar(inY, y_pixel_stride * x + y_row_stride * y);
 	float U = (float)rsGetElementAt_uchar(inU, uvIndex)-128;
 	float V = (float)rsGetElementAt_uchar(inV, uvIndex)-128;
 

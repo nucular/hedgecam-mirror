@@ -3,6 +3,7 @@ package com.caddish_hedgehog.hedgecam2.CameraController;
 import com.caddish_hedgehog.hedgecam2.MyDebug;
 
 import java.io.Serializable;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -13,6 +14,7 @@ import android.graphics.SurfaceTexture;
 import android.hardware.camera2.DngCreator;
 import android.location.Location;
 import android.media.Image;
+import android.media.Image.Plane;
 import android.media.MediaRecorder;
 import android.util.Log;
 import android.view.SurfaceHolder;
@@ -201,7 +203,17 @@ public abstract class CameraController {
 	
 	public static class Photo {
 		public byte [] jpeg;
-		public Image image;
+
+		public int width;
+		public int height;
+		public byte [] y;
+		public byte [] u;
+		public byte [] v;
+		public int pixelStrideY;
+		public int rowStrideY;
+		public int pixelStrideUV;
+		public int rowStrideUV;
+
 		public int orientation = 0;
 		
 		public Photo(byte [] jpeg) {
@@ -209,8 +221,60 @@ public abstract class CameraController {
 		}
 
 		public Photo(Image image, int orientation) {
-			this.image = image;
+			setYUV(image);
 			this.orientation = orientation;
+		}
+
+		public void setYUV(Image image) {
+			long time_ms = System.currentTimeMillis();
+
+			this.width = image.getWidth();
+			this.height = image.getHeight();
+
+			Plane[] planes = image.getPlanes();
+			if( MyDebug.LOG )
+				Log.d(TAG, "YUV performance: time after getPlanes: " + (System.currentTimeMillis() - time_ms));
+
+			ByteBuffer buffer = planes[0].getBuffer();
+			if (buffer.hasArray()) {
+				this.y = buffer.array();
+				if( MyDebug.LOG )
+					Log.d(TAG, "YUV performance: time after get buffer Y: " + (System.currentTimeMillis() - time_ms));
+			} else {
+				this.y = new byte[buffer.remaining()];
+				buffer.get(this.y);
+				if( MyDebug.LOG )
+					Log.d(TAG, "YUV performance: time after copying buffer Y: " + (System.currentTimeMillis() - time_ms));
+			}
+
+			buffer = planes[1].getBuffer();
+			if (buffer.hasArray()) {
+				this.u = buffer.array();
+				if( MyDebug.LOG )
+					Log.d(TAG, "YUV performance: time after get buffer U: " + (System.currentTimeMillis() - time_ms));
+			} else {
+				this.u = new byte[buffer.remaining()];
+				buffer.get(this.u);
+				if( MyDebug.LOG )
+					Log.d(TAG, "YUV performance: time after copying buffer U: " + (System.currentTimeMillis() - time_ms));
+			}
+
+			buffer = planes[2].getBuffer();
+			if (buffer.hasArray()) {
+				this.v = buffer.array();
+				if( MyDebug.LOG )
+					Log.d(TAG, "YUV performance: time after get buffer V: " + (System.currentTimeMillis() - time_ms));
+			} else {
+				this.v = new byte[buffer.remaining()];
+				buffer.get(this.v);
+				if( MyDebug.LOG )
+					Log.d(TAG, "YUV performance: time after copying buffer V: " + (System.currentTimeMillis() - time_ms));
+			}
+
+			this.pixelStrideY = planes[0].getPixelStride();
+			this.rowStrideY = planes[0].getRowStride();
+			this.pixelStrideUV = planes[1].getPixelStride();
+			this.rowStrideUV = planes[1].getRowStride();
 		}
 	}
 	
@@ -429,7 +493,7 @@ public abstract class CameraController {
 	public abstract void setRotation(int rotation);
 	public abstract void setLocationInfo(Location location);
 	public abstract void removeLocationInfo();
-	public abstract void enableShutterSound(boolean enabled);
+	public void enableShutterSound(boolean enabled) {};
 	public void setPreviewMaxExposure(int value) {};
 	public void useIsoForExpoBracketing(boolean value) {};
 	public abstract boolean setFocusAndMeteringArea(List<CameraController.Area> areas);

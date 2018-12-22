@@ -4,7 +4,8 @@ import com.caddish_hedgehog.hedgecam2.CameraController.CameraController;
 import com.caddish_hedgehog.hedgecam2.CameraController.CameraControllerManager2;
 import com.caddish_hedgehog.hedgecam2.Preview.Preview;
 import com.caddish_hedgehog.hedgecam2.Preview.VideoProfile;
-import com.caddish_hedgehog.hedgecam2.UI.FolderChooserDialog;
+import com.caddish_hedgehog.hedgecam2.Sound;
+import com.caddish_hedgehog.hedgecam2.UI.FileListDialog;
 import com.caddish_hedgehog.hedgecam2.UI.MainUI;
 import com.caddish_hedgehog.hedgecam2.UI.PopupView;
 
@@ -22,18 +23,18 @@ import android.content.pm.PackageInfo;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
+import android.graphics.Paint;
 import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
 import android.hardware.camera2.CameraMetadata;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.media.AudioAttributes;
-import android.media.AudioManager;
 import android.media.CamcorderProfile;
-import android.media.SoundPool;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -67,11 +68,9 @@ import android.renderscript.RSInvalidStateException;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
-import android.speech.tts.TextToSpeech;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
-import android.util.SparseIntArray;
 import android.view.GestureDetector;
 import android.view.GestureDetector.SimpleOnGestureListener;
 import android.view.KeyEvent;
@@ -91,6 +90,12 @@ import android.widget.ZoomControls;
  */
 public class MainActivity extends Activity implements AudioListener.AudioListenerCallback {
 	private static final String TAG = "HedgeCam/MainActivity";
+	
+	private static final int SAF_CODE_SAVE_FOLDER = 42;
+	private static final int SAF_CODE_SAVE_VIDEO_FOLDER = 45;
+	private static final int SAF_CODE_GHOST_IMAGE = 43;
+	public static final int SAF_CODE_OPEN_BACKUP = 44;
+
 	private SensorManager mSensorManager;
 	private Sensor mSensorAccelerometer;
 	private Sensor mSensorMagnetic;
@@ -115,13 +120,6 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 	private boolean screen_is_locked; // whether screen is "locked" - this is Open Camera's own lock to guard against accidental presses, not the standard Android lock
 	private final Map<Integer, Bitmap> preloaded_bitmap_resources = new Hashtable<>();
 	private ValueAnimator gallery_save_anim;
-
-	private SoundPool sound_pool;
-	private SparseIntArray sound_ids;
-	private int sound_shutter = 0;
-	
-	private TextToSpeech textToSpeech;
-	private boolean textToSpeechSuccess;
 	
 	private AudioListener audio_listener;
 	private int audio_noise_sensitivity = -1;
@@ -138,6 +136,7 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 	private boolean block_startup_toast = false; // used when returning from Settings/Popup - if we're displaying a toast anyway, don't want to display the info toast too
 	
 	private boolean fullscreen = false;
+	private boolean settingsOpened = false;
 	
 	private final int[] buttons_events = {
 		KeyEvent.KEYCODE_HEADSETHOOK,
@@ -263,7 +262,6 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 		// set up components
 		mainUI = new MainUI(this);
 		mainUI.updateOrientationPrefs(sharedPreferences);
-		mainUI.shutter_icon_material = sharedPreferences.getString(Prefs.SHUTTER_BUTTON_STYLE, "hedgecam").equals("material");
 		applicationInterface = new MyApplicationInterface(this, savedInstanceState);
 		if( MyDebug.LOG )
 			Log.d(TAG, "onCreate: time after creating application interface: " + (System.currentTimeMillis() - debug_time));
@@ -491,29 +489,6 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 		if( MyDebug.LOG )
 			Log.d(TAG, "onCreate: time after preloading icons: " + (System.currentTimeMillis() - debug_time));
 
-		// initialise text to speech engine
-		textToSpeechSuccess = false;
-		// run in separate thread so as to not delay startup time
-		new Thread(new Runnable() {
-			public void run() {
-				textToSpeech = new TextToSpeech(MainActivity.this, new TextToSpeech.OnInitListener() {
-					@Override
-					public void onInit(int status) {
-						if( MyDebug.LOG )
-							Log.d(TAG, "TextToSpeech initialised");
-						if( status == TextToSpeech.SUCCESS ) {
-							textToSpeechSuccess = true;
-							if( MyDebug.LOG )
-								Log.d(TAG, "TextToSpeech succeeded");
-						}
-						else {
-							if( MyDebug.LOG )
-								Log.d(TAG, "TextToSpeech failed");
-						}
-					}
-				});
-			}
-		}).start();
 
 		selfie_mode = sharedPreferences.getBoolean(Prefs.SELFIE_MODE, false);
 		audio_control = sharedPreferences.getBoolean(Prefs.AUDIO_CONTROL, false);
@@ -734,14 +709,6 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 			entry.getValue().recycle();
 		}
 		preloaded_bitmap_resources.clear();
-		if( textToSpeech != null ) {
-			// http://stackoverflow.com/questions/4242401/tts-error-leaked-serviceconnection-android-speech-tts-texttospeech-solved
-			if( MyDebug.LOG )
-				Log.d(TAG, "free textToSpeech");
-			textToSpeech.stop();
-			textToSpeech.shutdown();
-			textToSpeech = null;
-		}
 		super.onDestroy();
 	}
 	
@@ -960,8 +927,7 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 			if (fragment == null)
 				openSettings();
 /*			else {
-				getFragmentManager().beginTransaction().remove(fragment).commit();
-				getFragmentManager().popBackStack();
+				forceCloseSettings();
 				closeSettings();
 			}*/
 			return true;
@@ -1060,7 +1026,6 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 		orientationEventListener.enable();
 
 		initLocation();
-		initSound();
 
 		updateGalleryIcon(); // update in case images deleted whilst idle
 
@@ -1109,10 +1074,8 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 		freeSpeechRecognizer();
 		applicationInterface.getLocationSupplier().freeLocationListeners();
 		applicationInterface.getGyroSensor().stopRecording();
-		releaseSound();
 		applicationInterface.clearLastImages(); // this should happen when pausing the preview, but call explicitly just to be safe
 		preview.onPause();
-		applicationInterface.restoreSound();
 		if (fullscreen) setFullscreen();
 		if( MyDebug.LOG ) {
 			Log.d(TAG, "onPause: total time to pause: " + (System.currentTimeMillis() - debug_time));
@@ -1330,11 +1293,6 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 		return mainUI.popupIsOpen();
 	}
 	
-	// for testing
-	public View getPopupButton(String key) {
-		return mainUI.getPopupButton(key);
-	}
-	
 	public Bitmap getPreloadedBitmap(int resource) {
 		return this.preloaded_bitmap_resources.get(resource);
 	}
@@ -1355,6 +1313,7 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 		private boolean need_reconnect;
 		private boolean need_restart;
 		private boolean need_update_overlay;
+		private boolean need_reload_sound;
 
 		void startListening() {
 			if( MyDebug.LOG )
@@ -1362,6 +1321,7 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 			need_reconnect = false;
 			need_restart = false;
 			need_update_overlay = false;
+			need_reload_sound = false;
 
 			// n.b., registerOnSharedPreferenceChangeListener warns that we must keep a reference to the listener (which
 			// is this class) as long as we want to listen for changes, otherwise the listener may be garbage collected!
@@ -1380,9 +1340,6 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 				Log.d(TAG, "onSharedPreferenceChanged: " + key);
 			//fixme
 			switch( key ) {
-				case Prefs.SHUTTER_BUTTON_STYLE:
-					mainUI.shutter_icon_material = sharedPreferences.getString(Prefs.SHUTTER_BUTTON_STYLE, "hedgecam").equals("material");
-					break;
 				case Prefs.IND_FREQ:
 				case Prefs.IND_SLOW_IF_BUSY:
 					preview.updateTickInterval();
@@ -1403,11 +1360,26 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 					break;
 				case Prefs.GHOST_IMAGE:
 				case Prefs.GHOST_IMAGE_SOURCE:
+				case Prefs.GHOST_IMAGE_FILE:
 				case Prefs.GHOST_IMAGE_FILE_SAF:
 				case Prefs.GHOST_IMAGE_ALPHA:
 					need_update_overlay = true;
 					break;
-				case Prefs.RAW:
+				case Prefs.SHUTTER_SOUND:
+				case Prefs.VIDEO_SOUND:
+				case Prefs.TIMER_BEEP:
+				case Prefs.TIMER_SPEAK:
+				case Prefs.TIMER_START_SOUND:
+				case Prefs.FACE_DETECTION_SOUND:
+				case Prefs.SOUND_VOLUME:
+				case Prefs.AUDIO_STREAM:
+					need_reload_sound = true;
+					break;
+				case "camera_resolution_0":
+				case "camera_resolution_1":
+				case "camera_resolution_2":
+				case Prefs.QUALITY:
+				case Prefs.IMAGE_FORMAT:
 				case Prefs.IMMERSIVE_MODE:
 				case Prefs.FACE_DETECTION:
 				case Prefs.ROTATE_PREVIEW:
@@ -1467,9 +1439,16 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 				case Prefs.VIDEO_FPS:
 				case Prefs.VIDEO_LOG_PROFILE:
 				case Prefs.LOCK_PREVIEW_FPS_TO_VIDEO_FPS:
+				case "preview_resolution_0":
+				case "preview_resolution_1":
+				case "preview_resolution_2":
+				case "preview_resolution_0_video":
+				case "preview_resolution_1_video":
+				case "preview_resolution_2_video":
 					need_reconnect = true;
 					preview.closeCamera();
 					break;
+				case Prefs.SHUTTER_BUTTON_STYLE:
 				case Prefs.SHOW_WHEN_LOCKED:
 				case Prefs.MULTITOUCH_ZOOM:
 				case Prefs.PREVIEW_SURFACE:
@@ -1489,6 +1468,9 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 		}
 		boolean needUpdateOverlay() {
 			return need_update_overlay;
+		}
+		boolean needReloadSound() {
+			return need_reload_sound;
 		}
 	}
 	
@@ -1648,17 +1630,19 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 		// use commitAllowingStateLoss() instead of commit(), does to "java.lang.IllegalStateException: Can not perform this action after onSaveInstanceState" crash seen on Google Play
 		// see http://stackoverflow.com/questions/7575921/illegalstateexception-can-not-perform-this-action-after-onsaveinstancestate-wit
 		getFragmentManager().beginTransaction().add(R.id.prefs_container, fragment, "PREFERENCE_FRAGMENT").addToBackStack(null).commitAllowingStateLoss();
+		
+		settingsOpened = true;
 	}
 	
 	public void closeSettings() {
 		if( MyDebug.LOG )
 			Log.d(TAG, "closeSettings");
+			
+		settingsOpened = false;
 
 		if( preferencesListener.needRestart() ) {
 			preview.onPause();
-			Intent i = getBaseContext().getPackageManager().getLaunchIntentForPackage( getBaseContext().getPackageName() );
-			i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-			startActivity(i);
+			recreate();
 			return;
 		}
 
@@ -1674,6 +1658,9 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 		preview.setCameraDisplayOrientation(); // need to call in case the preview rotation option was changed
 		if( preferencesListener.needUpdateOverlay() ) {
 			mainUI.setOverlayImage();
+		}
+		if (preferencesListener.needReloadSound()) {
+			Sound.reload();
 		}
 		if (!mainUI.inImmersiveMode()) {
 			mainUI.showGUI(true);
@@ -1799,9 +1786,6 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 			preview.updateFocus(saved_focus_value, true, false);
 		}*/
 		
-		releaseSound();
-		initSound();
-		
 		applicationInterface.onPrefsChanged();
 
 		if( MyDebug.LOG ) {
@@ -1811,6 +1795,10 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 
 	private MyPreferenceFragment getPreferenceFragment() {
 		return (MyPreferenceFragment)getFragmentManager().findFragmentByTag("PREFERENCE_FRAGMENT");
+	}
+	
+	public boolean isSettingsOpened() {
+		return settingsOpened;
 	}
 	
 	@Override
@@ -2083,107 +2071,128 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 		container.setAlpha(show ? 0.0f : 1.0f);
 	}
 	
-	/** Shows the default "blank" gallery icon, when we don't have a thumbnail available.
-	 */
-	private void updateGalleryIconToBlank() {
-		if( MyDebug.LOG )
-			Log.d(TAG, "updateGalleryIconToBlank");
-		ImageButton galleryButton = (ImageButton) this.findViewById(R.id.gallery);
-		int bottom = galleryButton.getPaddingBottom();
-		int top = galleryButton.getPaddingTop();
-		int right = galleryButton.getPaddingRight();
-		int left = galleryButton.getPaddingLeft();
-		/*if( MyDebug.LOG )
-			Log.d(TAG, "padding: " + bottom);*/
-		galleryButton.setImageBitmap(null);
-		galleryButton.setImageResource(R.drawable.gallery_blank);
-		// workaround for setImageResource also resetting padding, Android bug
-		galleryButton.setPadding(left, top, right, bottom);
-		gallery_bitmap = null;
-	}
-
-	/** Shows a thumbnail for the gallery icon.
-	 */
-	void updateGalleryIcon(Bitmap thumbnail) {
-		if( MyDebug.LOG )
-			Log.d(TAG, "updateGalleryIcon: " + thumbnail);
-			
-		Bitmap new_thumbnail = null;
-		int width = thumbnail.getWidth();
-		int height = thumbnail.getHeight();
-		if (width > height)
-			new_thumbnail = Bitmap.createBitmap(thumbnail, (int)((width-height)/2), 0, height, height);
-		else if (height > width)
-			new_thumbnail = Bitmap.createBitmap(thumbnail, 0, (int)((height-width)/2), width, width);
-		else
-			new_thumbnail = thumbnail;
-
-		ImageButton galleryButton = (ImageButton) this.findViewById(R.id.gallery);
-		galleryButton.setImageBitmap(new_thumbnail);
-		if (gallery_bitmap != null) gallery_bitmap.recycle();
-		gallery_bitmap = new_thumbnail;
+	public void updateGalleryIcon() {
+		updateGalleryIcon(null);
 	}
 
 	/** Updates the gallery icon by searching for the most recent photo.
 	 *  Launches the task in a separate thread.
 	 */
-	public void updateGalleryIcon() {
+	public void updateGalleryIcon(Bitmap bitmap) {
 		long debug_time = 0;
 		if( MyDebug.LOG ) {
 			Log.d(TAG, "updateGalleryIcon");
 			debug_time = System.currentTimeMillis();
 		}
 
-		new AsyncTask<Void, Void, Bitmap>() {
+		new AsyncTask<Bitmap, Void, Bitmap>() {
 			private static final String TAG = "HedgeCam/MainActivity/AsyncTask";
 
 			/** The system calls this to perform work in a worker thread and
 			  * delivers it the parameters given to AsyncTask.execute() */
-			protected Bitmap doInBackground(Void... params) {
+			protected Bitmap doInBackground(Bitmap... bitmaps) {
 				if( MyDebug.LOG )
 					Log.d(TAG, "doInBackground");
-				StorageUtils.Media media = applicationInterface.getStorageUtils().getLatestMedia();
-				Bitmap thumbnail = null;
-				KeyguardManager keyguard_manager = (KeyguardManager)MainActivity.this.getSystemService(Context.KEYGUARD_SERVICE);
-				boolean is_locked = keyguard_manager != null && keyguard_manager.inKeyguardRestrictedInputMode();
-				if( MyDebug.LOG )
-					Log.d(TAG, "is_locked?: " + is_locked);
-				if( media != null && getContentResolver() != null && !is_locked ) {
-					// check for getContentResolver() != null, as have had reported Google Play crashes
-					try {
-						if( media.video ) {
-							  thumbnail = MediaStore.Video.Thumbnails.getThumbnail(getContentResolver(), media.id, MediaStore.Video.Thumbnails.MINI_KIND, null);
+				int rotation = 0;
+				Bitmap thumbnail = bitmaps[0];
+				if (thumbnail == null) {
+					StorageUtils.Media media = applicationInterface.getStorageUtils().getLatestMedia();
+					KeyguardManager keyguard_manager = (KeyguardManager)MainActivity.this.getSystemService(Context.KEYGUARD_SERVICE);
+					boolean is_locked = keyguard_manager != null && keyguard_manager.inKeyguardRestrictedInputMode();
+					if( MyDebug.LOG )
+						Log.d(TAG, "is_locked?: " + is_locked);
+					if( media != null && getContentResolver() != null && !is_locked ) {
+						// check for getContentResolver() != null, as have had reported Google Play crashes
+						try {
+							if( media.video ) {
+								  thumbnail = MediaStore.Video.Thumbnails.getThumbnail(getContentResolver(), media.id, MediaStore.Video.Thumbnails.MINI_KIND, null);
+							}
+							else {
+								  thumbnail = MediaStore.Images.Thumbnails.getThumbnail(getContentResolver(), media.id, MediaStore.Images.Thumbnails.MINI_KIND, null);
+							}
 						}
-						else {
-							  thumbnail = MediaStore.Images.Thumbnails.getThumbnail(getContentResolver(), media.id, MediaStore.Images.Thumbnails.MINI_KIND, null);
+						catch(Throwable exception) {
+							// have had Google Play NoClassDefFoundError crashes from new ExifInterface() for Galaxy Ace4 (vivalto3g), Galaxy S Duos3 (vivalto3gvn)
+							// also NegativeArraySizeException - best to catch everything
+	 						if( MyDebug.LOG )
+								Log.e(TAG, "exif orientation exception");
+							exception.printStackTrace();
 						}
+						
+						rotation = media.orientation;
+					} else
+						thumbnail = BitmapFactory.decodeResource(resources, R.drawable.gallery_blank);
+				}
+				if( thumbnail != null ) {
+					int width = thumbnail.getWidth();
+					int height = thumbnail.getHeight();
+					if( MyDebug.LOG )
+						Log.d(TAG, "thumbnail size is " + width + " x " + height);
+					int dst_size;
+					if (mainUI.shutter_icon_material)
+						dst_size = resources.getDimensionPixelSize(R.dimen.button_gallery_rounded_size)-resources.getDimensionPixelSize(R.dimen.button_gallery_rounded_padding)*2;
+					else
+						dst_size = resources.getDimensionPixelSize(R.dimen.button_gallery_size)-resources.getDimensionPixelSize(R.dimen.button_gallery_padding)*2;
+					float scale = (float)dst_size/(float)Math.min(width, height);
+					if (scale != 1) {
+						if( MyDebug.LOG )
+							Log.d(TAG, "scale is " + scale);
+						if (width > height) {
+							width = (int)((float)width*scale);
+							height = dst_size;
+						} else {
+							width = dst_size;
+							height = (int)((float)height*scale);
+						}
+						thumbnail = Bitmap.createScaledBitmap(thumbnail, width, height, true);
+						if( MyDebug.LOG )
+							Log.d(TAG, "new_thumbnail size is " + width + " x " + height);
 					}
-					catch(Throwable exception) {
-						// have had Google Play NoClassDefFoundError crashes from new ExifInterface() for Galaxy Ace4 (vivalto3g), Galaxy S Duos3 (vivalto3gvn)
-						// also NegativeArraySizeException - best to catch everything
- 						if( MyDebug.LOG )
-							Log.e(TAG, "exif orientation exception");
-						exception.printStackTrace();
-					}
-					if( thumbnail != null ) {
-						if( media.orientation != 0 ) {
+					if (rotation != 0) {
+						Matrix matrix = new Matrix();
+						matrix.setRotate(rotation, width * 0.5f, height * 0.5f);
+						try {
+							Bitmap new_thumbnail = Bitmap.createBitmap(thumbnail, 0, 0, width, height, matrix, true);
+							// careful, as rotated_thumbnail is sometimes not a copy!
+							if( new_thumbnail != thumbnail ) {
+								thumbnail.recycle();
+								thumbnail = new_thumbnail;
+								width = thumbnail.getWidth();
+								height = thumbnail.getHeight();
+							}
+						}
+						catch(Throwable t) {
 							if( MyDebug.LOG )
-								Log.d(TAG, "thumbnail size is " + thumbnail.getWidth() + " x " + thumbnail.getHeight());
-							Matrix matrix = new Matrix();
-							matrix.setRotate(media.orientation, thumbnail.getWidth() * 0.5f, thumbnail.getHeight() * 0.5f);
-							try {
-								Bitmap rotated_thumbnail = Bitmap.createBitmap(thumbnail, 0, 0, thumbnail.getWidth(), thumbnail.getHeight(), matrix, true);
-								// careful, as rotated_thumbnail is sometimes not a copy!
-								if( rotated_thumbnail != thumbnail ) {
-									thumbnail.recycle();
-									thumbnail = rotated_thumbnail;
-								}
-							}
-							catch(Throwable t) {
-								if( MyDebug.LOG )
-									Log.d(TAG, "failed to rotate thumbnail");
-							}
+								Log.d(TAG, "failed to rotate thumbnail");
 						}
+					}
+
+					Bitmap new_thumbnail = null;
+					if (mainUI.shutter_icon_material) {
+						int thumb_size = Math.min(width, height);
+						new_thumbnail = Bitmap.createBitmap(thumb_size, thumb_size, Bitmap.Config.ARGB_8888);
+
+						final Canvas canvas = new Canvas(new_thumbnail);
+						final Paint paint = new Paint();
+						paint.setAntiAlias(true);
+						paint.setColor(0xffffffff);
+						canvas.drawCircle(thumb_size / 2, thumb_size / 2, thumb_size / 2, paint);
+						paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
+						if (width > height)
+							canvas.drawBitmap(thumbnail, (int)((height-width)/2), 0, paint);
+						else if (height > width)
+							canvas.drawBitmap(thumbnail, 0, (int)((width-height)/2), paint);
+						else
+							canvas.drawBitmap(thumbnail, 0, 0, paint);
+					} else {
+						if (width > height)
+							new_thumbnail = Bitmap.createBitmap(thumbnail, (int)((width-height)/2), 0, height, height);
+						else if (height > width)
+							new_thumbnail = Bitmap.createBitmap(thumbnail, 0, (int)((height-width)/2), width, width);
+					}
+					if (new_thumbnail != null) {
+						thumbnail.recycle();
+						thumbnail = new_thumbnail;
 					}
 				}
 				return thumbnail;
@@ -2199,15 +2208,13 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 				if( thumbnail != null ) {
 					if( MyDebug.LOG )
 						Log.d(TAG, "set gallery button to thumbnail");
-					updateGalleryIcon(thumbnail);
-				}
-				else {
-					if( MyDebug.LOG )
-						Log.d(TAG, "set gallery button to blank");
-					updateGalleryIconToBlank();
+					ImageButton galleryButton = (ImageButton)findViewById(R.id.gallery);
+					galleryButton.setImageBitmap(thumbnail);
+					if (gallery_bitmap != null) gallery_bitmap.recycle();
+					gallery_bitmap = thumbnail;
 				}
 			}
-		}.execute();
+		}.execute(bitmap);
 
 		if( MyDebug.LOG )
 			Log.d(TAG, "updateGalleryIcon: total time to update gallery icon: " + (System.currentTimeMillis() - debug_time));
@@ -2223,7 +2230,7 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 				if( started ) {
 					//galleryButton.setColorFilter(0x80ffffff, PorterDuff.Mode.MULTIPLY);
 					if( gallery_save_anim == null ) {
-						gallery_save_anim = ValueAnimator.ofInt(Color.argb(200, 255, 255, 255), Color.argb(63, 255, 255, 255));
+						gallery_save_anim = ValueAnimator.ofInt(Color.argb(255, 255, 255, 255), Color.argb(191, 127, 127, 127));
 						gallery_save_anim.setEvaluator(new ArgbEvaluator());
 						gallery_save_anim.setRepeatCount(ValueAnimator.INFINITE);
 						gallery_save_anim.setRepeatMode(ValueAnimator.REVERSE);
@@ -2238,8 +2245,7 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 						});
 						gallery_save_anim.start();
 					}
-				}
-				else
+				} else {
 					if( gallery_save_anim != null ) {
 						gallery_save_anim.cancel();
 					}
@@ -2247,6 +2253,7 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 					if (sharedPreferences.getBoolean(Prefs.GHOST_IMAGE, false) && sharedPreferences.getString(Prefs.GHOST_IMAGE_SOURCE, "last_photo").equals("last_photo")) {
 						mainUI.setOverlayImage();
 					}
+				}
 			}
 		});
 	}
@@ -2255,7 +2262,7 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 		if( MyDebug.LOG )
 			Log.d(TAG, "clickedGallery");
 		
-		if (gallery_bitmap == null) return;
+		if (applicationInterface.getStorageUtils().getLatestMedia() == null) return;
 			
 		//Intent intent = new Intent(Intent.ACTION_VIEW, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
 		Uri uri = applicationInterface.getStorageUtils().getLastMediaScanned();
@@ -2324,14 +2331,14 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 	 * @param from_preferences Whether called from the Preferences
 	 */
 	@TargetApi(Build.VERSION_CODES.LOLLIPOP)
-	void openFolderChooserDialogSAF(boolean from_preferences) {
+	void openFolderChooserDialogSAF(boolean from_preferences, boolean is_video_folder) {
 		if( MyDebug.LOG )
 			Log.d(TAG, "openFolderChooserDialogSAF: " + from_preferences);
 		this.saf_dialog_from_preferences = from_preferences;
 		Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
 		//Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
 		//intent.addCategory(Intent.CATEGORY_OPENABLE);
-		startActivityForResult(intent, 42);
+		startActivityForResult(intent, is_video_folder ? SAF_CODE_SAVE_VIDEO_FOLDER : SAF_CODE_SAVE_FOLDER);
 	}
 
 	/** Opens the Storage Access Framework dialog to select a file for ghost image.
@@ -2346,7 +2353,26 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 		intent.addCategory(Intent.CATEGORY_OPENABLE);
 		intent.setType("image/*");
 		try {
-			startActivityForResult(intent, 43);
+			startActivityForResult(intent, SAF_CODE_GHOST_IMAGE);
+		}
+		catch(ActivityNotFoundException e) {
+			// see https://stackoverflow.com/questions/34021039/action-open-document-not-working-on-miui/34045627
+			preview.showToast(null, R.string.open_files_saf_exception_ghost);
+			Log.e(TAG, "ActivityNotFoundException from startActivityForResult");
+			e.printStackTrace();
+		}
+	}
+
+	@TargetApi(Build.VERSION_CODES.LOLLIPOP)
+	void openBackupChooserDialogSAF(boolean from_preferences) {
+		if( MyDebug.LOG )
+			Log.d(TAG, "openBackupChooserDialogSAF: " + from_preferences);
+		this.saf_dialog_from_preferences = from_preferences;
+		Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+		intent.addCategory(Intent.CATEGORY_OPENABLE);
+		intent.setType("text/xml");
+		try {
+			startActivityForResult(intent, SAF_CODE_OPEN_BACKUP);
 		}
 		catch(ActivityNotFoundException e) {
 			// see https://stackoverflow.com/questions/34021039/action-open-document-not-working-on-miui/34045627
@@ -2369,14 +2395,10 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 		save_location_history_saf.updateFolderHistory(save_folder, true);
 	}
 	
-	/** Listens for the response from the Storage Access Framework dialog to select a folder
-	 *  (as opened with openFolderChooserDialogSAF()).
-	 */
-	@TargetApi(Build.VERSION_CODES.LOLLIPOP)
 	public void onActivityResult(int requestCode, int resultCode, Intent resultData) {
 		if( MyDebug.LOG )
 			Log.d(TAG, "onActivityResult: " + requestCode);
-		if( requestCode == 42 ) {
+		if( requestCode == SAF_CODE_SAVE_FOLDER || requestCode == SAF_CODE_SAVE_VIDEO_FOLDER ) {
 			if( resultCode == RESULT_OK && resultData != null ) {
 				Uri treeUri = resultData.getData();
 				if( MyDebug.LOG )
@@ -2392,14 +2414,14 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 					getContentResolver().takePersistableUriPermission(treeUri, takeFlags);
 
 					SharedPreferences.Editor editor = sharedPreferences.edit();
-					editor.putString(Prefs.SAVE_LOCATION_SAF, treeUri.toString());
+					editor.putString(requestCode == SAF_CODE_SAVE_VIDEO_FOLDER ? Prefs.SAVE_VIDEO_LOCATION_SAF : Prefs.SAVE_LOCATION_SAF, treeUri.toString());
 					editor.apply();
 
 					if( MyDebug.LOG )
 						Log.d(TAG, "update folder history for saf");
 					updateFolderHistorySAF(treeUri.toString());
 
-					File file = applicationInterface.getStorageUtils().getImageFolder();
+					File file = applicationInterface.getStorageUtils().getFileFromDocumentUriSAF(treeUri, true);
 					if( file != null ) {
 						preview.showToast(null, resources.getString(R.string.changed_save_location) + "\n" + file.getAbsolutePath());
 					}
@@ -2407,15 +2429,17 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 				catch(SecurityException e) {
 					Log.e(TAG, "SecurityException failed to take permission");
 					e.printStackTrace();
-					// failed - if the user had yet to set a save location, make sure we switch SAF back off
-					String uri = sharedPreferences.getString(Prefs.SAVE_LOCATION_SAF, "");
-					if( uri.length() == 0 ) {
-						if( MyDebug.LOG )
-							Log.d(TAG, "no SAF save location was set");
-						SharedPreferences.Editor editor = sharedPreferences.edit();
-						editor.putBoolean(Prefs.USING_SAF, false);
-						editor.apply();
-						preview.showToast(null, R.string.saf_permission_failed);
+					if (requestCode == SAF_CODE_SAVE_FOLDER) {
+						// failed - if the user had yet to set a save location, make sure we switch SAF back off
+						String uri = sharedPreferences.getString(Prefs.SAVE_LOCATION_SAF, "");
+						if( uri.length() == 0 ) {
+							if( MyDebug.LOG )
+								Log.d(TAG, "no SAF save location was set");
+							SharedPreferences.Editor editor = sharedPreferences.edit();
+							editor.putBoolean(Prefs.USING_SAF, false);
+							editor.apply();
+							preview.showToast(null, R.string.saf_permission_failed);
+						}
 					}
 				}
 			}
@@ -2438,7 +2462,7 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 				setWindowFlagsForCamera();
 				showPreview(true);
 			}
-		} else if ( requestCode == 43 ) {
+		} else if ( requestCode == SAF_CODE_GHOST_IMAGE ) {
 			boolean check_source_pref = false;
 			if( resultCode == RESULT_OK && resultData != null ) {
 				Uri fileUri = resultData.getData();
@@ -2493,7 +2517,7 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 		}
 	}
 
-	void updateSaveFolder(String new_save_location) {
+	void updateSaveFolder(String new_save_location, boolean is_video_folder) {
 		if( MyDebug.LOG )
 			Log.d(TAG, "updateSaveFolder: " + new_save_location);
 		if( new_save_location != null ) {
@@ -2503,38 +2527,34 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 				if( MyDebug.LOG )
 					Log.d(TAG, "changed save_folder to: " + this.applicationInterface.getStorageUtils().getSaveLocation());
 				SharedPreferences.Editor editor = sharedPreferences.edit();
-				editor.putString(Prefs.SAVE_LOCATION, new_save_location);
+				editor.putString(is_video_folder ? Prefs.SAVE_VIDEO_LOCATION : Prefs.SAVE_LOCATION, new_save_location);
 				editor.apply();
 
-				this.save_location_history.updateFolderHistory(this.getStorageUtils().getSaveLocation(), true);
-				this.preview.showToast(null, resources.getString(R.string.changed_save_location) + "\n" + this.applicationInterface.getStorageUtils().getSaveLocation());
+				this.save_location_history.updateFolderHistory(new_save_location, true);
+				this.preview.showToast(null, resources.getString(R.string.changed_save_location) + "\n" + new_save_location);
 			}
-		}
-	}
-
-	public static class MyFolderChooserDialog extends FolderChooserDialog {
-		@Override
-		public void onDismiss(DialogInterface dialog) {
-			if( MyDebug.LOG )
-				Log.d(TAG, "FolderChooserDialog dismissed");
-			// n.b., fragments have to be static (as they might be inserted into a new Activity - see http://stackoverflow.com/questions/15571010/fragment-inner-class-should-be-static),
-			// so we access the MainActivity via the fragment's getActivity().
-			MainActivity main_activity = (MainActivity)this.getActivity();
-			main_activity.setWindowFlagsForCamera();
-			main_activity.showPreview(true);
-			String new_save_location = this.getChosenFolder();
-			main_activity.updateSaveFolder(new_save_location);
-			super.onDismiss(dialog);
 		}
 	}
 
 	/** Opens Open Camera's own (non-Storage Access Framework) dialog to select a folder.
 	 */
-	private void openFolderChooserDialog() {
+	private void openFolderChooserDialog(final boolean is_video_folder) {
 		if( MyDebug.LOG )
 			Log.d(TAG, "openFolderChooserDialog");
-		FolderChooserDialog fragment = new MyFolderChooserDialog();
-		fragment.show(getFragmentManager(), "FOLDER_FRAGMENT");
+		new FileListDialog(is_video_folder ?  Prefs.SAVE_VIDEO_LOCATION : null, new FileListDialog.Listener() {
+			@Override
+			public void onSelected(String folder) {
+				setWindowFlagsForCamera();
+				showPreview(true);
+				updateSaveFolder(folder, is_video_folder);
+			}
+			
+			@Override
+			public void onCancelled() {
+				setWindowFlagsForCamera();
+				showPreview(true);
+			}
+		}).show(getFragmentManager(), "FOLDER_FRAGMENT");
 	}
 
 	/** User can long-click on gallery to select a recent save location from the history, of if not available,
@@ -2549,7 +2569,7 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 			if( save_location_history_saf == null || save_location_history_saf.size() <= 1 ) {
 				if( MyDebug.LOG )
 					Log.d(TAG, "go straight to choose folder dialog for SAF");
-				openFolderChooserDialogSAF(false);
+				openFolderChooserDialogSAF(false, Prefs.isVideoFolder());
 				return;
 			}
 		}
@@ -2557,7 +2577,7 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 			if( save_location_history.size() <= 1 ) {
 				if( MyDebug.LOG )
 					Log.d(TAG, "go straight to choose folder dialog");
-				openFolderChooserDialog();
+				openFolderChooserDialog(Prefs.isVideoFolder());
 				return;
 			}
 		}
@@ -2618,29 +2638,32 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 				if( MyDebug.LOG )
 					Log.d(TAG, "selected choose new folder");
 				if( applicationInterface.getStorageUtils().isUsingSAF() ) {
-					openFolderChooserDialogSAF(false);
+					openFolderChooserDialogSAF(false, Prefs.isVideoFolder());
 				}
 				else {
-					openFolderChooserDialog();
+					openFolderChooserDialog(Prefs.isVideoFolder());
 				}
 			}
 		});
 
 		CharSequence [] items = new CharSequence[history.size()];
-		int index=0;
+		String current_folder = getStorageUtils().isUsingSAF() ? getStorageUtils().getSaveLocationSAF() : getStorageUtils().getSaveLocation();
+		int current_index = -1;
 		// history is stored in order most-recent-last
-		for(int i=0;i<history.size();i++) {
+		for(int i=0; i<history.size(); i++) {
 			String folder_name = history.get(history.size() - 1 - i);
-			if( applicationInterface.getStorageUtils().isUsingSAF() ) {
+			if (folder_name.equals(current_folder))
+				current_index = i;
+			if( getStorageUtils().isUsingSAF() ) {
 				// try to get human readable form if possible
-				File file = applicationInterface.getStorageUtils().getFileFromDocumentUriSAF(Uri.parse(folder_name), true);
+				File file = getStorageUtils().getFileFromDocumentUriSAF(Uri.parse(folder_name), true);
 				if( file != null ) {
 					folder_name = file.getAbsolutePath();
 				}
 			}
-			items[index++] = folder_name;
+			items[i] = folder_name;
 		}
-		alertDialog.setSingleChoiceItems(items, 0, new DialogInterface.OnClickListener() {
+		alertDialog.setSingleChoiceItems(items, current_index, new DialogInterface.OnClickListener() {
 			@Override
 			public void onClick(DialogInterface dialog, int which) {
 				if( MyDebug.LOG )
@@ -2965,6 +2988,10 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 
 	public boolean supportsCamera2() {
 		return this.supports_camera2;
+	}
+
+	public boolean supportsVideoPause() {
+		return Build.VERSION.SDK_INT >= Build.VERSION_CODES.N;
 	}
 
 	private void disableForceVideo4K() {
@@ -3484,116 +3511,6 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 			requestLocationPermission();
 		}
 	}
-	
-	@SuppressWarnings("deprecation")
-	private void initSound() {
-		if( sound_pool == null ) {
-			int audio_stream = AudioManager.STREAM_SYSTEM;
-			String stream = sharedPreferences.getString(Prefs.AUDIO_STREAM, "system");
-			if (stream.equals("notification"))
-				audio_stream = AudioManager.STREAM_NOTIFICATION;
-			else if (stream.equals("music"))
-				audio_stream = AudioManager.STREAM_MUSIC;
-
-			if( MyDebug.LOG )
-				Log.d(TAG, "create new sound_pool");
-			if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP ) {
-				AudioAttributes audio_attributes = new AudioAttributes.Builder()
-					.setLegacyStreamType(audio_stream)
-					.setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-					.build();
-				sound_pool = new SoundPool.Builder()
-					.setMaxStreams(1)
-					.setAudioAttributes(audio_attributes)
-					.build();
-			}
-			else {
-				sound_pool = new SoundPool(1, audio_stream, 0);
-			}
-			sound_ids = new SparseIntArray();
-			loadSound(R.raw.beep);
-			loadSound(R.raw.beep_hi);
-			loadSound(R.raw.double_beep);
-			loadSound(R.raw.double_beep_hi);
-			loadShutterSound();
-		}
-	}
-	
-	private void releaseSound() {
-		if( sound_pool != null ) {
-			if( MyDebug.LOG )
-				Log.d(TAG, "release sound_pool");
-			sound_pool.release();
-			sound_pool = null;
-			sound_ids = null;
-			sound_shutter = 0;
-		}
-	}
-	
-	// must be called before playSound (allowing enough time to load the sound)
-	private void loadSound(int resource_id) {
-		if( sound_pool != null ) {
-			if( MyDebug.LOG )
-				Log.d(TAG, "loading sound resource: " + resource_id);
-			int sound_id = sound_pool.load(this, resource_id, 1);
-			if( MyDebug.LOG )
-				Log.d(TAG, "	loaded sound: " + sound_id);
-			sound_ids.put(resource_id, sound_id);
-		}
-	}
-
-	void loadShutterSound() {
-		String shutter = PreferenceManager.getDefaultSharedPreferences(this)
-			.getString(Prefs.SHUTTER_SOUND_SELECT, "default");
-
-		int resource_id = resources.getIdentifier(shutter, "raw", getPackageName());
-		
-		if (resource_id != 0)
-			sound_shutter = sound_pool.load(this, resource_id, 1);
-	}
-	
-	// must call loadSound first (allowing enough time to load the sound)
-	void playSound(int resource_id) {
-		if( sound_pool != null ) {
-			if( sound_ids.indexOfKey(resource_id) < 0 ) {
-				if( MyDebug.LOG )
-					Log.d(TAG, "resource not loaded: " + resource_id);
-			}
-			else {
-				int sound_id = sound_ids.get(resource_id);
-				if( MyDebug.LOG )
-					Log.d(TAG, "play sound: " + sound_id);
-				doPlaySound(sound_id);
-			}
-		}
-	}
-
-	void playShutterSound() {
-		if (sound_shutter != 0)
-			doPlaySound(sound_shutter);
-	}
-	
-	private void doPlaySound(final int sound_id) {
-		float sound_volume = 1.0f;
-		String volume = sharedPreferences.getString(Prefs.SOUND_VOLUME, "max");
-		if (volume.equals("high"))
-			sound_volume = 0.5f;
-		if (volume.equals("medium"))
-			sound_volume = 0.25f;
-		else if (volume.equals("low"))
-			sound_volume = 0.125f;
-		else if (volume.equals("min"))
-			sound_volume = 0.063f;
-
-		sound_pool.play(sound_id, sound_volume, sound_volume, 0, 0, 1);
-	}
-	
-	@SuppressWarnings("deprecation")
-	void speak(String text) {
-		if( textToSpeech != null && textToSpeechSuccess ) {
-			textToSpeech.speak(text, TextToSpeech.QUEUE_FLUSH, null);
-		}
-	}
 
 	// Android 6+ permission handling:
 	
@@ -3919,4 +3836,21 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 		return rs;
 	}
 
+	public void forceCloseSettings() {
+		MyPreferenceFragment fragment = getPreferenceFragment();
+		if (fragment != null) {
+		    int backStackEntry = getFragmentManager().getBackStackEntryCount();
+		    if (backStackEntry > 0) {
+		        for (int i = 0; i < backStackEntry; i++) {
+		            getFragmentManager().popBackStackImmediate();
+		        }
+		    }
+			getFragmentManager().beginTransaction().remove(fragment).commitAllowingStateLoss();
+		}
+	}
+
+	public void restartActivity() {
+		forceCloseSettings();
+		recreate();
+	}
 }

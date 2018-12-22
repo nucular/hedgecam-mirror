@@ -2,7 +2,10 @@ package com.caddish_hedgehog.hedgecam2;
 
 import com.caddish_hedgehog.hedgecam2.Donations;
 import com.caddish_hedgehog.hedgecam2.Preview.Preview;
-import com.caddish_hedgehog.hedgecam2.UI.FolderChooserDialog;
+import com.caddish_hedgehog.hedgecam2.UI.FileListDialog;
+import com.caddish_hedgehog.hedgecam2.UI.SeekBarArrayPreference;
+import com.caddish_hedgehog.hedgecam2.UI.SeekBarPreference;
+import com.caddish_hedgehog.hedgecam2.UI.SeekBarCheckBoxPreference;
 import com.caddish_hedgehog.hedgecam2.UI.SeekBarFloatPreference;
 
 import android.app.Activity;
@@ -176,10 +179,6 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 			removePref("preference_screen_osd", Prefs.ALT_INDICATION);
 		}
 
-		final int preview_width = bundle.getInt("preview_width");
-		final int preview_height = bundle.getInt("preview_height");
-		final int [] preview_widths = bundle.getIntArray("preview_widths");
-		final int [] preview_heights = bundle.getIntArray("preview_heights");
 		final int [] video_widths = bundle.getIntArray("video_widths");
 		final int [] video_heights = bundle.getIntArray("video_heights");
 
@@ -188,13 +187,13 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 		final int [] widths = bundle.getIntArray("resolution_widths");
 		final int [] heights = bundle.getIntArray("resolution_heights");
 		if( widths != null && heights != null ) {
-			CharSequence [] entries = new CharSequence[widths.length];
-			CharSequence [] values = new CharSequence[widths.length];
+			String [] entries = new String[widths.length];
+			String [] values = new String[widths.length];
 			for(int i=0;i<widths.length;i++) {
 				entries[i] = widths[i] + " x " + heights[i] + " " + Preview.getAspectRatioMPString(widths[i], heights[i]);
 				values[i] = widths[i] + " " + heights[i];
 			}
-			ListPreference lp = (ListPreference)findPreference("preference_resolution");
+			SeekBarArrayPreference lp = (SeekBarArrayPreference)findPreference("preference_resolution");
 			lp.setEntries(entries);
 			lp.setEntryValues(values);
 			String resolution_preference_key = Prefs.getResolutionPreferenceKey();
@@ -209,39 +208,74 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 			removePref("preference_screen_photo_settings", "preference_resolution");
 		}
 
-/*		{
-			final int n_quality = 13;
-			CharSequence [] entries = new CharSequence[n_quality];
-			CharSequence [] values = new CharSequence[n_quality];
-			for(int i=0;i<n_quality;i++) {
-				entries[i] = "" + ((20-i)*5) + "%";
-				values[i] = "" + ((20-i)*5);
+		final int preview_width = bundle.getInt("preview_width");
+		final int preview_height = bundle.getInt("preview_height");
+		final int [] preview_widths = bundle.getIntArray("preview_widths");
+		final int [] preview_heights = bundle.getIntArray("preview_heights");
+		if( preview_widths != null && preview_heights != null ) {
+			int list_length_diff = 2;
+
+			String [] entries = new String[preview_widths.length+list_length_diff];
+			String [] values = new String[preview_widths.length+list_length_diff];
+
+			entries[0] = resources.getString(R.string.auto);
+			values[0] = "auto";
+			
+			entries[1] = resources.getString(R.string.match_target_resolution);
+			values[1] = "match_target";
+
+			for(int i=0;i<preview_widths.length;i++) {
+				entries[i+list_length_diff] = preview_widths[i] + " x " + preview_heights[i];
+				values[i+list_length_diff] = preview_widths[i] + " " + preview_heights[i];
 			}
-			ListPreference lp = (ListPreference)findPreference(Prefs.QUALITY);
+
+			ListPreference lp = (ListPreference)findPreference("preference_preview_resolution");
 			lp.setEntries(entries);
 			lp.setEntryValues(values);
-		}*/
-		
+			String preference_key = Prefs.getPreviewResolutionPreferenceKey();
+			String value = sharedPreferences.getString(preference_key, "auto");
+			if( MyDebug.LOG )
+				Log.d(TAG, "Preview resolution value: " + value);
+			lp.setValue(value);
+			// now set the key, so we save for the correct cameraId
+			lp.setKey(preference_key);
+		}
+		else {
+			removePref("preference_screen_preview", "preference_preview_resolution");
+		}
+
 		final boolean supports_raw = bundle.getBoolean("supports_raw");
 		if( MyDebug.LOG )
 			Log.d(TAG, "supports_raw: " + supports_raw);
 
 		if( !supports_raw ) {
-			removePref("preference_screen_photo_settings", Prefs.RAW);
+			ListPreference lp = (ListPreference)findPreference(Prefs.IMAGE_FORMAT);
+
+			String [] all_entries = resources.getStringArray(R.array.preference_image_format_entries);
+			String [] all_values = resources.getStringArray(R.array.preference_image_format_values);
+
+			String [] entries = new String[all_entries.length-1];
+			String [] values = new String[all_values.length-1];
+
+			System.arraycopy(all_entries, 0, entries, 0, entries.length);
+			System.arraycopy(all_values, 0, values, 0, values.length);
+
+			lp.setEntries(entries);
+			lp.setEntryValues(values);
 		}
 		else {
-			Preference pref = findPreference(Prefs.RAW);
+			Preference pref = findPreference(Prefs.IMAGE_FORMAT);
 			pref.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
 				@Override
 				public boolean onPreferenceChange(Preference preference, Object newValue) {
 					if( MyDebug.LOG )
 						Log.d(TAG, "clicked raw: " + newValue);
-					if( newValue.equals("preference_raw_yes") ) {
+					if( newValue.equals("jpeg_raw") ) {
 						// we check done_raw_info every time, so that this works if the user selects RAW again without leaving and returning to Settings
 						boolean done_raw_info = sharedPreferences.contains(Prefs.DONE_RAW_INFO);
 						if( !done_raw_info ) {
 							AlertDialog.Builder alertDialog = new AlertDialog.Builder(MyPreferenceFragment.this.getActivity());
-							alertDialog.setTitle(R.string.preference_raw);
+							alertDialog.setTitle("RAW");
 							alertDialog.setMessage(R.string.raw_info);
 							alertDialog.setPositiveButton(android.R.string.ok, null);
 							alertDialog.setNegativeButton(R.string.dont_show_again, new OnClickListener() {
@@ -270,23 +304,21 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 		if( MyDebug.LOG )
 			Log.d(TAG, "supports_hdr: " + supports_hdr);
 
-		if( !supports_hdr && !supports_dro) {
+		if(!supports_hdr) {
 			removePref("preference_screen_photo_settings", "preference_category_hdr");
 			removePref(popupGroup, Prefs.POPUP_HDR_DEGHOST);
 			removePref(popupGroup, Prefs.POPUP_HDR_TONEMAPPING);
-			removePref(popupGroup, Prefs.POPUP_HDR_UNSHARP_MASK);
-			removePref(popupGroup, Prefs.POPUP_HDR_UNSHARP_MASK_RADIUS);
-			removePref(popupGroup, Prefs.POPUP_HDR_LOCAL_CONTRAST);
-			removePref(popupGroup, Prefs.POPUP_HDR_N_TILES);
+			removePref("preference_category_photo_modes", "preference_photo_mode_hdr");
+		}
+		if (!supports_dro) {
+			if(!supports_hdr) {
+				removePref(popupGroup, Prefs.POPUP_HDR_UNSHARP_MASK);
+				removePref(popupGroup, Prefs.POPUP_HDR_UNSHARP_MASK_RADIUS);
+				removePref(popupGroup, Prefs.POPUP_HDR_LOCAL_CONTRAST);
+				removePref(popupGroup, Prefs.POPUP_HDR_N_TILES);
+			}
+			removePref("preference_screen_photo_settings", "preference_category_dro");
 			removePref("preference_category_photo_modes", "preference_photo_mode_dro");
-			removePref("preference_category_photo_modes", "preference_photo_mode_hdr");
-		} else if( !supports_hdr ) {
-			removePref("preference_category_hdr", Prefs.HDR_SAVE_EXPO);
-			removePref("preference_category_hdr", Prefs.HDR_TONEMAPPING);
-			removePref(popupGroup, Prefs.HDR_DEGHOST);
-			removePref(popupGroup, Prefs.POPUP_HDR_TONEMAPPING);
-			removePref(popupGroup, Prefs.POPUP_HDR_DEGHOST);
-			removePref("preference_category_photo_modes", "preference_photo_mode_hdr");
 		}
 
 		final boolean supports_expo_bracketing = bundle.getBoolean("supports_expo_bracketing");
@@ -429,13 +461,13 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 		final String [] video_quality = bundle.getStringArray("video_quality");
 		final String [] video_quality_string = bundle.getStringArray("video_quality_string");
 		if( video_quality != null && video_quality_string != null ) {
-			CharSequence [] entries = new CharSequence[video_quality.length];
-			CharSequence [] values = new CharSequence[video_quality.length];
+			String [] entries = new String[video_quality.length];
+			String [] values = new String[video_quality.length];
 			for(int i=0;i<video_quality.length;i++) {
 				entries[i] = video_quality_string[i];
 				values[i] = video_quality[i];
 			}
-			ListPreference lp = (ListPreference)findPreference("preference_video_quality");
+			SeekBarArrayPreference lp = (SeekBarArrayPreference)findPreference("preference_video_quality");
 			lp.setEntries(entries);
 			lp.setEntryValues(values);
 			String video_quality_preference_key = Prefs.getVideoQualityPreferenceKey();
@@ -449,6 +481,32 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 		else {
 			removePref("preference_screen_video_settings", "preference_video_quality");
 		}
+		
+		if( Build.VERSION.SDK_INT < Build.VERSION_CODES.N ) {
+			String [] all_entries = resources.getStringArray(R.array.preference_video_format_entries);
+			String [] all_values = resources.getStringArray(R.array.preference_video_format_values);
+			int length = all_entries.length-1;
+			if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP)
+				length--;
+
+			String [] entries = new String[length];
+			String [] values = new String[length];
+
+			int out_i = 0;
+			for(int i = 0; i < all_entries.length; i++) {
+				if (all_values[i].equals("mpeg4_hevc") || (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP && all_values[i].equals("webm")))
+					continue;
+				
+				entries[out_i] = all_entries[i];
+				values[out_i] = all_values[i];
+				
+				out_i++;
+			}
+			ListPreference lp = (ListPreference)findPreference(Prefs.VIDEO_FORMAT);
+			lp.setEntries(entries);
+			lp.setEntryValues(values);
+		}
+		
 		final String current_video_quality = bundle.getString("current_video_quality");
 		final int video_frame_width = bundle.getInt("video_frame_width");
 		final int video_frame_height = bundle.getInt("video_frame_height");
@@ -476,8 +534,8 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 		if( noise_reduction_modes != null && noise_reduction_modes.length > 1 ) {
 			List<String> arr_entries = Arrays.asList(resources.getStringArray(R.array.preference_noise_reduction_entries));
 			List<String> arr_values = Arrays.asList(resources.getStringArray(R.array.preference_noise_reduction_values));
-			CharSequence [] entries = new CharSequence[noise_reduction_modes.length];
-			CharSequence [] values = new CharSequence[noise_reduction_modes.length];
+			String [] entries = new String[noise_reduction_modes.length];
+			String [] values = new String[noise_reduction_modes.length];
 			for(int i=0; i<noise_reduction_modes.length; i++) {
 				int index = arr_values.indexOf(noise_reduction_modes[i]);
 				entries[i] = index == -1 ? noise_reduction_modes[i] : arr_entries.get(index);
@@ -500,8 +558,8 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 		if( edge_modes != null && edge_modes.length > 1 ) {
 			List<String> arr_entries = Arrays.asList(resources.getStringArray(R.array.preference_edge_entries));
 			List<String> arr_values = Arrays.asList(resources.getStringArray(R.array.preference_edge_values));
-			CharSequence [] entries = new CharSequence[edge_modes.length];
-			CharSequence [] values = new CharSequence[edge_modes.length];
+			String [] entries = new String[edge_modes.length];
+			String [] values = new String[edge_modes.length];
 			for(int i=0; i<edge_modes.length; i++) {
 				int index = arr_values.indexOf(edge_modes[i]);
 				entries[i] = index == -1 ? edge_modes[i] : arr_entries.get(index);
@@ -538,7 +596,7 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 			edge_modes != null && edge_modes.length > 1
 		) {
 			String preference_key = Prefs.SMART_FILTER + "_" + cameraId;
-			ListPreference lp = (ListPreference)findPreference(Prefs.SMART_FILTER);
+			SeekBarArrayPreference lp = (SeekBarArrayPreference)findPreference(Prefs.SMART_FILTER);
 			lp.setKey(preference_key);
 			lp.setValue(sharedPreferences.getString(preference_key, "0"));
 		} else {
@@ -551,8 +609,8 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 		if( optical_stabilization_modes != null && optical_stabilization_modes.length > 1 ) {
 			List<String> arr_entries = Arrays.asList(resources.getStringArray(R.array.preference_optical_stabilization_entries));
 			List<String> arr_values = Arrays.asList(resources.getStringArray(R.array.preference_optical_stabilization_values));
-			CharSequence [] entries = new CharSequence[optical_stabilization_modes.length];
-			CharSequence [] values = new CharSequence[optical_stabilization_modes.length];
+			String [] entries = new String[optical_stabilization_modes.length];
+			String [] values = new String[optical_stabilization_modes.length];
 			for(int i=0; i<optical_stabilization_modes.length; i++) {
 				int index = arr_values.indexOf(optical_stabilization_modes[i]);
 				entries[i] = index == -1 ? optical_stabilization_modes[i] : arr_entries.get(index);
@@ -576,8 +634,8 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 		if( hot_pixel_correction_modes != null && hot_pixel_correction_modes.length > 1 ) {
 			List<String> arr_entries = Arrays.asList(resources.getStringArray(R.array.preference_edge_entries));
 			List<String> arr_values = Arrays.asList(resources.getStringArray(R.array.preference_edge_values));
-			CharSequence [] entries = new CharSequence[hot_pixel_correction_modes.length];
-			CharSequence [] values = new CharSequence[hot_pixel_correction_modes.length];
+			String [] entries = new String[hot_pixel_correction_modes.length];
+			String [] values = new String[hot_pixel_correction_modes.length];
 			for(int i=0; i<hot_pixel_correction_modes.length; i++) {
 				int index = arr_values.indexOf(hot_pixel_correction_modes[i]);
 				entries[i] = index == -1 ? hot_pixel_correction_modes[i] : arr_entries.get(index);
@@ -598,8 +656,13 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 		final boolean can_disable_shutter_sound = bundle.getBoolean("can_disable_shutter_sound");
 		if( MyDebug.LOG )
 			Log.d(TAG, "can_disable_shutter_sound: " + can_disable_shutter_sound);
-		if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.JELLY_BEAN_MR1 || !can_disable_shutter_sound){
-			removePref("preference_screen_sounds", Prefs.SHUTTER_SOUND_SELECT);
+		if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.JELLY_BEAN_MR1){
+			ListPreference lp = (ListPreference)findPreference(Prefs.SHUTTER_SOUND);
+			lp.setEntries(R.array.preference_shutter_sound_old_entries);
+			lp.setEntryValues(R.array.preference_shutter_sound_old_values);
+		}
+		if(!using_camera_2) {
+			removePref("preference_screen_sounds", Prefs.VIDEO_SOUND);
 		}
 		
 		final boolean has_navigation_bar;
@@ -633,7 +696,9 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 
 		final String [] focus_values = bundle.getStringArray("focus_values");
 		boolean supports_manual_focus = false;
+		boolean supports_yuv = false;
 		if( using_camera_2 ) {
+			supports_yuv = true;
 			removePref("preference_screen_preview", "preference_category_preview_advanced");
 			
 			if( focus_values != null && focus_values.length > 0 ) {
@@ -651,18 +716,36 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 
 			removePref("preference_screen_bug_fix", Prefs.CAMERA2_FAKE_FLASH);
 			removePref("preference_screen_bug_fix", Prefs.FULL_SIZE_COPY);
-			removePref("preference_screen_photo_settings", Prefs.UNCOMPRESSED_PHOTO);
-			removePref("preference_screen_photo_settings", Prefs.YUV_CONVERSION);
 			removePref("preference_category_expo_bracketing", Prefs.CAMERA2_FAST_BURST);
 			removePref("preference_screen_video_settings", Prefs.VIDEO_LOG_PROFILE);
+		}
+		
+		if (supports_yuv) {
+			String preference_key = Prefs.ROW_SPACE_Y + "_" + cameraId;
+
+			SeekBarCheckBoxPreference lp = (SeekBarCheckBoxPreference)findPreference(Prefs.ROW_SPACE_Y);
+			lp.setValue(sharedPreferences.getString(preference_key, "default"));
+			lp.setKey(preference_key);
+
+			preference_key = Prefs.ROW_SPACE_UV + "_" + cameraId;
+
+			lp = (SeekBarCheckBoxPreference)findPreference(Prefs.ROW_SPACE_UV);
+			lp.setValue(sharedPreferences.getString(preference_key, "default"));
+			lp.setKey(preference_key);
+		} else {
+			removePref("preference_screen_photo_settings", Prefs.UNCOMPRESSED_PHOTO);
+			removePref("preference_screen_photo_settings", Prefs.YUV_CONVERSION);
+			removePref("preference_screen_calibration", Prefs.ROW_SPACE_Y);
+			removePref("preference_screen_calibration", Prefs.ROW_SPACE_UV);
 		}
 
 		if (supports_manual_focus) {
 			String preference_key = Prefs.MIN_FOCUS_DISTANCE + "_" + cameraId;
-			ListPreference lp = (ListPreference)findPreference(Prefs.MIN_FOCUS_DISTANCE);
+
+			SeekBarCheckBoxPreference lp = (SeekBarCheckBoxPreference)findPreference(Prefs.MIN_FOCUS_DISTANCE);
 			lp.setValue(sharedPreferences.getString(preference_key, "default"));
 			lp.setKey(preference_key);
-			
+
 			preference_key = Prefs.FOCUS_DISTANCE_CALIBRATION + "_" + cameraId;
 /*			EditTextPreference etp = (EditTextPreference)findPreference(Prefs.FOCUS_DISTANCE_CALIBRATION);
 			etp.setText(sharedPreferences.getString(preference_key, "0"));
@@ -673,8 +756,8 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 			p.setKey(preference_key);
 		} else {
 			removePref("preference_screen_sliders", Prefs.FOCUS_RANGE);
-			removePref("preference_screen_bug_fix", Prefs.MIN_FOCUS_DISTANCE);
-			removePref("preference_screen_bug_fix", Prefs.FOCUS_DISTANCE_CALIBRATION);
+			removePref("preference_screen_calibration", Prefs.MIN_FOCUS_DISTANCE);
+			removePref("preference_screen_calibration", Prefs.FOCUS_DISTANCE_CALIBRATION);
 			removePref("preference_screen_preview", Prefs.ZOOM_WHEN_FOCUSING);
 		}
 
@@ -706,10 +789,8 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 					if( pref.getKey().equals(Prefs.USE_CAMERA2) ) {
 						if( MyDebug.LOG )
 							Log.d(TAG, "user clicked camera2 API - need to restart");
-						// see http://stackoverflow.com/questions/2470870/force-application-to-restart-on-first-activity
-						Intent i = getActivity().getBaseContext().getPackageManager().getLaunchIntentForPackage( getActivity().getBaseContext().getPackageName() );
-						i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-						startActivity(i);
+
+						((MainActivity)getActivity()).restartActivity();
 						return false;
 					}
 					return false;
@@ -720,11 +801,7 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 			removePref("preference_category_mics", Prefs.USE_CAMERA2);
 		}
 
-		if( Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP ) {
-			// require Storage Access Framework to select a ghost image
-			removePref("preference_category_ghost_image", Prefs.GHOST_IMAGE_SOURCE);
-		} else {
-
+		{
 			((ListPreference)findPreference(Prefs.GHOST_IMAGE_SOURCE)).setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
 				@Override
 				public boolean onPreferenceChange(Preference arg0, Object newValue) {
@@ -732,7 +809,30 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 						Log.d(TAG, "clicked ghost image: " + newValue);
 					if( newValue.equals("file") ) {
 						MainActivity main_activity = (MainActivity) MyPreferenceFragment.this.getActivity();
-						main_activity.openGhostImageChooserDialogSAF(true);
+						if( main_activity.getStorageUtils().isUsingSAF() ) {
+							main_activity.openGhostImageChooserDialogSAF(true);
+							return true;
+						}
+						else {
+							new FileListDialog(new String[] {"jpeg", "jpg", "jpe", "png"}, new FileListDialog.Listener(){
+								@Override
+								public void onSelected(String file) {
+									SharedPreferences.Editor editor = sharedPreferences.edit();
+									editor.putString(Prefs.GHOST_IMAGE_FILE, file);
+									editor.apply();
+								}
+								
+								@Override
+								public void onCancelled() {
+									if (sharedPreferences.getString(Prefs.GHOST_IMAGE_FILE, "").length() == 0) {
+										SharedPreferences.Editor editor = sharedPreferences.edit();
+										editor.putString(Prefs.GHOST_IMAGE_SOURCE, "last_photo");
+										editor.apply();
+									}
+								}
+							}).show(getFragmentManager(), "GHOST_IMAGE_FRAGMENT");
+							return true;
+						}
 					}
 					return true;
 				}
@@ -765,14 +865,53 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 						Log.d(TAG, "clicked save location");
 					MainActivity main_activity = (MainActivity)MyPreferenceFragment.this.getActivity();
 					if( main_activity.getStorageUtils().isUsingSAF() ) {
-						main_activity.openFolderChooserDialogSAF(true);
+						main_activity.openFolderChooserDialogSAF(true, false);
 						return true;
 					}
 					else {
-						FolderChooserDialog fragment = new SaveFolderChooserDialog();
-						fragment.show(getFragmentManager(), "FOLDER_FRAGMENT");
+						new FileListDialog(Prefs.SAVE_LOCATION, new FileListDialog.Listener(){
+							@Override
+							public void onSelected(String folder) {
+								MainActivity main_activity = (MainActivity)MyPreferenceFragment.this.getActivity();
+								main_activity.updateSaveFolder(folder, false);
+							}
+						}).show(getFragmentManager(), "FOLDER_FRAGMENT");
 						return true;
 					}
+				}
+			});
+		}
+		{
+			((ListPreference)findPreference(Prefs.SAVE_VIDEO_FOLDER)).setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
+				@Override
+				public boolean onPreferenceChange(Preference arg0, Object newValue) {
+					if( newValue.equals("folder") ) {
+						MainActivity main_activity = (MainActivity) MyPreferenceFragment.this.getActivity();
+						if( main_activity.getStorageUtils().isUsingSAF() ) {
+							main_activity.openFolderChooserDialogSAF(true, true);
+							return true;
+						}
+						else {
+							new FileListDialog(Prefs.SAVE_VIDEO_LOCATION, new FileListDialog.Listener(){
+								@Override
+								public void onSelected(String folder) {
+									MainActivity main_activity = (MainActivity)MyPreferenceFragment.this.getActivity();
+									main_activity.updateSaveFolder(folder, true);
+								}
+
+								@Override
+								public void onCancelled() {
+									if (sharedPreferences.getString(Prefs.SAVE_VIDEO_LOCATION, "").length() == 0) {
+										SharedPreferences.Editor editor = sharedPreferences.edit();
+										editor.putString(Prefs.SAVE_VIDEO_FOLDER, "same_as_photo");
+										editor.apply();
+									}
+								}
+							}).show(getFragmentManager(), "FOLDER_FRAGMENT");
+							return true;
+						}
+					}
+					return true;
 				}
 			});
 		}
@@ -797,12 +936,19 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 							{
 								MainActivity main_activity = (MainActivity)MyPreferenceFragment.this.getActivity();
 								Toast.makeText(main_activity, R.string.saf_select_save_location, Toast.LENGTH_SHORT).show();
-								main_activity.openFolderChooserDialogSAF(true);
+								main_activity.openFolderChooserDialogSAF(true, false);
 							}
 						}
 						else {
 							if( MyDebug.LOG )
 								Log.d(TAG, "saf is now disabled");
+						}
+
+						if (sharedPreferences.getString(Prefs.GHOST_IMAGE_SOURCE, "last_photo").equals("file")) {
+							SharedPreferences.Editor editor = sharedPreferences.edit();
+							editor.putBoolean(Prefs.GHOST_IMAGE, false);
+							editor.putString(Prefs.GHOST_IMAGE_SOURCE, "last_photo");
+							editor.apply();
 						}
 					}
 					return false;
@@ -835,7 +981,7 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 						}
 						about_string.append("HedgeCam v");
 						about_string.append(version);
-						about_string.append("\n\n(c) 2016-2017 alex82 aka Caddish Hedgehog");
+						about_string.append("\n\n(c) 2016-2018 alex82 aka Caddish Hedgehog");
 						about_string.append("\n\n");
 						about_string.append(resources.getString(R.string.about_credits));
 						final String translation = resources.getString(R.string.translation_author);
@@ -1229,18 +1375,13 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 							public void onClick(DialogInterface dialog, int which) {
 								if( MyDebug.LOG )
 									Log.d(TAG, "user confirmed reset");
-								SharedPreferences.Editor editor = sharedPreferences.edit();
-								editor.clear();
-								editor.putBoolean(Prefs.DONE_FIRST_TIME, true);
-								editor.apply();
+								Prefs.reset();
 								MainActivity main_activity = (MainActivity)MyPreferenceFragment.this.getActivity();
 								main_activity.setDeviceDefaults();
 								if( MyDebug.LOG )
 									Log.d(TAG, "user clicked reset - need to restart");
-								// see http://stackoverflow.com/questions/2470870/force-application-to-restart-on-first-activity
-								Intent i = getActivity().getBaseContext().getPackageManager().getLaunchIntentForPackage( getActivity().getBaseContext().getPackageName() );
-								i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-								startActivity(i);
+								
+								((MainActivity)getActivity()).restartActivity();
 							}
 						})
 						.setNegativeButton(R.string.answer_no, null)
@@ -1250,12 +1391,56 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 				}
 			});
 		}
-		
+
+		{
+			final Preference pref = findPreference("preference_backup");
+			pref.setOnPreferenceClickListener(new OnPreferenceClickListener() {
+				@Override
+				public boolean onPreferenceClick(Preference arg0) {
+					if( pref.getKey().equals("preference_backup") ) {
+						if( MyDebug.LOG )
+							Log.d(TAG, "user clicked backup");
+						boolean result = Prefs.backup();
+						Toast.makeText((MainActivity)MyPreferenceFragment.this.getActivity(), result ? R.string.backup_saved : R.string.failed_to_save_backup, Toast.LENGTH_SHORT).show();
+					}
+					return false;
+				}
+			});
+		}
+
+		{
+			final Preference pref = findPreference("preference_restore");
+			pref.setOnPreferenceClickListener(new OnPreferenceClickListener() {
+				@Override
+				public boolean onPreferenceClick(Preference arg0) {
+					if( pref.getKey().equals("preference_restore") ) {
+						if( MyDebug.LOG )
+							Log.d(TAG, "user clicked restore");
+
+						MainActivity main_activity = (MainActivity)MyPreferenceFragment.this.getActivity();
+						if( main_activity.getStorageUtils().isUsingSAF() ) {
+							main_activity.openBackupChooserDialogSAF(true);
+							return true;
+						}
+						else {
+							new FileListDialog(new String[] {"xml"}, new FileListDialog.Listener(){
+								@Override
+								public void onSelected(String file) {
+									restoreSettings(file, null);
+								}
+							}).show(getFragmentManager(), "RESTORE_FRAGMENT");
+							return true;
+						}
+					}
+					return false;
+				}
+			});
+		}
+
 		{
 			was_donations = sharedPreferences.getBoolean("was_donations", false);
 
 			if (!MyDebug.GOOGLE_PLAY) {
-				
 				
 				PreferenceCategory cat = new PreferenceCategory(getActivity());
 				cat.setKey("preference_category_webmoney_donations");
@@ -1343,20 +1528,6 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 
 		}
 	}
-	
-	public static class SaveFolderChooserDialog extends FolderChooserDialog {
-		@Override
-		public void onDismiss(DialogInterface dialog) {
-			if( MyDebug.LOG )
-				Log.d(TAG, "FolderChooserDialog dismissed");
-			// n.b., fragments have to be static (as they might be inserted into a new Activity - see http://stackoverflow.com/questions/15571010/fragment-inner-class-should-be-static),
-			// so we access the MainActivity via the fragment's getActivity().
-			MainActivity main_activity = (MainActivity)this.getActivity();
-			String new_save_location = this.getChosenFolder();
-			main_activity.updateSaveFolder(new_save_location);
-			super.onDismiss(dialog);
-		}
-	}
 
 	public void onResume() {
 		super.onResume();
@@ -1407,7 +1578,28 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 	public void onActivityResult(int requestCode, int resultCode, Intent resultData) {
 		if( MyDebug.LOG )
 			Log.d(TAG, "onActivityResult");
-		if (donations != null)
+		if ( requestCode == MainActivity.SAF_CODE_OPEN_BACKUP ) {
+			Uri fileUri = null;
+			if( resultCode == Activity.RESULT_OK && resultData != null ) {
+				fileUri = resultData.getData();
+				if( MyDebug.LOG )
+					Log.d(TAG, "returned single fileUri: " + fileUri);
+				// persist permission just in case?
+				final int takeFlags = resultData.getFlags() & Intent.FLAG_GRANT_READ_URI_PERMISSION;
+				try {
+					// Check for the freshest data.
+					((MainActivity)getActivity()).getContentResolver().takePersistableUriPermission(fileUri, takeFlags);
+				}
+				catch(SecurityException e) {
+					Log.e(TAG, "SecurityException failed to take permission");
+					e.printStackTrace();
+					((MainActivity)getActivity()).getPreview().showToast(null, R.string.failed_to_read_backup);
+				}
+			}
+			
+			if (fileUri != null)
+				restoreSettings(null, fileUri);
+		} else if (donations != null)
 			donations.handleActivityResult(requestCode, resultCode, resultData);
 	}
 	
@@ -1429,5 +1621,29 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 			donations.onDestroy();
 
 		super.onDestroy();
+	}
+	
+	private void restoreSettings(final String file, final Uri uri) {
+		new AlertDialog.Builder(MyPreferenceFragment.this.getActivity())
+		.setIcon(android.R.drawable.ic_dialog_alert)
+		.setTitle(R.string.preference_restore)
+		.setMessage(R.string.preference_restore_question)
+		.setPositiveButton(R.string.answer_yes, new DialogInterface.OnClickListener() {
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+				if( MyDebug.LOG )
+					Log.d(TAG, "user confirmed restore");
+				boolean result = Prefs.restore(file, uri);
+				if (result) {
+					if( MyDebug.LOG )
+						Log.d(TAG, "user clicked restore - need to restart");
+					
+					((MainActivity)getActivity()).restartActivity();
+				} else
+					((MainActivity)getActivity()).getPreview().showToast(null, R.string.failed_to_restore_from_backup);
+			}
+		})
+		.setNegativeButton(R.string.answer_no, null)
+		.show();
 	}
 }

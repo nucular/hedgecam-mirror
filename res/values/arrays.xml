@@ -464,13 +464,15 @@
 		<item>crop_guide_2.35</item>
 		<item>crop_guide_2.4</item>
 	</string-array>
-	<string-array name="preference_raw_entries">
-		<item>@string/jpeg_only</item>
+	<string-array name="preference_image_format_entries">
+		<item>JPEG</item>
+		<item>PNG</item>
 		<item>@string/jpeg_and_dng</item>
 	</string-array>
-	<string-array name="preference_raw_values">
-		<item>preference_raw_no</item>
-		<item>preference_raw_yes</item>
+	<string-array name="preference_image_format_values">
+		<item>jpeg</item>
+		<item>png</item>
+		<item>jpeg_raw</item>
 	</string-array>
 	<string-array name="preference_stamp_dateformat_entries">
 		<item>@string/default_str</item>
@@ -620,6 +622,20 @@
 		<item>200</item>
 		<item>240</item>
 	</string-array>
+	<string-array name="preference_video_format_entries">
+		<item>@string/default_str</item>
+		<item>3GPP</item>
+		<item>WebM</item>
+		<item>MPEG4 (H264)</item>
+		<item>MPEG4 (HEVC)</item>
+	</string-array>
+	<string-array name="preference_video_format_values">
+		<item>default</item>
+		<item>3gpp</item>
+		<item>webm</item>
+		<item>mpeg4_h264</item>
+		<item>mpeg4_hevc</item>
+	</string-array>
 	<string-array name="preference_video_restart_entries">
 		<item>@string/dont_restart</item>
 		<item>@string/repeat_1_time</item>
@@ -667,6 +683,52 @@
 		<item>audio_default</item>
 		<item>audio_mono</item>
 		<item>audio_stereo</item>
+	</string-array>
+	<string-array name="preference_record_audio_bitrate_entries">
+		<item>@string/default_str</item>
+		<item>8kbps</item>
+		<item>12kbps</item>
+		<item>16kbps</item>
+		<item>24kbps</item>
+		<item>32kbps</item>
+		<item>48kbps</item>
+		<item>64kbps</item>
+		<item>96kbps</item>
+		<item>128kbps</item>
+		<item>156kbps</item>
+		<item>160kbps</item>
+		<item>192kbps</item>
+		<item>256kbps</item>
+	</string-array>
+	<string-array name="preference_record_audio_bitrate_values">
+		<item>default</item>
+		<item>8000</item>
+		<item>12000</item>
+		<item>16000</item>
+		<item>24000</item>
+		<item>32000</item>
+		<item>48000</item>
+		<item>64000</item>
+		<item>96000</item>
+		<item>128000</item>
+		<item>156000</item>
+		<item>160000</item>
+		<item>192000</item>
+		<item>256000</item>
+	</string-array>
+	<string-array name="preference_record_audio_sample_rate_entries">
+		<item>@string/default_str</item>
+		<item>24kHz</item>
+		<item>32kHz</item>
+		<item>44.1kHz</item>
+		<item>48kHz</item>
+	</string-array>
+	<string-array name="preference_record_audio_sample_rate_values">
+		<item>default</item>
+		<item>24000</item>
+		<item>32000</item>
+		<item>44100</item>
+		<item>48000</item>
 	</string-array>
 	<string-array name="preference_audio_control_entries">
 		<item>@string/vc_loud_noise</item>
@@ -814,6 +876,8 @@
 		<item>wb_minus</item>
 	</string-array>
 	<string-array name="preference_shutter_sound_entries">
+		<item>@string/off</item>
+		<item>@string/shutter_force_off</item>
 		<item>@string/default_str</item>
 		<item>@string/shutter_android_2</item>
 		<item>@string/shutter_android_4</item>
@@ -824,6 +888,8 @@
 		<item>@string/shutter_unlock</item>
 	</string-array>
 	<string-array name="preference_shutter_sound_values">
+		<item>off</item>
+		<item>force_off</item>
 		<item>default</item>
 		<item>android2</item>
 		<item>android4</item>
@@ -832,6 +898,14 @@
 		<item>shutter3</item>
 		<item>shutter4</item>
 		<item>unlock</item>
+	</string-array>
+	<string-array name="preference_shutter_sound_old_entries">
+		<item>@string/shutter_force_off</item>
+		<item>@string/default_str</item>
+	</string-array>
+	<string-array name="preference_shutter_sound_old_values">
+		<item>force_off</item>
+		<item>default</item>
 	</string-array>
 	<string-array name="preference_sound_volume_entries">
 		<item>@string/sv_max</item>
@@ -869,6 +943,14 @@
 		<item>large</item>
 		<item>xlarge</item>
 	</string-array>
+	<string-array name="preference_video_folder_entries">
+		<item>@string/vf_same_as_photo</item>
+		<item>@string/vf_folder</item>
+	</string-array>
+	<string-array name="preference_video_folder_values">
+		<item>same_as_photo</item>
+		<item>folder</item>
+	</string-array>
 	<string-array name="preference_ghost_image_source_entries">
 		<item>@string/gi_last_photo</item>
 		<item>@string/gi_file</item>
@@ -902,6 +984,16 @@
 	<string-array name="preference_stamp_location_y_values">
 		<item>top</item>
 		<item>bottom</item>
+	</string-array>
+	<string-array name="preference_align_entries">
+		<item>@string/none</item>
+		<item>@string/only_align</item>
+		<item>@string/align_and_crop</item>
+	</string-array>
+	<string-array name="preference_align_values">
+		<item>none</item>
+		<item>align</item>
+		<item>align_crop</item>
 	</string-array>
 	<string-array name="preference_hdr_tonemapping_entries">
 		<item>Clamp</item>
@@ -1027,10 +1119,12 @@
 	</string-array>
 	<string-array name="preference_optical_stabilization_entries">
 		<item>@string/off</item>
+		<item>@string/if_necessary</item>
 		<item>@string/on</item>
 	</string-array>
 	<string-array name="preference_optical_stabilization_values">
 		<item>off</item>
+		<item>if_necessary</item>
 		<item>on</item>
 	</string-array>
 	<string-array name="preference_osd_frequency_entries">

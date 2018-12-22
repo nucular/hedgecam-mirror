@@ -27,6 +27,7 @@ public class VideoProfile {
 	public int videoBitRate;
 	public int videoFrameHeight;
 	public int videoFrameWidth;
+	public String fileExtension = "mp4";
 
 	/** Returns a dummy video profile, used if video isn't supported.
 	 */

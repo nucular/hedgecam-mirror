@@ -6,5 +6,9 @@
 		<attr name="fmin" format="float" />
 		<attr name="fmax" format="float" />
 		<attr name="fstep" format="float" />
+		<attr name="checkBoxTitle" format="string" />
+		<attr name="checkBoxValue" format="string" />
+		<attr name="defaultSeekBarValue" format="string" />
+		<attr name="reverse" format="boolean" />
 	</declare-styleable>
 </resources>

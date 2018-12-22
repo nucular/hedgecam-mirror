@@ -26,6 +26,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Typeface;
@@ -111,6 +112,7 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 	private final RectF thumbnail_anim_src_rect = new RectF();
 	private final RectF thumbnail_anim_dst_rect = new RectF();
 	private final Matrix thumbnail_anim_matrix = new Matrix();
+	private float gallery_button_padding;
 
 	private boolean show_last_image;
 	private final RectF last_image_src_rect = new RectF();
@@ -284,6 +286,8 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 		pref_take_photo_border = sharedPreferences.getBoolean(Prefs.TAKE_PHOTO_BORDER, true);
 		pref_thumbnail_animation = sharedPreferences.getBoolean(Prefs.THUMBNAIL_ANIMATION, true)
 			&& !sharedPreferences.getBoolean(Prefs.PAUSE_PREVIEW, false);
+		if (pref_thumbnail_animation)
+			gallery_button_padding = resources.getDimension(main_activity.getMainUI().shutter_icon_material ? R.dimen.button_gallery_rounded_padding : R.dimen.button_gallery_padding);
 
 		pref_angle = sharedPreferences.getBoolean(Prefs.SHOW_ANGLE, true);
 		pref_angle_line = sharedPreferences.getBoolean(Prefs.SHOW_ANGLE_LINE, false);
@@ -987,10 +991,10 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 		}
 
 		// see documentation for CameraController.shouldCoverPreview()
-		if( preview.usingCamera2API() && ( camera_controller == null || camera_controller.shouldCoverPreview() ) ) {
+/*		if( preview.usingCamera2API() && ( camera_controller == null || camera_controller.shouldCoverPreview() ) ) {
 			p.setColor(Color.BLACK);
 			canvas.drawRect(0.0f, 0.0f, canvas_width, canvas_height, p);
-		}
+		}*/
 
 		if( camera_controller != null && taking_picture && pref_take_photo_border ) {
 			p.setColor(Color.WHITE);
@@ -1033,8 +1037,8 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 
 				float st_w = canvas_width;
 				float st_h = canvas_height;
-				float nd_w = galleryButton.getWidth()-resources.getDimension(R.dimen.button_gallery_padding)*2;
-				float nd_h = galleryButton.getHeight()-resources.getDimension(R.dimen.button_gallery_padding)*2;
+				float nd_w = galleryButton.getWidth()-gallery_button_padding*2;
+				float nd_h = galleryButton.getHeight()-gallery_button_padding*2;
 				//int thumbnail_w = (int)( (1.0f-alpha)*st_w + alpha*nd_w );
 				//int thumbnail_h = (int)( (1.0f-alpha)*st_h + alpha*nd_h );
 				float correction_w = st_w/nd_w - 1.0f;
@@ -1053,12 +1057,36 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 					thumbnail_anim_matrix.preScale(ratio, 1.0f/ratio, last_thumbnail.getWidth()/2.0f, last_thumbnail.getHeight()/2.0f);
 				}
 				thumbnail_anim_matrix.preRotate(ui_rotation, last_thumbnail.getWidth()/2.0f, last_thumbnail.getHeight()/2.0f);
+				
+				float radius = 0;
+				if (main_activity.getMainUI().shutter_icon_material)
+					radius = Math.min(thumbnail_w, thumbnail_h)*alpha;
+				if (radius > 0) {
+					Path path = new Path();
+					path.addRoundRect(thumbnail_anim_dst_rect, radius, radius, Path.Direction.CW);
+					canvas.save();
+					canvas.clipPath(path);
+				}
 				canvas.drawBitmap(last_thumbnail, thumbnail_anim_matrix, p);
+				if (radius > 0) 
+					canvas.restore();
 				if (pref_take_photo_border) {
 					p.setColor(Color.WHITE);
 					p.setStyle(Paint.Style.STROKE);
-					p.setStrokeWidth(resources.getDimension(R.dimen.ind_take_photo_border)*( ((thumbnail_w+thumbnail_h)/2) / ((st_w+st_h)/2) ));
-					canvas.drawRect(thumbnail_anim_dst_rect, p);
+					if (radius > 0) {
+						float this_stroke_width = resources.getDimension(R.dimen.ind_take_photo_border);
+						this_stroke_width -= (this_stroke_width-resources.getDimension(R.dimen.button_gallery_rounded_border))*alpha;
+						p.setStrokeWidth(this_stroke_width);
+						float stroke_diff = this_stroke_width*alpha;
+						thumbnail_anim_dst_rect.left -= stroke_diff;
+						thumbnail_anim_dst_rect.top -= stroke_diff;
+						thumbnail_anim_dst_rect.right += stroke_diff;
+						thumbnail_anim_dst_rect.bottom += stroke_diff;
+						canvas.drawRoundRect(thumbnail_anim_dst_rect, radius, radius, p);
+					} else {
+						p.setStrokeWidth(resources.getDimension(R.dimen.ind_take_photo_border)*( ((thumbnail_w+thumbnail_h)/2) / ((st_w+st_h)/2) ));
+						canvas.drawRect(thumbnail_anim_dst_rect, p);
+					}
 					p.setStyle(Paint.Style.FILL); // reset
 					p.setStrokeWidth(stroke_width); // reset
 				}
@@ -1219,6 +1247,12 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 //						canvas.drawCircle(face_rect.centerX(), face_rect.centerY(), (float)(face_rect.width()*0.6), p);
 					} else {
 						canvas.drawRect(face_rect, p);
+					}
+					if( MyDebug.LOG ) {
+						p.setTextSize(text_size_default);
+						drawText(canvas, p, ""+face.score, text_color_yellow, (int)((face_rect.left+face_rect.right)/2), (int)((face_rect.top+face_rect.bottom)/2+text_size_default/half_line_div), false);
+						p.setStyle(Paint.Style.STROKE);
+						p.setStrokeWidth(resources.getDimension(pref_alt_indication ? R.dimen.ind_focus_thickness : R.dimen.ind_focus_thickness_old));
 					}
 					/*if( face.leftEye != null ) {
 						float [] left_point = {face.leftEye.x, face.leftEye.y};

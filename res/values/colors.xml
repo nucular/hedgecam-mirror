@@ -25,6 +25,8 @@
 	<color name="ctrl_button_shadow">#7f000000</color>
 	
 	<color name="toast_color"		>#323232</color>
+	
+	<color name="folder"			>#fff280</color>
 
 	<!-- Drawing on photo -->
 	<color name="photo_red"			>#ef5350</color>

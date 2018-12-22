@@ -12,7 +12,7 @@ import android.renderscript.Script;
 import android.renderscript.Type;
 
 public class NRProcessor {
-	private static final String TAG = "NRProcessor";
+	private static final String TAG = "HedgeCam/NRProcessor";
 
 	private int width = 0;
 	private int height = 0;

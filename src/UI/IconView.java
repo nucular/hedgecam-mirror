@@ -39,8 +39,13 @@ public class IconView extends TextView {
 	public static final String RAW = "r";
 	public static final String NOISE_REDUCTION = "n";
 	public static final String FAST_FORWARD = "»";
+	public static final String FOLDER = "o";
+	public static final String FILE = "p";
+	public static final String UP = "u";
 	
-	public static Typeface mIconFont;	
+	public static Typeface mIconFont;
+	
+	private Context context;
 
 	public IconView(Context context, AttributeSet attrs, int defStyle) {
 		super(context, attrs, defStyle);
@@ -65,14 +70,24 @@ public class IconView extends TextView {
 	}
 
 	private void init(Context context) {
+		this.context = context;
+
 		if (mIconFont == null) {
 			loadIconFont(context);
 		}
 
 		setGravity(Gravity.CENTER);
 		setTextColor(Color.WHITE);
-		setShadowLayer(context.getResources().getDimension(R.dimen.ctrl_button_shadow), 0, 0, context.getResources().getColor(R.color.ctrl_button_shadow));
+		setDrawShadow(true);
 		setTypeface(mIconFont);
+	}
+	
+	public void setDrawShadow(boolean draw) {
+		if (draw) {
+			setShadowLayer(context.getResources().getDimension(R.dimen.ctrl_button_shadow), 0, 0, context.getResources().getColor(R.color.ctrl_button_shadow));
+			return;
+		}
+		setShadowLayer(0, 0, 0, 0);
 	}
 	
 	private static void loadIconFont(Context context) {

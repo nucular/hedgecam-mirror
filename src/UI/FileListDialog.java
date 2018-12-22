@@ -7,10 +7,10 @@ import com.caddish_hedgehog.hedgecam2.R;
 import com.caddish_hedgehog.hedgecam2.StorageUtils;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -37,61 +37,44 @@ import android.widget.Toast;
 /** Dialog to pick a folder. Also allows creating new folders. Used when not
  *  using the Storage Access Framework.
  */
-public class FolderChooserDialog extends DialogFragment {
-	private static final String TAG = "HedgeCam/FolderChooserFragment";
+public class FileListDialog extends DialogFragment {
+	private static final String TAG = "HedgeCam/FileListDialog";
+	
+	public static abstract class Listener {
+		public void onSelected(String file) {};
+		public void onCancelled() {};
+	}
 
+	private final Listener listener;
 	private File current_folder;
 	private AlertDialog folder_dialog;
 	private ListView list;
-	private String chosen_folder;
+	private String[] extensions = null;
+	private final boolean multi_select;
+	private String pref_key = Prefs.SAVE_LOCATION;
 
-	private static class FileWrapper implements Comparable<FileWrapper> {
-		private final File file;
-		private final String override_name; // if non-null, use this as the display name instead
-		private final int sort_order; // items are sorted first by sort_order, then alphabetically
-		
-		FileWrapper(File file, String override_name, int sort_order) {
-			this.file = file;
-			this.override_name = override_name;
-			this.sort_order = sort_order;
-		}
-		
-		@Override
-		public String toString() {
-			if( override_name != null )
-				return override_name;
-			return file.getName();
-		}
-		
-		@Override
-		public int compareTo(@NonNull FileWrapper o) {
-			if( this.sort_order < o.sort_order )
-				return -1;
-			else if( this.sort_order > o.sort_order )
-				return 1;
-			return this.file.getName().toLowerCase(Locale.US).compareTo(o.getFile().getName().toLowerCase(Locale.US));
-		}
-		
-		@Override
-		public boolean equals(Object o) {
-			// important to override equals(), since we're overriding compareTo()
-			if( !(o instanceof FileWrapper) )
-				return false;
-			FileWrapper that = (FileWrapper)o;
-			if( this.sort_order != that.sort_order )
-				return false;
-			return this.file.getName().toLowerCase(Locale.US).equals(that.getFile().getName().toLowerCase(Locale.US));
-		}
+	public FileListDialog(String pref_key, Listener listener) {
+		super();
+		if (pref_key != null)
+			this.pref_key = pref_key;
+		this.listener = listener;
+		this.multi_select = false;
+	}
 
-		@Override
-		public int hashCode() {
-			// must override this, as we override equals()
-			return this.file.getName().toLowerCase(Locale.US).hashCode();
-		}
+	public FileListDialog(String[] extensions, Listener listener) {
+		super();
+		this.listener = listener;
+		this.extensions = extensions;
+		Arrays.sort(this.extensions);
+		this.multi_select = false;
+	}
 
-		File getFile() {
-			return file;
-		}
+	public FileListDialog(String[] extensions, boolean multi_select, Listener listener) {
+		super();
+		this.listener = listener;
+		this.extensions = extensions;
+		Arrays.sort(this.extensions);
+		this.multi_select = multi_select;
 	}
 
 	@Override
@@ -99,7 +82,7 @@ public class FolderChooserDialog extends DialogFragment {
 		if( MyDebug.LOG )
 			Log.d(TAG, "onCreateDialog");
 		SharedPreferences sharedPreferences = ((MainActivity)this.getActivity()).getSharedPrefs();
-		String folder_name = sharedPreferences.getString(Prefs.SAVE_LOCATION, "HedgeCam");
+		String folder_name = sharedPreferences.getString(pref_key, "HedgeCam");
 		if( MyDebug.LOG )
 			Log.d(TAG, "folder_name: " + folder_name);
 		File new_folder = StorageUtils.getImageFolder(folder_name);
@@ -118,38 +101,78 @@ public class FolderChooserDialog extends DialogFragment {
 				File file = file_wrapper.getFile();
 				if( MyDebug.LOG )
 					Log.d(TAG, "file: " + file.toString());
-				refreshList(file);
+				if (file.isDirectory())
+					refreshList(file);
+				else if (file.isFile()) {
+					if (multi_select) {
+						file_wrapper.reverseSelected();
+						((FileListAdapter)list.getAdapter()).update();
+					} else {
+						folder_dialog.dismiss();
+						if (listener != null)
+							listener.onSelected(file.getAbsolutePath());
+					}
+				}
 			}
 		});
 		// good to use as short a text as possible for the icons, to reduce chance that the three buttons will have to appear on top of each other rather than in a row, in portrait mode
-		folder_dialog = new AlertDialog.Builder(getActivity())
+		AlertDialog.Builder builder = new AlertDialog.Builder(getActivity())
 			//.setIcon(R.drawable.alert_dialog_icon)
 			.setView(list)
-			.setPositiveButton(android.R.string.ok, null) // we set the listener in onShowListener, so we can prevent the dialog from closing (if chosen folder isn't writable)
-			.setNeutralButton(R.string.new_folder, null) // we set the listener in onShowListener, so we can prevent the dialog from closing
-			.setNegativeButton(android.R.string.cancel, null)
-			.create();
+			.setNegativeButton(android.R.string.cancel, null);
+		if (extensions == null || multi_select)
+			builder.setPositiveButton(android.R.string.ok, null); // we set the listener in onShowListener, so we can prevent the dialog from closing (if chosen folder isn't writable)
+		if (extensions == null)
+			builder.setNeutralButton(R.string.new_folder, null); // we set the listener in onShowListener, so we can prevent the dialog from closing
+
+		folder_dialog = builder.create();
 		folder_dialog.setOnShowListener(new DialogInterface.OnShowListener() {
 			@Override
 			public void onShow(DialogInterface dialog_interface) {
-				Button b_positive = folder_dialog.getButton(AlertDialog.BUTTON_POSITIVE);
-				b_positive.setOnClickListener(new View.OnClickListener() {
-					@Override
-					public void onClick(View view) {
-						if( MyDebug.LOG )
-							Log.d(TAG, "choose folder: " + current_folder.toString());
-						if( useFolder() ) {
-							folder_dialog.dismiss();
+				if (multi_select) {
+					Button b_positive = folder_dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+					b_positive.setOnClickListener(new View.OnClickListener() {
+						@Override
+						public void onClick(View view) {
+							if( MyDebug.LOG )
+								Log.d(TAG, "choose files from folder: " + current_folder.toString());
+							// Finish it!
 						}
-					}
-				});
-				Button b_neutral = folder_dialog.getButton(AlertDialog.BUTTON_NEUTRAL);
-				b_neutral.setOnClickListener(new View.OnClickListener() {
+					});
+				} else if (extensions == null) {
+					Button b_positive = folder_dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+					b_positive.setOnClickListener(new View.OnClickListener() {
+						@Override
+						public void onClick(View view) {
+							if( MyDebug.LOG )
+								Log.d(TAG, "choose folder: " + current_folder.toString());
+							String folder = useFolder();
+							if( folder != null ) {
+								folder_dialog.dismiss();
+								if (listener != null)
+									listener.onSelected(folder);
+							}
+						}
+					});
+
+					Button b_neutral = folder_dialog.getButton(AlertDialog.BUTTON_NEUTRAL);
+					b_neutral.setOnClickListener(new View.OnClickListener() {
+						@Override
+						public void onClick(View view) {
+							if( MyDebug.LOG )
+								Log.d(TAG, "new folder in: " + current_folder.toString());
+							newFolder();
+						}
+					});
+				}
+
+				Button b_negative = folder_dialog.getButton(AlertDialog.BUTTON_NEGATIVE);
+				b_negative.setOnClickListener(new View.OnClickListener() {
 					@Override
 					public void onClick(View view) {
-						if( MyDebug.LOG )
-							Log.d(TAG, "new folder in: " + current_folder.toString());
-						newFolder();
+						folder_dialog.dismiss();
+						if (listener != null)
+							listener.onCancelled();
 					}
 				});
 			}
@@ -165,7 +188,7 @@ public class FolderChooserDialog extends DialogFragment {
 			}
 		}
 		refreshList(new_folder);
-		if( !canWrite() ) {
+/*		if( !canWrite() ) {
 			// see testFolderChooserInvalid()
 			if( MyDebug.LOG )
 				Log.d(TAG, "failed to read folder");
@@ -176,7 +199,7 @@ public class FolderChooserDialog extends DialogFragment {
 					Log.d(TAG, "can't even read DCIM?!");
 				refreshList(new File("/"));
 			}
-		}
+		}*/
 		return folder_dialog;
 	}
 	
@@ -202,20 +225,32 @@ public class FolderChooserDialog extends DialogFragment {
 		// to view this folder (so the user can go to parent folders which might be readable again)
 		List<FileWrapper> listed_files = new ArrayList<>();
 		if( new_folder.getParentFile() != null )
-			listed_files.add(new FileWrapper(new_folder.getParentFile(), getResources().getString(R.string.parent_folder), 0));
-		File default_folder = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM);
-		if( !default_folder.equals(new_folder) && !default_folder.equals(new_folder.getParentFile()) )
-			listed_files.add(new FileWrapper(default_folder, null, 1));
+			listed_files.add(new FileWrapper(new_folder.getParentFile(), FileWrapper.ITEM_LEVEL_UP));
+//		File default_folder = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM);
+//		if( !default_folder.equals(new_folder) && !default_folder.equals(new_folder.getParentFile()) )
+//			listed_files.add(new FileWrapper(default_folder, null, 1));
 		if( files != null ) {
 			for(File file : files) {
-				if( file.isDirectory() ) {
-					listed_files.add(new FileWrapper(file, null, 2));
+				if (file.isDirectory()) {
+					listed_files.add(new FileWrapper(file, FileWrapper.ITEM_FOLDER));
+				} else if ( extensions != null && file.isFile()) {
+					String name = file.getName();
+					String ext = null;
+					int dot_pos = name.lastIndexOf('.');
+					if (dot_pos > 0)
+						ext = name.substring(dot_pos+1).toLowerCase();
+						
+					if (ext != null && Arrays.binarySearch(extensions, ext) >= 0)
+						listed_files.add(new FileWrapper(file, FileWrapper.ITEM_FILE));
 				}
 			}
 		}
+		if ((files == null || files.length == 0) && new_folder.getAbsolutePath().equals("/storage/emulated")) {
+			listed_files.add(new FileWrapper(new File("/storage/emulated/0"), FileWrapper.ITEM_FOLDER));
+		}
 		Collections.sort(listed_files);
 
-		ArrayAdapter<FileWrapper> adapter = new ArrayAdapter<>(this.getActivity(), android.R.layout.simple_list_item_1, listed_files);
+		FileListAdapter adapter = new FileListAdapter(this.getActivity(), R.layout.file_list_item, listed_files);
 		list.setAdapter(adapter);
 
 		this.current_folder = new_folder;
@@ -235,11 +270,11 @@ public class FolderChooserDialog extends DialogFragment {
 		return false;
 	}
 
-	private boolean useFolder() {
+	private String useFolder() {
 		if( MyDebug.LOG )
 			Log.d(TAG, "useFolder");
 		if( current_folder == null )
-			return false;
+			return null;
 		if( canWrite() ) {
 			File base_folder = StorageUtils.getBaseFolder();
 			String new_save_location = current_folder.getAbsolutePath();
@@ -250,19 +285,12 @@ public class FolderChooserDialog extends DialogFragment {
 			}
 			if( MyDebug.LOG )
 				Log.d(TAG, "new_save_location: " + new_save_location);
-			chosen_folder = new_save_location;
-			return true;
+			return new_save_location;
 		}
 		else {
 			Toast.makeText(getActivity(), R.string.cant_write_folder, Toast.LENGTH_SHORT).show();
 		}
-		return false;
-	}
-
-	/** Returns the folder selected by the user. Returns null if the dialog was cancelled.
-	 */
-	public String getChosenFolder() {
-		return this.chosen_folder;
+		return null;
 	}
 	
 	private static class NewFolderInputFilter implements InputFilter {
@@ -343,17 +371,10 @@ public class FolderChooserDialog extends DialogFragment {
 		}
 	}
 
-
 	@Override
 	public void onResume() {
 		super.onResume();
 		// refresh in case files have changed
 		refreshList(current_folder);
-	}
-	
-	// for testing:
-
-	public File getCurrentFolder() {
-		return current_folder;
 	}
 }

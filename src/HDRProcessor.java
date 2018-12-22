@@ -11,6 +11,7 @@ import java.util.Comparator;
 import java.util.List;
 
 import android.content.Context;
+import android.graphics.Rect;
 import android.graphics.Bitmap;
 //import android.graphics.Color;
 import android.media.MediaScannerConnection;
@@ -29,7 +30,7 @@ import android.support.annotation.RequiresApi;
 import android.util.Log;
 
 public class HDRProcessor {
-	private static final String TAG = "HDRProcessor";
+	private static final String TAG = "HedgeCam/HDRProcessor";
 	
 	private final Context context;
 	private RenderScript rs; // lazily created, so we don't take up resources if application isn't using HDR
@@ -269,7 +270,7 @@ public class HDRProcessor {
 	 *					  Algorithm to use for tonemapping (if multiple images are received).
 	 */
 	@RequiresApi(api = Build.VERSION_CODES.KITKAT)
-	public Allocation processHDR(List<Bitmap> bitmaps, boolean assume_sorted, SortCallback sort_cb, float hdr_alpha, int n_tiles, float unsharp_mask, int unsharp_mask_radius, TonemappingAlgorithm tonemapping_algorithm, boolean deghost) throws HDRProcessorException {
+	public Allocation processHDR(List<Bitmap> bitmaps, boolean assume_sorted, SortCallback sort_cb, boolean align, boolean crop_aligned, float hdr_alpha, int n_tiles, float unsharp_mask, int unsharp_mask_radius, TonemappingAlgorithm tonemapping_algorithm, boolean deghost) throws HDRProcessorException {
 		if( MyDebug.LOG )
 			Log.d(TAG, "processHDR");
 		int n_bitmaps = bitmaps.size();
@@ -302,7 +303,7 @@ public class HDRProcessor {
 			}
 			return processSingleImage(bitmaps, hdr_alpha, n_tiles, unsharp_mask, unsharp_mask_radius);
 		case HDRALGORITHM_STANDARD:
-			return processHDRCore(bitmaps, assume_sorted, sort_cb, hdr_alpha, n_tiles, unsharp_mask, unsharp_mask_radius, tonemapping_algorithm, deghost);
+			return processHDRCore(bitmaps, assume_sorted, sort_cb, align, crop_aligned, hdr_alpha, n_tiles, unsharp_mask, unsharp_mask_radius, tonemapping_algorithm, deghost);
 		default:
 			if( MyDebug.LOG )
 				Log.e(TAG, "unknown algorithm " + algorithm);
@@ -440,7 +441,8 @@ public class HDRProcessor {
 	 *  Android 5.0).
 	 */
 	@RequiresApi(api = Build.VERSION_CODES.KITKAT)
-	private Allocation processHDRCore(List<Bitmap> bitmaps, boolean assume_sorted, SortCallback sort_cb, float hdr_alpha, int n_tiles, float unsharp_mask, int unsharp_mask_radius, TonemappingAlgorithm tonemapping_algorithm, boolean deghost) {
+	private Allocation processHDRCore(List<Bitmap> bitmaps, boolean assume_sorted, SortCallback sort_cb, boolean align, boolean crop_aligned,
+			float hdr_alpha, int n_tiles, float unsharp_mask, int unsharp_mask_radius, TonemappingAlgorithm tonemapping_algorithm, boolean deghost) {
 		if( MyDebug.LOG )
 			Log.d(TAG, "processHDRCore");
 		
@@ -458,7 +460,7 @@ public class HDRProcessor {
 		}*/
 		//float [] hdr = new float[3];
 		//int [] rgb = new int[3];
-
+		
 		initRenderScript();
 		if( MyDebug.LOG )
 			Log.d(TAG, "### time after creating renderscript: " + (System.currentTimeMillis() - time_s));
@@ -472,7 +474,7 @@ public class HDRProcessor {
 
 		// perform auto-alignment
 		// if assume_sorted if false, this function will also sort the allocations and bitmaps from darkest to brightest.
-		BrightnessDetails brightnessDetails = autoAlignment(offsets_x, offsets_y, allocations, width, height, bitmaps, 1, assume_sorted, sort_cb, true, false, time_s);
+		BrightnessDetails brightnessDetails = autoAlignment(offsets_x, offsets_y, allocations, width, height, bitmaps, 1, assume_sorted, sort_cb, align, true, false, time_s);
 		int median_brightness = brightnessDetails.median_brightness;
 		if( MyDebug.LOG ) {
 			Log.d(TAG, "### time after autoAlignment: " + (System.currentTimeMillis() - time_s));
@@ -491,51 +493,78 @@ public class HDRProcessor {
 		if( MyDebug.LOG )
 			Log.d(TAG, "### time after creating response functions: " + (System.currentTimeMillis() - time_s));
 
-		/*
-		// calculate average luminance by sampling
-		final int n_samples_c = 100;
-		final int n_w_samples = (int)Math.sqrt(n_samples_c);
-		final int n_h_samples = n_samples_c/n_w_samples;
+		boolean need_crop = false;
+		if (crop_aligned) {
+			Rect crop = new Rect(0, 0, width, height);
 
-		double sum_log_luminance = 0.0;
-		int count = 0;
-		for(int y=0;y<n_h_samples;y++) {
-			double alpha = ((double)y+1.0) / ((double)n_h_samples+1.0);
-			int y_coord = (int)(alpha * bm.getHeight());
-			for(int i=0;i<n_bitmaps;i++) {
-				bitmaps.get(i).getPixels(buffers[i], 0, bm.getWidth(), 0, y_coord, bm.getWidth(), 1);
+			if (offsets_x[0] > 0) {
+				need_crop = true;
+				crop.right = Math.min(crop.right, width-offsets_x[0]);
+			} else if (offsets_x[0] < 0) {
+				need_crop = true;
+				crop.left = Math.max(crop.left, -offsets_x[0]);
 			}
-			for(int x=0;x<n_w_samples;x++) {
-				double beta = ((double)x+1.0) / ((double)n_w_samples+1.0);
-				int x_coord = (int)(beta * bm.getWidth());
-				if( MyDebug.LOG )
-					Log.d(TAG, "sample luminance from " + x_coord + " , " + y_coord);
-				calculateHDR(hdr, n_bitmaps, buffers, x_coord, response_functions);
-				double luminance = calculateLuminance(hdr[0], hdr[1], hdr[2]) + 1.0; // add 1 so we don't take log of 0..;
-				sum_log_luminance += Math.log(luminance);
-				count++;
+			if (offsets_y[0] > 0) {
+				need_crop = true;
+				crop.bottom = Math.min(crop.bottom, height-offsets_y[0]);
+			} else if (offsets_y[0] < 0) {
+				need_crop = true;
+				crop.top = Math.max(crop.top, -offsets_y[0]);
+			}
+
+			if (offsets_x[2] > 0) {
+				need_crop = true;
+				crop.right = Math.min(crop.right, width-offsets_x[2]);
+			} else if (offsets_x[2] < 0) {
+				need_crop = true;
+				crop.left = Math.max(crop.left, -offsets_x[2]);
+			}
+			if (offsets_y[2] > 0) {
+				need_crop = true;
+				crop.bottom = Math.min(crop.bottom, height-offsets_y[2]);
+			} else if (offsets_y[2] < 0) {
+				need_crop = true;
+				crop.top = Math.max(crop.top, -offsets_y[2]);
+			}
+			
+			if (need_crop) {
+				offsets_x[1] = crop.left;
+				offsets_y[1] = crop.top;
+
+				offsets_x[0] += crop.left;
+				offsets_y[0] += crop.top;
+
+				offsets_x[2] += crop.left;
+				offsets_y[2] += crop.top;
+				
+				width = crop.right-crop.left;
+				height = crop.bottom-crop.top;
+
+				if( MyDebug.LOG ) {
+					Log.d(TAG, "bitmap 0 offsets: x=" + offsets_x[0] + ", y="+offsets_y[0]);
+					Log.d(TAG, "bitmap 1 offsets: x=" + offsets_x[1] + ", y="+offsets_y[1]);
+					Log.d(TAG, "bitmap 2 offsets: x=" + offsets_x[2] + ", y="+offsets_y[2]);
+					Log.d(TAG, "cropping rectangle: left=" + crop.left + ", top=" + crop.top + ", right=" + crop.right + ", bottom=" + crop.bottom);
+					Log.d(TAG, "new resolution : " + width + "x" + height);
+				}
 			}
 		}
-		float avg_luminance = (float)(Math.exp( sum_log_luminance / count ));
-		if( MyDebug.LOG )
-			Log.d(TAG, "avg_luminance: " + avg_luminance);
-		if( MyDebug.LOG )
-			Log.d(TAG, "time after calculating average luminance: " + (System.currentTimeMillis() - time_s));
-			*/
-
-		// write new hdr image
 
 		// create RenderScript
 		ScriptC_process_hdr processHDRScript = new ScriptC_process_hdr(rs);
 
 		// set allocations
 		processHDRScript.set_bitmap0(allocations[0]);
+		processHDRScript.set_bitmap1(allocations[1]);
 		processHDRScript.set_bitmap2(allocations[2]);
 
 		// set offsets
 		processHDRScript.set_offset_x0(offsets_x[0]);
 		processHDRScript.set_offset_y0(offsets_y[0]);
-		// no offset for middle image
+
+		processHDRScript.set_offset_x1(offsets_x[1]);
+		processHDRScript.set_offset_y1(offsets_y[1]);
+
 		processHDRScript.set_offset_x2(offsets_x[2]);
 		processHDRScript.set_offset_y2(offsets_y[2]);
 
@@ -706,11 +735,21 @@ public class HDRProcessor {
 
 		if( MyDebug.LOG )
 			Log.d(TAG, "call processHDRScript");
-		Allocation output_allocation = allocations[base_bitmap];
+		Allocation output_allocation;
+		if (need_crop) {
+			if( MyDebug.LOG )
+				Log.d(TAG, "### time before creating output_allocation: " + (System.currentTimeMillis() - time_s));
+			Type.Builder builder = new Type.Builder(rs, Element.RGBA_8888(rs));
+			builder.setX(width);
+			builder.setY(height);
+			output_allocation = Allocation.createTyped(rs, builder.create());
+		} else {
+			output_allocation = allocations[base_bitmap];
+		}
 
 		if( MyDebug.LOG )
 			Log.d(TAG, "### time before processHDRScript: " + (System.currentTimeMillis() - time_s));
-		processHDRScript.forEach_hdr(allocations[1], output_allocation);
+		processHDRScript.forEach_hdr(output_allocation);
 		if( MyDebug.LOG )
 			Log.d(TAG, "### time after processHDRScript: " + (System.currentTimeMillis() - time_s));
 
@@ -847,7 +886,7 @@ public class HDRProcessor {
 	 * @param floating_point If true, the first allocation is in floating point (F32_3) format.
 	 */
 	@RequiresApi(api = Build.VERSION_CODES.KITKAT)
-	private BrightnessDetails autoAlignment(int [] offsets_x, int [] offsets_y, Allocation [] allocations, int width, int height, List<Bitmap> bitmaps, int base_bitmap, boolean assume_sorted, SortCallback sort_cb, boolean use_mtb, boolean floating_point, long time_s) {
+	private BrightnessDetails autoAlignment(int [] offsets_x, int [] offsets_y, Allocation [] allocations, int width, int height, List<Bitmap> bitmaps, int base_bitmap, boolean assume_sorted, SortCallback sort_cb, boolean align, boolean use_mtb, boolean floating_point, long time_s) {
 		if( MyDebug.LOG )
 			Log.d(TAG, "autoAlignment");
 
@@ -943,6 +982,10 @@ public class HDRProcessor {
 			median_brightness = luminanceInfos[base_bitmap].median_value;
 			if( MyDebug.LOG )
 				Log.d(TAG, "median_brightness: " + median_brightness);
+		}
+
+		if( !align ) {
+			return new BrightnessDetails(median_brightness);
 		}
 
 		for(int i=0;i<allocations.length;i++) {

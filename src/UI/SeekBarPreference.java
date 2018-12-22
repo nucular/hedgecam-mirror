@@ -53,6 +53,7 @@ public class SeekBarPreference extends DialogPreference implements SeekBar.OnSee
 		minValue = idontneedthisshit.getInteger(R.styleable.idontneedthisshit_min, 0);
 		step = idontneedthisshit.getInteger(R.styleable.idontneedthisshit_step, 1);
 
+		idontneedthisshit.recycle();
 	}
 
 	@Override 
@@ -67,7 +68,7 @@ public class SeekBarPreference extends DialogPreference implements SeekBar.OnSee
 
 		valueText = new TextView(context);
 		valueText.setGravity(Gravity.CENTER_HORIZONTAL);
-		valueText.setTextSize(TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.pref_seekbar_text));
+		valueText.setTextSize(TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.pref_seekbar_text_large));
 		
 		params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.FILL_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
 		layout.addView(valueText, params);

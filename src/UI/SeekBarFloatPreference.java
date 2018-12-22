@@ -57,6 +57,7 @@ public class SeekBarFloatPreference extends DialogPreference implements SeekBar.
 		minValue = idontneedthisshit.getFloat(R.styleable.idontneedthisshit_fmin, 0.0f);
 		maxValue = idontneedthisshit.getFloat(R.styleable.idontneedthisshit_fmax, 100.0f);
 		step = idontneedthisshit.getFloat(R.styleable.idontneedthisshit_fstep, 1.0f);
+		idontneedthisshit.recycle();
 	}
 
 	@Override 
@@ -71,7 +72,7 @@ public class SeekBarFloatPreference extends DialogPreference implements SeekBar.
 
 		valueText = new TextView(context);
 		valueText.setGravity(Gravity.CENTER_HORIZONTAL);
-		valueText.setTextSize(TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.pref_seekbar_text));
+		valueText.setTextSize(TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.pref_seekbar_text_large));
 		
 		params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.FILL_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
 		layout.addView(valueText, params);

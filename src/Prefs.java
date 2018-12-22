@@ -1,13 +1,20 @@
 package com.caddish_hedgehog.hedgecam2;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
+import android.content.ContentResolver;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.util.Log;
 import android.util.Pair;
 import android.os.Environment;
-
 
 public class Prefs {
 	private static final String TAG = "HedgeCam/Prefs";
@@ -32,7 +39,7 @@ public class Prefs {
 	public static final String ISO = "preference_iso";
 	public static final String MANUAL_ISO = "preference_manual_iso";
 	public static final String EXPOSURE_TIME = "preference_exposure_time";
-	public static final String RAW = "preference_raw";
+	public static final String IMAGE_FORMAT = "preference_image_format";
 	public static final String EXPO_BRACKETING_N_IMAGES = "preference_expo_bracketing_n_images";
 	public static final String EXPO_BRACKETING_STOPS_UP = "preference_expo_bracketing_stops_up";
 	public static final String EXPO_BRACKETING_STOPS_DOWN = "preference_expo_bracketing_stops";
@@ -77,6 +84,9 @@ public class Prefs {
 	public static final String USING_SAF = "preference_using_saf";
 	public static final String SAVE_LOCATION = "preference_save_location";
 	public static final String SAVE_LOCATION_SAF = "preference_save_location_saf";
+	public static final String SAVE_VIDEO_FOLDER = "preference_save_video_folder";
+	public static final String SAVE_VIDEO_LOCATION = "preference_save_video_location";
+	public static final String SAVE_VIDEO_LOCATION_SAF = "preference_save_video_location_saf";
 	public static final String SAVE_PHOTO_PREFIX = "preference_save_photo_prefix";
 	public static final String SAVE_VIDEO_PREFIX = "preference_save_video_prefix";
 	public static final String SAVE_ZULU_TIME = "preference_save_zulu_time";
@@ -106,6 +116,7 @@ public class Prefs {
 	public static final String FORCE_VIDEO_4K = "preference_force_video_4k";
 	public static final String VIDEO_BITRATE = "preference_video_bitrate";
 	public static final String VIDEO_FPS = "preference_video_fps";
+	public static final String VIDEO_FORMAT = "preference_video_format";
 	public static final String VIDEO_MAX_DURATION = "preference_video_max_duration";
 	public static final String VIDEO_RESTART = "preference_video_restart";
 	public static final String VIDEO_MAX_FILESIZE = "preference_video_max_filesize";
@@ -113,11 +124,13 @@ public class Prefs {
 	public static final String VIDEO_FLASH = "preference_video_flash";
 	public static final String VIDEO_LOW_POWER_CHECK = "preference_video_low_power_check";
 	public static final String VIDEO_LOG_PROFILE = "preference_video_log";
-	public static final String CAPTURE_RATE = "preference_capture_rate";
+	public static final String CAPTURE_RATE = "preference_capture_rate_s";
 	public static final String LOCK_VIDEO = "preference_lock_video";
 	public static final String RECORD_AUDIO = "preference_record_audio";
 	public static final String RECORD_AUDIO_CHANNELS = "preference_record_audio_channels";
 	public static final String RECORD_AUDIO_SRC = "preference_record_audio_src";
+	public static final String RECORD_AUDIO_BITRATE = "preference_record_audio_bitrate";
+	public static final String RECORD_AUDIO_SAMPLE_RATE = "preference_record_audio_sample_rate";
 	public static final String PREVIEW_MAX_SIZE = "preference_preview_max_size";
 	public static final String ROTATE_PREVIEW = "preference_rotate_preview";
 	public static final String LOCK_ORIENTATION = "preference_lock_orientation";
@@ -132,8 +145,8 @@ public class Prefs {
 	public static final String BURST_LOW_BRIGHTNESS = "preference_burst_low_brightness";
 	public static final String BURST_LOCK = "preference_burst_lock";
 	public static final String WAIT_FACE = "preference_wait_face";
-	public static final String SHUTTER_SOUND = "preference_shutter_sound";
-	public static final String SHUTTER_SOUND_SELECT = "preference_shutter_sound_select";
+	public static final String SHUTTER_SOUND = "preference_shutter_sound_select";
+	public static final String VIDEO_SOUND = "preference_video_sound";
 	public static final String FACE_DETECTION_SOUND = "preference_face_detection_sound";
 	public static final String SOUND_VOLUME = "preference_sound_volume";
 	public static final String AUDIO_STREAM = "preference_audio_stream";
@@ -143,8 +156,9 @@ public class Prefs {
 	public static final String CTRL_PANEL_MARGIN = "preference_ctrl_panel_margin";
 	public static final String SHUTTER_BUTTON_SIZE = "preference_shutter_button_size";
 	public static final String SHUTTER_BUTTON_STYLE = "preference_shutter_button_style";
-	
+
 	public static final String HDR_TONEMAPPING = "preference_hdr_tonemapping";
+	public static final String HDR_ALIGN = "preference_hdr_align";
 	public static final String HDR_UNSHARP_MASK = "preference_hdr_unsharp_mask";
 	public static final String HDR_UNSHARP_MASK_RADIUS = "preference_hdr_unsharp_mask_radius";
 	public static final String HDR_LOCAL_CONTRAST = "preference_hdr_local_contrast";
@@ -155,11 +169,18 @@ public class Prefs {
 	public static final String HDR_DEGHOST = "preference_hdr_deghost";
 	public static final String HDR_ADJUST_LEVELS = "preference_hdr_adjust_levels";
 
+	public static final String DRO_UNSHARP_MASK = "preference_dro_unsharp_mask";
+	public static final String DRO_UNSHARP_MASK_RADIUS = "preference_dro_unsharp_mask_radius";
+	public static final String DRO_LOCAL_CONTRAST = "preference_dro_local_contrast";
+	public static final String DRO_N_TILES = "preference_dro_n_tiles";
+	public static final String DRO_ADJUST_LEVELS = "preference_dro_adjust_levels";
+
 	public static final String PREVIEW_LOCATION = "preference_preview_location";
 	public static final String PREVIEW_MAX_EXPO = "preference_preview_max_expo";
 	public static final String GHOST_IMAGE = "preference_ghost_image";
 	public static final String GHOST_IMAGE_SOURCE = "preference_ghost_image_source";
 	public static final String GHOST_IMAGE_ALPHA = "preference_ghost_image_alpha";
+	public static final String GHOST_IMAGE_FILE = "preference_ghost_image_file";
 	public static final String GHOST_IMAGE_FILE_SAF = "preference_ghost_image_file_saf";
 	public static final String CTRL_PANEL_SELFIE_MODE = "preference_ctrl_panel_selfie_mode";
 	public static final String CTRL_PANEL_AUDIO_CONTROL = "preference_ctrl_panel_audio_control";
@@ -226,6 +247,8 @@ public class Prefs {
 	public static final String POPUP_HDR_N_TILES = "preference_popup_hdr_n_tiles";
 	public static final String POPUP_HDR_DEGHOST = "preference_popup_hdr_deghost";
 	public static final String POPUP_PHOTOS_COUNT = "preference_popup_photos_count";
+	public static final String POPUP_VIDEO_BITRATE = "preference_popup_video_bitrate";
+	public static final String POPUP_VIDEO_FPS = "preference_popup_video_fps";
 	public static final String POPUP_VIDEO_LOG_PROFILE = "preference_popup_video_log";
 	public static final String FORCE_FACE_FOCUS = "preference_force_face_focus";
 	public static final String CENTER_FOCUS = "preference_center_focus";
@@ -263,6 +286,8 @@ public class Prefs {
 	public static final String NR_DISABLE_FILTERS = "preference_nr_disable_filters";
 	public static final String UNCOMPRESSED_PHOTO = "preference_uncompressed_photo";
 	public static final String YUV_CONVERSION = "preference_yuv_conversion";
+	public static final String ROW_SPACE_Y = "preference_row_space_y";
+	public static final String ROW_SPACE_UV = "preference_row_space_uv";
 	public static final String FULL_SIZE_COPY = "preference_full_size_copy";
 
 	public static final String METADATA_AUTHOR = "preference_metadata_author";
@@ -310,8 +335,8 @@ public class Prefs {
 		return "flash_value_" + pref_camera_id + (isVideoPref() ? "_video" : "");
 	}
 
-	public static String getFocusPreferenceKey(boolean is_video) {
-		return "focus_value_" + pref_camera_id + "_" + is_video;
+	public static String getFocusPreferenceKey() {
+		return "focus_value_" + pref_camera_id + (isVideoPref() ? "_video" : "");
 	}
 
 	public static String getResolutionPreferenceKey() {
@@ -322,6 +347,10 @@ public class Prefs {
 		return "video_quality_" + pref_camera_id;
 	}
 	
+	public static String getPreviewResolutionPreferenceKey() {
+		return "preview_resolution_" + pref_camera_id + (isVideoPref() ? "_video" : "");
+	}
+
 	public static int getCameraIdPref() {
 		if (pref_camera_id < 0) {
 			pref_camera_id = sharedPreferences.getInt(CAMERA_ID, 0);
@@ -564,13 +593,13 @@ public class Prefs {
 		editor.apply();
 	}
 
-	public static String getFocusPref(boolean is_video) {
-		return sharedPreferences.getString(getFocusPreferenceKey(is_video), "");
+	public static String getFocusPref() {
+		return sharedPreferences.getString(getFocusPreferenceKey(), "");
 	}
 
-	public static void setFocusPref(String focus_value, boolean is_video) {
+	public static void setFocusPref(String focus_value) {
 		SharedPreferences.Editor editor = sharedPreferences.edit();
-		editor.putString(getFocusPreferenceKey(is_video), focus_value);
+		editor.putString(getFocusPreferenceKey(), focus_value);
 		editor.apply();
 	}
 
@@ -587,6 +616,10 @@ public class Prefs {
 		SharedPreferences.Editor editor = sharedPreferences.edit();
 		editor.putBoolean(IS_VIDEO, state);
 		editor.apply();
+	}
+	
+	public static boolean isVideoFolder() {
+		return isVideoPref() && sharedPreferences.getString(Prefs.SAVE_VIDEO_FOLDER, "same_as_photo").equals("folder");
 	}
 
 	public static String getSceneModePref() {
@@ -761,9 +794,7 @@ public class Prefs {
 		// see documentation for getSaveImageQualityPref(): in DRO mode we want to take the photo
 		// at 100% quality for post-processing, the final image will then be saved at the user requested
 		// setting
-		if( photo_mode == PhotoMode.DRO )
-			return 100;
-		else if( photo_mode == PhotoMode.NoiseReduction )
+		if( photo_mode == PhotoMode.DRO || photo_mode == PhotoMode.NoiseReduction || sharedPreferences.getString(Prefs.IMAGE_FORMAT, "jpeg").equals("png") )
 			return 100;
 		return getSaveImageQualityPref();
 	}
@@ -826,7 +857,10 @@ public class Prefs {
 
 	public static float getVideoCaptureRateFactor() {
 		// fixme
-		float capture_rate_factor = sharedPreferences.getFloat(CAPTURE_RATE, 1.0f);
+		float capture_rate_factor = 1.0f;
+		try {
+			capture_rate_factor = Float.parseFloat(sharedPreferences.getString(CAPTURE_RATE, "1.0"));
+		} catch (NumberFormatException e) {}
 		if( MyDebug.LOG )
 			Log.d(TAG, "capture_rate_factor: " + capture_rate_factor);
 		if( Math.abs(capture_rate_factor - 1.0f) > 1.0e-5 ) {
@@ -932,7 +966,7 @@ public class Prefs {
 	}
 
 	public static boolean getPreviewMaxSizePref() {
-		return sharedPreferences.getBoolean(PREVIEW_MAX_SIZE, true);
+		return sharedPreferences.getBoolean(PREVIEW_MAX_SIZE, false);
 	}
 
 	public static String getPreviewRotationPref() {
@@ -962,17 +996,12 @@ public class Prefs {
 		return sharedPreferences.getBoolean(THUMBNAIL_ANIMATION, true);
 	}
 
-	public static boolean getShutterSoundPref() {
-		return (sharedPreferences.getBoolean(SHUTTER_SOUND, true) &&
-			sharedPreferences.getString(SHUTTER_SOUND_SELECT, "default").equals("default"));
-	}
-
 	public static boolean getStartupFocusPref() {
 		return sharedPreferences.getBoolean(STARTUP_FOCUS, false);
 	}
 
 	public static long getTimerPref() {
-		String timer_value = sharedPreferences.getString(TIMER, "0");
+		String timer_value = sharedPreferences.getString(TIMER, "5");
 		long timer_delay;
 		try {
 			timer_delay = (long)Integer.parseInt(timer_value) * 1000;
@@ -987,7 +1016,7 @@ public class Prefs {
 	}
 
 	public static String getRepeatPref() {
-		return sharedPreferences.getString(BURST_MODE, "5");
+		return sharedPreferences.getString(BURST_MODE, "1");
 	}
 
 	public static boolean getSelfieModePref() {
@@ -1035,6 +1064,32 @@ public class Prefs {
 
 	public static String getRecordAudioSourcePref() {
 		return sharedPreferences.getString(RECORD_AUDIO_SRC, "audio_src_camcorder");
+	}
+
+	public static int getRecordAudioBitRatePref() {
+		String value = sharedPreferences.getString(RECORD_AUDIO_BITRATE, "default");
+		if (value.equals("default"))
+			return 0;
+		else {
+			try{
+				return Integer.parseInt(value);
+			} catch (NumberFormatException e) {
+				return 0;
+			}
+		}
+	}
+
+	public static int getRecordAudioSampleRatePref() {
+		String value = sharedPreferences.getString(RECORD_AUDIO_SAMPLE_RATE, "default");
+		if (value.equals("default"))
+			return 0;
+		else {
+			try{
+				return Integer.parseInt(value);
+			} catch (NumberFormatException e) {
+				return 0;
+			}
+		}
 	}
 
 	public static boolean getAutoStabilisePref() {
@@ -1093,10 +1148,133 @@ public class Prefs {
 		return value;
 	}
 
+	public static int getRowSpaceYPref() {
+		String value = sharedPreferences.getString(ROW_SPACE_Y + "_" + pref_camera_id, "default");
+		if (value.equals("default"))
+			return -1;
+		try {
+			return Integer.parseInt(value);
+		}
+		catch(NumberFormatException e) {
+			return -1;
+		}
+	}
+
+	public static int getRowSpaceUVPref() {
+		String value = sharedPreferences.getString(ROW_SPACE_UV + "_" + pref_camera_id, "default");
+		if (value.equals("default"))
+			return -1;
+		try {
+			return Integer.parseInt(value);
+		}
+		catch(NumberFormatException e) {
+			return -1;
+		}
+	}
+
 	public static void setShowSeekbarsPref(boolean value) {
 		SharedPreferences.Editor editor = sharedPreferences.edit();
 		editor.putBoolean(SHOW_SEEKBARS, value);
 		editor.apply();
 	}
 
+	public static boolean backup() {
+		if( MyDebug.LOG )
+			Log.e(TAG, "backup()");
+		
+		boolean res = false;
+
+		OutputStream output = null;
+		File file = null;
+		StorageUtils storageUtils = main_activity.getStorageUtils();
+		try {
+			if (!storageUtils.isUsingSAF()) {
+				file = storageUtils.createOutputMediaFile("BACKUP_", "", "xml", new Date());
+				output = new FileOutputStream(file);
+			} else {
+				Uri uri = storageUtils.createOutputMediaFileSAF("BACKUP_", "", "xml", new Date());
+				output = main_activity.getContentResolver().openOutputStream(uri);
+				file = storageUtils.getFileFromDocumentUriSAF(uri, false);
+			}
+			if (output != null) {
+				XmlUtils.writeMapXml(sharedPreferences.getAll(), output);
+				
+				if (file != null)
+					storageUtils.broadcastFile(file, false, false, false);
+
+				res = true;
+			}
+		} catch (Throwable e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				if (output != null) {
+					output.flush();
+					output.close();
+				}
+			} catch (Throwable ex) {
+				ex.printStackTrace();
+			}
+		}
+		return res;
+	}
+
+	public static boolean restore(String filename, Uri uri) {
+		if( MyDebug.LOG )
+			Log.e(TAG, "restore()");
+		boolean res = false;
+		InputStream input = null;
+		try {
+			if (filename != null)
+				input = new FileInputStream(filename);
+			else if (uri != null) {
+				final ContentResolver resolver = main_activity.getContentResolver();
+				if (resolver != null)
+					input = resolver.openInputStream(uri);
+			}
+			
+			if (input == null)
+				return false;
+			
+			SharedPreferences.Editor editor = sharedPreferences.edit();
+			editor.clear();
+			Map<String, ?> entries = XmlUtils.readMapXml(input);
+			for (Map.Entry<String, ?> entry : entries.entrySet()) {
+				String key = entry.getKey();
+				Object value = entry.getValue();
+				if (value instanceof Boolean)
+					editor.putBoolean(key, ((Boolean)value).booleanValue());
+				else if (value instanceof Float)
+					editor.putFloat(key, ((Float)value).floatValue());
+				else if (value instanceof Integer)
+					editor.putInt(key, ((Integer)value).intValue());
+				else if (value instanceof Long)
+					editor.putLong(key, ((Long)value).longValue());
+				else if (value instanceof String)
+					editor.putString(key, (String)value);
+			}
+
+			editor.apply();
+
+			res = true;
+		} catch (Throwable e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				if (input != null) {
+					input.close();
+				}
+			} catch (Throwable ex) {
+				ex.printStackTrace();
+			}
+		}
+		return res;
+	}
+	
+	public static void reset() {
+		SharedPreferences.Editor editor = sharedPreferences.edit();
+		editor.clear();
+		editor.putBoolean(Prefs.DONE_FIRST_TIME, true);
+		editor.apply();
+	}
 }

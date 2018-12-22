@@ -97,10 +97,6 @@ public class MyApplicationInterface implements ApplicationInterface {
 	}
 	private final List<LastImage> last_images = new ArrayList<>();
 
-	private boolean isVolumeChanged = false;
-	private int currentVolume = 0;
-
-
 	MyApplicationInterface(MainActivity main_activity, Bundle savedInstanceState) {
 		long debug_time = 0;
 		if( MyDebug.LOG ) {
@@ -130,7 +126,6 @@ public class MyApplicationInterface implements ApplicationInterface {
 		if( drawPreview != null ) {
 			drawPreview.onDestroy();
 		}
-		restoreSound();
 	}
 
 	LocationSupplier getLocationSupplier() {
@@ -270,14 +265,14 @@ public class MyApplicationInterface implements ApplicationInterface {
 	}
 
 	@Override
-	public File createOutputVideoFile(String prefix) throws IOException {
-		last_video_file = storageUtils.createOutputMediaFile(prefix, "", "mp4", new Date());
+	public File createOutputVideoFile(String prefix, String extension) throws IOException {
+		last_video_file = storageUtils.createOutputMediaFile(prefix, "", extension, new Date());
 		return last_video_file;
 	}
 
 	@Override
-	public Uri createOutputVideoSAF(String prefix) throws IOException {
-		last_video_file_saf = storageUtils.createOutputMediaFileSAF(prefix, "", "mp4", new Date());
+	public Uri createOutputVideoSAF(String prefix, String extension) throws IOException {
+		last_video_file_saf = storageUtils.createOutputMediaFileSAF(prefix, "", extension, new Date());
 		return last_video_file_saf;
 	}
 
@@ -303,7 +298,7 @@ public class MyApplicationInterface implements ApplicationInterface {
 	public boolean isRawPref() {
 		if( isImageCaptureIntent() )
 			return false;
-		return sharedPreferences.getString(Prefs.RAW, "preference_raw_no").equals("preference_raw_yes");
+		return sharedPreferences.getString(Prefs.IMAGE_FORMAT, "jpeg").equals("jpeg_raw");
 	}
 
 	@Override
@@ -400,7 +395,7 @@ public class MyApplicationInterface implements ApplicationInterface {
 	public void startedVideo() {
 		if( MyDebug.LOG )
 			Log.d(TAG, "startedVideo()");
-		if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.N ) {
+		if( main_activity.supportsVideoPause() ) {
 			if( !( main_activity.getMainUI().inImmersiveMode() && main_activity.usingKitKatImmersiveModeEverything() ) ) {
 				main_activity.findViewById(R.id.pause_video).setVisibility(View.VISIBLE);
 				main_activity.findViewById(R.id.gallery).setVisibility(View.INVISIBLE);
@@ -500,7 +495,7 @@ public class MyApplicationInterface implements ApplicationInterface {
 									File file = storageUtils.getFileFromDocumentUriSAF(last_video_file_saf, false);
 									String subtitle_filename = file.getName();
 									subtitle_filename = getSubtitleFilename(subtitle_filename);
-									Uri subtitle_uri = storageUtils.createOutputFileSAF(subtitle_filename, ""); // don't set a mimetype, as we don't want it to append a new extension
+									Uri subtitle_uri = storageUtils.createOutputFileSAF(subtitle_filename, "", true); // don't set a mimetype, as we don't want it to append a new extension
 									ParcelFileDescriptor pfd_saf = getContext().getContentResolver().openFileDescriptor(subtitle_uri, "w");
 									writer = new FileWriter(pfd_saf.getFileDescriptor());
 								}
@@ -730,7 +725,7 @@ public class MyApplicationInterface implements ApplicationInterface {
 		} else {
 			if( sharedPreferences.getBoolean(Prefs.TIMER_START_SOUND, false) &&
 					!sharedPreferences.getBoolean(Prefs.TIMER_BEEP, true) )
-				main_activity.playSound(R.raw.beep);
+				Sound.playSound(R.raw.beep);
 
 			if( is_burst && sharedPreferences.getBoolean(Prefs.BURST_LOW_BRIGHTNESS, false) ) {
 				main_activity.setMinBrightness();
@@ -775,7 +770,7 @@ public class MyApplicationInterface implements ApplicationInterface {
 
 			if( !intermediate && sharedPreferences.getBoolean(Prefs.TIMER_START_SOUND, false) &&
 					!sharedPreferences.getBoolean(Prefs.TIMER_BEEP, true) )
-				main_activity.playSound(R.raw.beep_hi);
+				Sound.playSound(R.raw.beep_hi);
 		}
 
 		main_activity.getMainUI().resetTakePhotoIcon();
@@ -981,38 +976,6 @@ public class MyApplicationInterface implements ApplicationInterface {
 			drawPreview.showLastImage();
 		}
 	}
-	
-	@Override
-	public void timerBeep(long remaining_time) {
-		if( MyDebug.LOG ) {
-			Log.d(TAG, "timerBeep()");
-			Log.d(TAG, "remaining_time: " + remaining_time);
-		}
-		if( sharedPreferences.getBoolean(Prefs.TIMER_BEEP, true) ) {
-			if( MyDebug.LOG )
-				Log.d(TAG, "play beep!");
-			boolean is_last = remaining_time <= 1000;
-			main_activity.playSound(is_last ? R.raw.beep_hi : R.raw.beep);
-		}
-		if( sharedPreferences.getBoolean(Prefs.TIMER_SPEAK, false) ) {
-			if( MyDebug.LOG )
-				Log.d(TAG, "speak countdown!");
-			int remaining_time_s = (int)(remaining_time/1000);
-			if( remaining_time_s <= 60 )
-				main_activity.speak("" + remaining_time_s);
-		}
-	}
-
-	@Override
-	public void shutterSound() {
-		if( MyDebug.LOG ) {
-			Log.d(TAG, "shutterSound()");
-		}
-		if (!sharedPreferences.getBoolean(Prefs.SHUTTER_SOUND, true))
-			return;
-			
-		main_activity.playShutterSound();
-	}
 
 	@Override
 	public void layoutUI() {
@@ -1059,7 +1022,7 @@ public class MyApplicationInterface implements ApplicationInterface {
 	@Override
 	public void faceDetected(boolean detected) {
 		if (sharedPreferences.getBoolean(Prefs.FACE_DETECTION_SOUND, false))
-			main_activity.playSound(detected ? R.raw.double_beep : R.raw.double_beep_hi);
+			Sound.playSound(detected ? R.raw.double_beep : R.raw.double_beep_hi);
 	}
 
 	public void drawTextOnPhoto(final Canvas canvas, final Paint paint, final String text, final int width, final int height, final int line_count) {
@@ -1240,8 +1203,10 @@ public class MyApplicationInterface implements ApplicationInterface {
 			String adjust_levels_key = null;
 			if (photo_mode == Prefs.PhotoMode.NoiseReduction && n_capture_images == Prefs.getBurstCount()) {
 				adjust_levels_key = Prefs.NR_ADJUST_LEVELS;
-			} else if (photo_mode == Prefs.PhotoMode.HDR || photo_mode == Prefs.PhotoMode.DRO) {
+			} else if (photo_mode == Prefs.PhotoMode.HDR) {
 				adjust_levels_key = Prefs.HDR_ADJUST_LEVELS;
+			} else if (photo_mode == Prefs.PhotoMode.DRO) {
+				adjust_levels_key = Prefs.DRO_ADJUST_LEVELS;
 			} else if (photo_mode != Prefs.PhotoMode.NoiseReduction) {
 				adjust_levels_key = Prefs.ADJUST_LEVELS;
 			}
@@ -1258,12 +1223,16 @@ public class MyApplicationInterface implements ApplicationInterface {
 			settings.save_base = save_expo ? ImageSaver.ProcessingSettings.SaveBase.ALL : ImageSaver.ProcessingSettings.SaveBase.NONE;
 			settings.hdr_tonemapping = sharedPreferences.getString(Prefs.HDR_TONEMAPPING, "reinhard");
 			settings.hdr_deghost = sharedPreferences.getBoolean(Prefs.HDR_DEGHOST, true);
-		}
-		if (photo_mode == Prefs.PhotoMode.HDR || photo_mode == Prefs.PhotoMode.DRO) {
 			settings.hdr_local_contrast = sharedPreferences.getString(Prefs.HDR_LOCAL_CONTRAST, "5");
 			settings.hdr_n_tiles = sharedPreferences.getString(Prefs.HDR_N_TILES, "4");
 			settings.hdr_unsharp_mask = sharedPreferences.getString(Prefs.HDR_UNSHARP_MASK, "1");
 			settings.hdr_unsharp_mask_radius = sharedPreferences.getString(Prefs.HDR_UNSHARP_MASK_RADIUS, "5");
+			settings.align = sharedPreferences.getString(Prefs.HDR_ALIGN, "align_crop");
+		} else if (photo_mode == Prefs.PhotoMode.DRO) {
+			settings.hdr_local_contrast = sharedPreferences.getString(Prefs.DRO_LOCAL_CONTRAST, "5");
+			settings.hdr_n_tiles = sharedPreferences.getString(Prefs.DRO_N_TILES, "4");
+			settings.hdr_unsharp_mask = sharedPreferences.getString(Prefs.DRO_UNSHARP_MASK, "1");
+			settings.hdr_unsharp_mask_radius = sharedPreferences.getString(Prefs.DRO_UNSHARP_MASK_RADIUS, "5");
 		}
 
 		settings.do_auto_stabilise = do_auto_stabilise;
@@ -1276,7 +1245,7 @@ public class MyApplicationInterface implements ApplicationInterface {
 		settings.stamp_gpsformat = sharedPreferences.getString(Prefs.STAMP_GPSFORMAT, "preference_stamp_gpsformat_default");
 		
 		String yuv_conversion = "";
-		if (images.get(0).image != null) {
+		if (images.get(0).y != null) {
 			yuv_conversion = sharedPreferences.getString(Prefs.YUV_CONVERSION, "default");
 		}
 		
@@ -1417,7 +1386,9 @@ public class MyApplicationInterface implements ApplicationInterface {
 
 		String prefix = sharedPreferences.getString(Prefs.SAVE_PHOTO_PREFIX, "IMG_");
 
-		success = imageSaver.saveImageJpeg(do_in_background, photo_mode,
+		success = imageSaver.saveImageJpeg(do_in_background, 
+				sharedPreferences.getString(Prefs.IMAGE_FORMAT, "jpeg").equals("png"),
+				photo_mode,
 				images,
 				yuv_conversion,
 				image_capture_intent, image_capture_intent_uri,
@@ -1654,21 +1625,6 @@ public class MyApplicationInterface implements ApplicationInterface {
 	public HDRProcessor getHDRProcessor() {
 		return imageSaver.getHDRProcessor();
 	}
-
-	public void disableSound() {
-		AudioManager audio = (AudioManager)this.getContext().getSystemService(Context.AUDIO_SERVICE);
-		currentVolume = audio.getStreamVolume(AudioManager.STREAM_SYSTEM);
-		audio.setStreamVolume(AudioManager.STREAM_SYSTEM, 0,   AudioManager.FLAG_REMOVE_SOUND_AND_VIBRATE);
-		isVolumeChanged = true;
-	}
-	
-	public void restoreSound() {
-		if (isVolumeChanged){
-			AudioManager audio = (AudioManager)this.getContext().getSystemService(Context.AUDIO_SERVICE);
-			audio.setStreamVolume(AudioManager.STREAM_SYSTEM,currentVolume,AudioManager.FLAG_REMOVE_SOUND_AND_VIBRATE);
-			isVolumeChanged = false;
-		}
-	}	
 
 	public boolean isSetExpoMeteringArea() {
 		return main_activity.set_expo_metering_area;

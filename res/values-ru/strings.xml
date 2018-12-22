@@ -19,6 +19,7 @@
 	<string name="none">Нет</string>
 	<string name="unlimited">Бесконечно</string>
 	<string name="device_default">По умолчанию (зависит от устройства)</string>
+	<string name="if_necessary">При необходимости</string>
 	<string name="sorry">К сожалению</string>
 
 	<string name="choose_save_location">Выберите папку сохранения:</string>
@@ -35,7 +36,7 @@
 	<string name="folder_exists">Папка уже существует</string>
 	<string name="saf_select_save_location">Выберите место для сохранения</string>
 	<string name="saf_cancelled">Storage Access Framework отменен</string>
-	<string name="saf_permission_failed">Unable to save to this folder</string>
+	<string name="saf_permission_failed">Папка недоступна для записи</string>
 
 	<string name="angle">Угол</string>
 	<string name="rotation">Поворот</string>
@@ -107,6 +108,7 @@
 	<string name="video_max_filesize">Видео достигло максимального размера</string>
 	<string name="video_pause">Запись видео приостановлена</string>
 	<string name="video_resume">Запись видео продолжена</string>
+	<string name="backup_saved">Резервная копия создана</string>
 
 	<string name="failed_to_open_camera_1">Не удалось открыть камеру.</string>
 	<string name="failed_to_open_camera_2">Камера может быть использована</string>
@@ -133,6 +135,9 @@
 	<string name="speech_recognizer_unavailable">Распознавание речи недоступно</string>
 	<string name="open_files_saf_exception_ghost">Диалог открытия файлов не найден, наложение изображения из файла недоступно</string>
 	<string name="saf_permission_failed_open_image">Невозможно открыть изображение</string>
+	<string name="failed_to_save_backup">Невозможно сохранить резервную копию</string>
+	<string name="failed_to_read_backup">Невозможно прочитать резервную копию</string>
+	<string name="failed_to_restore_from_backup">Невозможно восстановить настройки из выбранной резервной копии</string>
 
 	<string name="no_permission">В ДОСТУПЕ ОТКАЗАНО</string>
 	<!-- the permission names such as Microphone should match what Android calls them in the App permission settings -->
@@ -147,7 +152,8 @@
 	<string name="auto_stabilise_info">Автоматическое выравнивание снимков, сделанных при неправильном положении камеры.\n\nСнимки, сделанные с использованием автовыравнивания, как правило, имеют более низкое разрешение.</string>
 	<string name="raw_info">Файлы DNG содержат несжатую и необработанную информацию, полученную с сенсора камеры.\n\nБольшинство приложений для просмотра изображений не могут открывать файлы DNG, поэтому для их просмотра требуется специализированное ПО (Snapseed, Lightroom и т.д.).\n\nРежимы обработки \"Отметки\" и \"Автовыравнивание\" не работают при сохранении фото в файлы DNG.</string>
 	<string name="hdr_info">Режим HDR позволяет делать снимки объектов с большими перепадами яркости. При создании HDR-снимка, камера делает несколько снимков с разными значениями экспозиции, после чего полученные изображения склеиваются в одно.\n\nДанный режим не подходит для съемки динамичных сцен.\n\nСохранение снимков, сделанных в этом режиме происходит значительно дольше, чем в обычном.</string>
-	<string name="preference_reset_question">Сбросить все настройки приложения на стандартные значения?</string>
+	<string name="preference_reset_question">Вы действительно хотите сбросить все настройки приложения на стандартные значения?</string>
+	<string name="preference_restore_question">Вы действительно хотите восстановить настройки из резервной копии? Все текущие настройки будут перезаписаны!</string>
 	<string name="dont_show_again">Не показывать снова</string>
 
 	<string name="mb_abbreviation">Мб</string> <!-- symbol short for megabytes -->
@@ -266,15 +272,16 @@
 
 	<string name="preference_screen_sounds">Звуки</string>
 	<string name="preference_shutter_sound">Звук затвора</string>
-	<string name="preference_shutter_sound_summary">Воспроизведение звука при съемке фото</string>
-	<string name="preference_shutter_sound_select">Выбрать звук затвора</string>
+	<string name="preference_shutter_sound_summary">%s\n\nВоспроизведение звука при съемке фото</string>
+	<string name="shutter_force_off">Выкл принудительно</string>
 
 
 	<string name="shutter_1">Затвор 1 (короткий)</string>
-	<string name="shutter_2">Затвор 1 (короткий)</string>
-	<string name="shutter_3">Затвор 1 (длинный)</string>
-	<string name="shutter_4">Затвор 1 (длинный)</string>
+	<string name="shutter_2">Затвор 2 (короткий)</string>
+	<string name="shutter_3">Затвор 3 (длинный)</string>
+	<string name="shutter_4">Затвор 4 (длинный)</string>
 	<string name="shutter_unlock">Звук разблокировки</string>
+	<string name="preference_video_sound">Звук записи видео</string>
 	<string name="preference_timer_beep">Звук таймера</string>
 	<string name="preference_timer_beep_summary">Подавать звуковой сигнал, когда таймер закончит отсчет</string>
 	<string name="preference_timer_speak">Озвучка таймера</string>
@@ -392,6 +399,9 @@
 	<string name="preference_screen_preview">Предпросмотр</string>
 	<string name="preference_preview_max_size">Mакс. размер предпросмотра</string>
 	<string name="preference_preview_max_size_summary">Изображение заполняет окно предпросмотра</string>
+	<string name="preference_preview_resolution">Разрешение предпросмотра</string>
+	<string name="preference_preview_resolution_summary">Разрешение окна предпросмотра. При изменении данной опции, предыдущая опция будет проигнрирована. Сохраняется раздельно для каждой камеры и для режимов фото/видео.</string>
+	<string name="match_target_resolution">Совпадает с фото/видео</string>
 	<string name="preference_preview_location">Расположение предпросмотра</string>
 	<string name="preference_preview_location_summary">%s</string>
 	<string name="left_gap_for_buttons">С учетом расположения кнопок</string>
@@ -507,8 +517,17 @@
 	<string name="fr_landscape_macro">Пейзаж/Макро</string>
 	<string name="fr_room">Комната</string>
 	<string name="fr_group">Групповое фото</string>
+	
+	<string name="preference_screen_calibration">Калибровка</string>
 	<string name="preference_level_angle_calibration">Калибровка уровня</string>
 	<string name="preference_level_angle_calibration_summary">%s\n\nДанная опция позволяет вручную откалибровать уровень наклона. Для калибровки укажите значение в градусах.</string>
+	<string name="preference_min_focus_distance">Минимальное фокусное расстояние</string>
+	<string name="preference_focus_distance_calibration">Калибровка фокусного расстояния</string>
+	<string name="preference_focus_distance_calibration_summary">%s\n\nПоложительные значения соответствуют ближнему расстоянию, отрицательные - дальнему.</string>
+	<string name="preference_row_space_y">Промежуток строк яркости</string>
+	<string name="preference_row_space_y_summary">%s\n\nПромежуток между строками яркостного канала. Используется при включении опции \"Несжатый вывод\". Параметр сохраняется раздельно для каждой камеры.</string>
+	<string name="preference_row_space_uv">Промежуток строк цветности</string>
+	<string name="preference_row_space_uv_summary">%s\n\nПромежуток между строками цветоразностных каналов. Используется при включении опции \"Несжатый вывод\". Параметр сохраняется раздельно для каждой камеры.</string>
 
 	<string name="preference_screen_bug_fix">Решение проблем</string>
 	<string name="preference_startup_focus">Автофокус при запуске</string>
@@ -517,9 +536,6 @@
 	<string name="preference_force_face_focus_summary">Принудительно устанавливать зону фокусировки на лице при его распознавании. Опция работает только в режиме фокусировки \"Автофокус\" при распознавании одного лица.</string>
 	<string name="preference_center_focus">Фокус в центре</string>
 	<string name="preference_center_focus_summary">При запуске устанавливать зону фокусировки в центре кадра</string>
-	<string name="preference_min_focus_distance">Минимальное фокусное расстояние</string>
-	<string name="preference_focus_distance_calibration">Калибровка фокусного расстояния</string>
-	<string name="preference_focus_distance_calibration_summary">Положительные значения соответствуют ближнему расстоянию, отрицательные - дальнему.</string>
 	<string name="preference_update_focus_for_video">Сбрасывать режим фокусировки</string>
 	<string name="preference_update_focus_for_video_summary">Исправляет баг Samsung Galaxy S5, приводящий к замиранию предпросмотра и созданию &quot;битого&quot; видеофайла при записи видео сверхвысокой четкости после выхода из настроек</string>
 	<string name="preference_camera2_fake_flash">Альтернативная вспышка</string>
@@ -541,9 +557,8 @@
 	<string name="preference_quality">Качество изображения</string>
 	<string name="preference_auto_stabilise">Автовыравнивание</string>
 	<string name="preference_auto_stabilise_summary">Изображение будет автоматически выравниваться относительно горизонта. Не рекомендуется на слабых устройствах. Перед использованием данной функции рекомендуется выполнить калибровку уровня</string>
-	<string name="preference_raw">RAW</string>
-	<string name="preference_raw_summary">%s\n\nСохранять в формате RAW (DNG)</string>
-	<string name="jpeg_only">Только JPEG</string>
+	<string name="preference_image_format">Формат изображений</string>
+	<string name="preference_image_format_summary">%s</string>
 	<string name="jpeg_and_dng">JPEG и DNG (RAW)</string>
 	<string name="preference_flip_front_facing">Отразить фото</string>
 	<string name="preference_flip_front_facing_summary">Перевернуть по горизонтали фото, снятые передней камерой</string>
@@ -578,13 +593,15 @@
 	<string name="preference_expo_bracketing_use_iso_summary">По возможности использовать регулировку ISO при съемке темных снимков</string>
 	<string name="preference_expo_bracketing_delay">Задержка</string>
 	<string name="preference_expo_bracketing_delay_summary">%s\n\nЗадержка между снимками, необходимая для установки компенсации экспозиции</string>
-	<string name="preference_category_hdr">HDR и DRO</string>
-	<string name="preference_category_hdr_summary">Настройки режимов HDR и DRO</string>
 	<string name="preference_hdr_save_expo">Сохранять изображения HDR</string>
 	<string name="preference_hdr_save_expo_summary">В режиме HDR сохранять 3 исходных изображения, используемых при создании HDR-снимка. Замедляет процесс сохранения, особенно при включении опции \"Отметки\" или автовыравнивания.</string>
 	<string name="preference_hdr_deghost">Устранение призраков</string>
 	<string name="preference_hdr_tonemapping">Тональное отображение</string>
 	<string name="preference_hdr_tonemapping_summary">%s\n\nАлгоритм тонального отображения, используемый при склейке HDR</string>
+	<string name="preference_align">Выравнивание</string>
+	<string name="preference_align_summary">%s\n\nВыровнять исходные изображения относительно основного</string>
+	<string name="only_align">Только выровнять</string>
+	<string name="align_and_crop">Выровнять и обрезать</string>
 	<string name="preference_hdr_unsharp_mask">Нерезкая маска</string>
 	<string name="preference_hdr_unsharp_mask_summary">%s\n\nУровень воздействия фильтра "Нерезкая маска" при обработке HDR и DRO</string>
 	<string name="preference_hdr_unsharp_mask_radius">Радиус</string>
@@ -643,12 +660,14 @@
 
 	<string name="preference_screen_video_settings">Настройки видео</string>
 	<string name="video_quality">Разрешение видео</string>
+	<string name="preference_video_format">Формат</string>
+	<string name="preference_video_format_summary">%s\n\nФормат записываемых видеофайлов.</string>
 	<string name="preference_video_stabilization">Стабилизация видео</string>
 	<string name="preference_video_stabilization_summary">Стабилизация видео уменьшает тряску, вызванную движением камеры</string>
-	<string name="preference_video_bitrate">Битрейт видео (примерно)</string>
-	<string name="preference_video_bitrate_summary">%s\n\nВыбор битрейта видео. (чем выше, тем лучше качество, но файл будет занимать больше места на диске. Неподдерживаемый битрейт может стать причиной ошибки при записи видео).</string>
-	<string name="preference_video_fps">Частота кадров видео (примерно)</string>
-	<string name="preference_video_fps_summary">Кол-во кадров в секунду (FPS) в видео (примерное). Может привести к записи с ошибкой, если частота кадров не поддерживается</string>
+	<string name="preference_video_bitrate">Битрейт видео</string>
+	<string name="preference_video_bitrate_summary">%s\n\nВыбор битрейта видео (примерно). Чем выше, тем лучше качество, но файл будет занимать больше места на диске. Неподдерживаемый битрейт может стать причиной ошибки при записи видео.</string>
+	<string name="preference_video_fps">Частота кадров видео</string>
+	<string name="preference_video_fps_summary">%s\n\nКол-во кадров в секунду (FPS) в видео (примерное). Может привести к записи с ошибкой, если частота кадров не поддерживается</string>
 	<string name="preference_video_log">Логарифмическое тональное отображение</string>
 	<string name="vl_low">Низко</string>
 	<string name="vl_medium">Средне</string>
@@ -677,6 +696,10 @@
 	<string name="preference_video_restart_max_filesize_summary">Автоматически начать видеозапись заново при достижении максимального размера файла (обусловленного ограничениями устройства или указанного пользователем)</string>
 	<string name="preference_record_audio">Запись звука</string>
 	<string name="preference_record_audio_summary">Запись звука при записи видео</string>
+	<string name="preference_record_audio_bitrate">Битрейт звука</string>
+	<string name="preference_record_audio_bitrate_summary">%s\n\nВыбор битрейта аудио. Чем выше, тем лучше качество звука, но файл будет занимать больше места на диске. Неподдерживаемый битрейт может стать причиной ошибки при записи видео.</string>
+	<string name="preference_record_audio_sample_rate">Частота дискретизации</string>
+	<string name="preference_record_audio_sample_rate_summary">%s</string>
 	<string name="preference_record_audio_src">Источник звука</string>
 	<string name="as_camcorder">Микрофон видеокамеры</string>
 	<string name="as_external_mic">Внешний микрофон (если есть)</string>
@@ -721,7 +744,11 @@
 
 	<string name="preference_screen_files">Файлы</string>
 	<string name="preference_save_location">Папка сохранения</string>
-	<string name="preference_save_location_summary">Имя папки для сохранения фото и видео (также может быть полный путь)</string>
+	<string name="preference_save_location_summary">Имя папки для сохранения фото</string>
+	<string name="preference_save_video_location">Папка для видео</string>
+	<string name="preference_save_video_location_summary">%s\n\nПапка для сохранения видеофайлов</string>
+	<string name="vf_same_as_photo">Та же, что и для фото</string>
+	<string name="vf_folder">Папка...</string>
 	<string name="preference_using_saf">Использовать Storage Access Framework</string>
 	<string name="preference_using_saf_summary">Для Android 5+: использовать Storage Access Framework для сохранения фото и видео</string>
 	<string name="preference_save_photo_prefix">Префикс для фото</string>
@@ -757,8 +784,15 @@
 	<string name="preference_about_translation">Перевод</string>
 	<string name="preference_info">Информация</string>
 	<string name="about_copy_to_clipboard">Копировать в буфер</string>
+
+	<string name="preference_screen_preferences_control">Управление настройками</string>
+	<string name="preference_backup">Резервная копия</string>
+	<string name="preference_backup_summary">Создать резервную копию настроек. Файл будет сохранен в папке для сохранения фото/видео.</string>
+	<string name="preference_restore">Восстановить</string>
+	<string name="preference_restore_summary">Восстановить настройки из резервной копии.</string>
 	<string name="preference_reset">Сброс настроек</string>
 	<string name="preference_reset_summary">Сброс всех настроек приложения на стандартные значения</string>
+
 	<string name="preference_advanced">Для экспертов</string>
 
 	<string name="time_1_second">1 секунда</string>

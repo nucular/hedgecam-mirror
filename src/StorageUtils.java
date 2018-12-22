@@ -13,13 +13,11 @@ import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.ContentUris;
 import android.content.ContentValues;
-//import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
-//import android.location.Location;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Build;
@@ -40,6 +38,7 @@ public class StorageUtils {
 	private static final String TAG = "HedgeCam/StorageUtils";
 
 	private final Context context;
+	private final SharedPreferences sharedPreferences;
 	private Uri last_media_scanned;
 
 	// for testing:
@@ -47,6 +46,7 @@ public class StorageUtils {
 	
 	StorageUtils(Context context) {
 		this.context = context;
+		this.sharedPreferences = ((MainActivity)context).getSharedPrefs();
 	}
 	
 	Uri getLastMediaScanned() {
@@ -267,27 +267,40 @@ public class StorageUtils {
 		}
 	}
 
-	boolean isUsingSAF() {
+	public boolean isUsingSAF() {
 		// check Android version just to be safe
 		if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP ) {
-			SharedPreferences sharedPreferences = ((MainActivity)context).getSharedPrefs();
 			if( sharedPreferences.getBoolean(Prefs.USING_SAF, false) ) {
 				return true;
 			}
 		}
 		return false;
 	}
+	
+	String getSaveLocationMain() {
+		return sharedPreferences.getString(Prefs.SAVE_LOCATION, "HedgeCam");
+	}
 
 	// only valid if !isUsingSAF()
 	String getSaveLocation() {
-		SharedPreferences sharedPreferences = ((MainActivity)context).getSharedPrefs();
-		return sharedPreferences.getString(Prefs.SAVE_LOCATION, "HedgeCam");
+		String result = "";
+		if (Prefs.isVideoFolder())
+			result = sharedPreferences.getString(Prefs.SAVE_VIDEO_LOCATION, "");
+		if (result.length() == 0)
+			result = getSaveLocationMain();
+
+		return result;
 	}
-	
+
 	// only valid if isUsingSAF()
 	String getSaveLocationSAF() {
-		SharedPreferences sharedPreferences = ((MainActivity)context).getSharedPrefs();
-		return sharedPreferences.getString(Prefs.SAVE_LOCATION_SAF, "");
+		String result = "";
+		if (Prefs.isVideoFolder())
+			result = sharedPreferences.getString(Prefs.SAVE_VIDEO_LOCATION_SAF, "");
+		if (result.length() == 0)
+			result = sharedPreferences.getString(Prefs.SAVE_LOCATION_SAF, "");
+
+		return result;
 	}
 
 	// only valid if isUsingSAF()
@@ -450,7 +463,7 @@ public class StorageUtils {
 		if( count > 0 ) {
 			index = "_" + count; // try to find a unique filename
 		}
-		boolean useZuluTime = ((MainActivity)context).getSharedPrefs().getString(Prefs.SAVE_ZULU_TIME, "local").equals("zulu");
+		boolean useZuluTime = sharedPreferences.getString(Prefs.SAVE_ZULU_TIME, "local").equals("zulu");
 		String timeStamp;
 		if( useZuluTime ) {
 			SimpleDateFormat fmt = new SimpleDateFormat("yyyyMMdd_HHmmss'Z'", Locale.US);
@@ -466,7 +479,19 @@ public class StorageUtils {
 	// only valid if !isUsingSAF()
 	@SuppressLint("SimpleDateFormat")
 	File createOutputMediaFile(String prefix, String suffix, String extension, Date current_date) throws IOException {
-		File mediaStorageDir = getImageFolder();
+		boolean is_video = false;
+		switch(extension) {
+			case "3gp":
+			case "webm":
+			case "mp4":
+				is_video = true;
+				break;
+		}
+		File mediaStorageDir;
+		if (is_video)
+			mediaStorageDir = getImageFolder();
+		else
+			mediaStorageDir = getImageFolder(getSaveLocationMain());
 
 		// Create the storage directory if it does not exist
 		if( !mediaStorageDir.exists() ) {
@@ -498,9 +523,13 @@ public class StorageUtils {
 
 	// only valid if isUsingSAF()
 	@TargetApi(Build.VERSION_CODES.LOLLIPOP)
-	Uri createOutputFileSAF(String filename, String mimeType) throws IOException {
+	Uri createOutputFileSAF(String filename, String mimeType, boolean is_video) throws IOException {
 		try {
-			Uri treeUri = getTreeUriSAF();
+			Uri treeUri;
+			if (is_video)
+				treeUri = getTreeUriSAF();
+			else
+				treeUri = Uri.parse(sharedPreferences.getString(Prefs.SAVE_LOCATION_SAF, ""));
 			if( MyDebug.LOG )
 				Log.d(TAG, "treeUri: " + treeUri);
 			Uri docUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, DocumentsContract.getTreeDocumentId(treeUri));
@@ -536,18 +565,34 @@ public class StorageUtils {
 	@TargetApi(Build.VERSION_CODES.LOLLIPOP)
 	Uri createOutputMediaFileSAF(String prefix, String suffix, String extension, Date current_date) throws IOException {
 		String mimeType;
+		boolean is_video = false;
 		switch(extension) {
 			case "jpg":
 				mimeType = "image/jpeg";
 				break;
+			case "png":
+				mimeType = "image/png";
+				break;
 			case "dng":
 				mimeType = "image/dng";
 				break;
+			case "3gp":
+				mimeType = "video/3gpp";
+				is_video = true;
+				break;
+			case "webm":
+				mimeType = "video/webm";
+				is_video = true;
+				break;
 			case "mp4":
 				mimeType = "video/mp4";
+				is_video = true;
 				break;
 			case "txt":
 				mimeType = "text/plain";
+				break;
+			case "xml":
+				mimeType = "text/xml";
 				break;
 			default:
 				// throw exception as this is a programming error
@@ -557,7 +602,7 @@ public class StorageUtils {
 		}
 		// note that DocumentsContract.createDocument will automatically append to the filename if it already exists
 		String mediaFilename = createMediaFilename(prefix, suffix, 0, extension, current_date);
-		return createOutputFileSAF(mediaFilename, mimeType);
+		return createOutputFileSAF(mediaFilename, mimeType, is_video);
 	}
 
 	public static class Media {

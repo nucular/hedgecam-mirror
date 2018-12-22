@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Locale;
 
 import android.annotation.TargetApi;
-import android.app.Activity;
 import android.content.Context;
 import android.graphics.ImageFormat;
 import android.graphics.PixelFormat;
@@ -37,7 +36,6 @@ import android.location.Location;
 import android.media.ExifInterface;
 import android.media.Image;
 import android.media.ImageReader;
-import android.media.MediaActionSound;
 import android.media.MediaRecorder;
 import android.os.Build;
 import android.os.Handler;
@@ -147,9 +145,6 @@ public class CameraController2 extends CameraController {
 
 	private ContinuousFocusMoveCallback continuous_focus_move_callback;
 	
-	private final MediaActionSound media_action_sound = new MediaActionSound();
-	private boolean sounds_enabled = true;
-
 	private boolean has_received_frame;
 	private boolean capture_result_is_ae_scanning;
 	private Integer capture_result_ae; // latest ae_state, null if not available
@@ -185,6 +180,9 @@ public class CameraController2 extends CameraController {
 	private int image_reader_burst_count = 3;
 	private final List<Photo> pair_photos = new ArrayList<>();
 	private final List<Long> pair_photo_timestamps = new ArrayList<>();
+	
+	private final static int LENS_OPTICAL_STABILIZATION_MODE_IF_NECESSARY = 2;
+	private boolean optical_stabilization_if_necessary;
 
 	private class CameraSettings {
 		// keys that we need to store, to pass to the stillBuilder, but doesn't need to be passed to previewBuilder (should set sensible defaults)
@@ -237,17 +235,13 @@ public class CameraController2 extends CameraController {
 					exif_orientation = ExifInterface.ORIENTATION_NORMAL;
 					break;
 				case 90:
-					exif_orientation = isFrontFacing() ?
-							ExifInterface.ORIENTATION_ROTATE_270 :
-							ExifInterface.ORIENTATION_ROTATE_90;
+					exif_orientation = ExifInterface.ORIENTATION_ROTATE_90;
 					break;
 				case 180:
 					exif_orientation = ExifInterface.ORIENTATION_ROTATE_180;
 					break;
 				case 270:
-					exif_orientation = isFrontFacing() ?
-							ExifInterface.ORIENTATION_ROTATE_90 :
-							ExifInterface.ORIENTATION_ROTATE_270;
+					exif_orientation = ExifInterface.ORIENTATION_ROTATE_270;
 					break;
 				default:
 					// leave exif_orientation unchanged
@@ -674,7 +668,12 @@ public class CameraController2 extends CameraController {
 
 		private boolean setOpticalStabilizationMode(CaptureRequest.Builder builder) {
 			if (optical_stabilization != -1) {
-				builder.set(CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE, optical_stabilization);
+				if (optical_stabilization_if_necessary) {
+					builder.set(CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE, previewIsVideoMode ? 
+						CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE_ON : CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE_OFF);
+				} else {
+					builder.set(CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE, optical_stabilization);
+				}
 				return true;
 			}
 			return false;
@@ -1198,16 +1197,7 @@ public class CameraController2 extends CameraController {
 				}
 			}, 5000);
 		}*/
-
-		/*CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraIdS);
-		StreamConfigurationMap configs = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
-		android.util.Size [] camera_picture_sizes = configs.getOutputSizes(ImageFormat.JPEG);
-		imageReader = ImageReader.newInstance(camera_picture_sizes[0].getWidth(), , ImageFormat.JPEG, 2);*/
 		
-		// preload sounds to reduce latency - important so that START_VIDEO_RECORDING sound doesn't play after video has started (which means it'll be heard in the resultant video)
-		media_action_sound.load(MediaActionSound.START_VIDEO_RECORDING);
-		media_action_sound.load(MediaActionSound.STOP_VIDEO_RECORDING);
-		media_action_sound.load(MediaActionSound.SHUTTER_CLICK);
 	}
 
 	@Override
@@ -1604,24 +1594,9 @@ public class CameraController2 extends CameraController {
 
 		android.util.Size [] camera_preview_sizes = configs.getOutputSizes(SurfaceTexture.class);
 		camera_features.preview_sizes = new ArrayList<>();
-		Point display_size = new Point();
-		Activity activity = (Activity)context;
-		{
-			Display display = activity.getWindowManager().getDefaultDisplay();
-			display.getRealSize(display_size);
-			if (display_size.x < display_size.y)
-				display_size.set(display_size.y, display_size.x);
-			if( MyDebug.LOG )
-				Log.d(TAG, "display_size: " + display_size.x + " x " + display_size.y);
-		}
 		for(android.util.Size camera_size : camera_preview_sizes) {
 			if( MyDebug.LOG )
 				Log.d(TAG, "preview size: " + camera_size.getWidth() + " x " + camera_size.getHeight());
-			if( camera_size.getWidth() > display_size.x || camera_size.getHeight() > display_size.y ) {
-				// Nexus 6 returns these, even though not supported?! (get green corruption lines if we allow these)
-				// Google Camera filters anything larger than height 1080, with a todo saying to use device's measurements
-				continue;
-			}
 			camera_features.preview_sizes.add(new CameraController.Size(camera_size.getWidth(), camera_size.getHeight()));
 		}
 		
@@ -2460,7 +2435,7 @@ public class CameraController2 extends CameraController {
 		updateUseFakePrecaptureMode(camera_settings.flash_value);
 		camera_settings.setAEMode(previewBuilder, false); // need to set the ae mode, as flash is disabled for expo mode
 		
-		if (uncompressed_photo) setUncompressedPhoto(true);
+//		if (uncompressed_photo) setUncompressedPhoto(true);
 	}
 
 	@Override
@@ -2479,7 +2454,7 @@ public class CameraController2 extends CameraController {
 		}
 		this.want_burst_count = n_images;
 		
-		if (uncompressed_photo) setUncompressedPhoto(true);
+//		if (uncompressed_photo) setUncompressedPhoto(true);
 	}
 
 	@Override
@@ -2541,14 +2516,14 @@ public class CameraController2 extends CameraController {
 		updateUseFakePrecaptureMode(camera_settings.flash_value);
 		camera_settings.setAEMode(previewBuilder, false); // need to set the ae mode, as flash is disabled for burst mode
 
-		if (uncompressed_photo) setUncompressedPhoto(true);
+//		if (uncompressed_photo) setUncompressedPhoto(true);
 	}
 
 	@Override
 	public void setWantBurstCount(int count) {
 		want_burst_count = count;
 		
-		if (uncompressed_photo) setUncompressedPhoto(true);
+//		if (uncompressed_photo) setUncompressedPhoto(true);
 	}
 	
 	@Override
@@ -2558,7 +2533,7 @@ public class CameraController2 extends CameraController {
 	
 	@Override
 	public void setUncompressedPhoto(boolean state) {
-		if (uncompressed_photo != state || (uncompressed_photo && (want_burst || want_expo_bracketing) && want_burst_count != image_reader_burst_count)) {
+		if (uncompressed_photo != state/* || (uncompressed_photo && (want_burst || want_expo_bracketing) && want_burst_count != image_reader_burst_count)*/) {
 			uncompressed_photo = state;
 			
 			if( captureSession != null ) {
@@ -2856,6 +2831,9 @@ public class CameraController2 extends CameraController {
 		case CameraMetadata.LENS_OPTICAL_STABILIZATION_MODE_ON:
 			value = "on";
 			break;
+		case LENS_OPTICAL_STABILIZATION_MODE_IF_NECESSARY:
+			value = "if_necessary";
+			break;
 		default:
 			if( MyDebug.LOG )
 				Log.d(TAG, "unknown optical stabilization mode: " + value2);
@@ -2879,6 +2857,9 @@ public class CameraController2 extends CameraController {
 				case "on":
 					selected_value2 = CameraMetadata.LENS_OPTICAL_STABILIZATION_MODE_ON;
 					break;
+				case "if_necessary":
+					selected_value2 = LENS_OPTICAL_STABILIZATION_MODE_IF_NECESSARY;
+					break;
 				default:
 					if (MyDebug.LOG)
 						Log.d(TAG, "unknown selected_value: " + value);
@@ -2886,6 +2867,7 @@ public class CameraController2 extends CameraController {
 			}
 
 			if (selected_value2 != -1) {
+				optical_stabilization_if_necessary = selected_value2 == LENS_OPTICAL_STABILIZATION_MODE_IF_NECESSARY;
 				camera_settings.optical_stabilization = selected_value2;
 				if( camera_settings.setOpticalStabilizationMode(previewBuilder) ) {
 					try {
@@ -2910,7 +2892,11 @@ public class CameraController2 extends CameraController {
 	public String getOpticalStabilizationMode() {
 		if( previewBuilder.get(CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE) == null )
 			return null;
-		int value2 = previewBuilder.get(CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE);
+		int value2;
+		if (optical_stabilization_if_necessary)
+			value2 = LENS_OPTICAL_STABILIZATION_MODE_IF_NECESSARY;
+		else
+			value2 = previewBuilder.get(CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE);
 		return convertOpticalStabilizationMode(value2);
 	}
 
@@ -2923,12 +2909,20 @@ public class CameraController2 extends CameraController {
 			if (values2.length == 2 && values2[0] == values2[1]) {
 				values2[0] = CameraMetadata.LENS_OPTICAL_STABILIZATION_MODE_OFF;
 				values2[1] = CameraMetadata.LENS_OPTICAL_STABILIZATION_MODE_ON;
+			} else if (values2.length == 1 && previewBuilder.get(CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE) != null) {
+				values2 = new int[] {
+					CameraMetadata.LENS_OPTICAL_STABILIZATION_MODE_OFF,
+					CameraMetadata.LENS_OPTICAL_STABILIZATION_MODE_ON
+				};
 			}
 			for(int value2 : values2) {
 				String this_value = convertOpticalStabilizationMode(value2);
 				if( this_value != null ) {
 					values.add(this_value);
 				}
+			}
+			if (values2.length == 2) {
+				values.add(convertOpticalStabilizationMode(LENS_OPTICAL_STABILIZATION_MODE_IF_NECESSARY));
 			}
 		}
 		return values;
@@ -3038,11 +3032,11 @@ public class CameraController2 extends CameraController {
 			throw new RuntimeException(); // throw as RuntimeException, as this is a programming error
 		}
 		
-		if (uncompressed_photo) {
-			image_reader_burst_count = (want_burst || want_expo_bracketing) ? want_burst_count : 2;
-		} else {
+//		if (uncompressed_photo) {
+//			image_reader_burst_count = (want_burst || want_expo_bracketing) ? want_burst_count : 2;
+//		} else {
 			image_reader_burst_count = 2;
-		}
+//		}
 		
 		imageReader = ImageReader.newInstance(uncompressed_photo && !full_size_copy ? 320 : picture_width, uncompressed_photo && !full_size_copy ? 240 : picture_height, ImageFormat.JPEG, image_reader_burst_count);
 		if( MyDebug.LOG ) {
@@ -3107,17 +3101,13 @@ public class CameraController2 extends CameraController {
 				@Override
 				public void onImageAvailable(ImageReader reader) {
 					if( MyDebug.LOG )
-						Log.d(TAG, "new still image available");
+						Log.d(TAG, "new uncompressed image available");
 					if( jpeg_cb == null ) {
 						if( MyDebug.LOG )
 							Log.d(TAG, "no picture callback available");
 						return;
 					}
 					synchronized( image_reader_lock ) {
-						/* Whilst in theory the two setOnImageAvailableListener methods (for JPEG and RAW) seem to be called separately, I don't know if this is always true;
-						 * also, we may process the RAW image when the capture result is available (see
-						 * OnRawImageAvailableListener.setCaptureResult()), which may be in a separate thread.
-						 */
 						Image image = reader.acquireNextImage();
 						final long timestamp = image.getTimestamp();
 						if( MyDebug.LOG )
@@ -3129,13 +3119,14 @@ public class CameraController2 extends CameraController {
 							pair_photos.remove(index);
 							pair_photo_timestamps.remove(index);
 							
-							photo.image = image;
+							photo.setYUV(image);
 							photo.orientation = camera_settings.getExifOrientation();
 							imageAvailable(photo);
 						} else {
 							pair_photo_timestamps.add(timestamp);
 							pair_photos.add(new Photo(image, camera_settings.getExifOrientation()));
 						}
+						image.close();
 					}
 				}
 			}, null);
@@ -3825,11 +3816,6 @@ public class CameraController2 extends CameraController {
 	@Override
 	public void removeLocationInfo() {
 		this.camera_settings.location = null;
-	}
-
-	@Override
-	public void enableShutterSound(boolean enabled) {
-		this.sounds_enabled = enabled;
 	}
 
 	@Override
@@ -4930,8 +4916,13 @@ public class CameraController2 extends CameraController {
 			} else if (camera_settings.manual_mode) {
 				expected_capture_time = camera_settings.exposure_time/1000000L;
 			}
-			//stillBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
-			//stillBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
+
+			if (!previewIsVideoMode && optical_stabilization_if_necessary && expected_capture_time > 1000L/30) {
+				if( MyDebug.LOG )
+					Log.d(TAG, "optical stabilization enabled for capture session");
+				stillBuilder.set(CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE, CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE_ON);
+			}
+
 			clearPending();
 			// shouldn't add preview surface as a target - no known benefit to doing so
 			stillBuilder.addTarget(imageReader.getSurface());
@@ -4959,12 +4950,9 @@ public class CameraController2 extends CameraController {
 				Log.d(TAG, "capture with stillBuilder");
 				
 			
-			//pending_request_when_ready = stillBuilder.build();
 			captureSession.capture(stillBuilder.build(), previewCaptureCallback, handler);
-			//captureSession.capture(stillBuilder.build(), new CameraCaptureSession.CaptureCallback() {
-			//}, handler);
-			if( sounds_enabled ) // play shutter sound asap, otherwise user has the illusion of being slow to take photos
-				media_action_sound.play(MediaActionSound.SHUTTER_CLICK);
+
+			shutter_cb.onShutter();
 		}
 		catch(CameraAccessException e) {
 			if( MyDebug.LOG ) {
@@ -5124,6 +5112,12 @@ public class CameraController2 extends CameraController {
 					Log.d(TAG, "Max exposure time: " + max_exposure_time);
 				}
 
+				if (!previewIsVideoMode && optical_stabilization_if_necessary && base_exposure_time > 1000000000L/30) {
+					if( MyDebug.LOG )
+						Log.d(TAG, "optical stabilization enabled for capture session");
+					stillBuilder.set(CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE, CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE_ON);
+				}
+
 				// darker images
 				double scale = Math.pow(2.0, expo_bracketing_stops_down/(double)n_half_images);
 				for(int i=0;i<n_half_images;i++) {
@@ -5224,7 +5218,6 @@ public class CameraController2 extends CameraController {
 					Log.d(TAG, "call onStarted() in callback");
 				jpeg_cb.onStarted();
 			}
-			
 
 			if (expo_bracketing_exposure_compensation) {
 				if( MyDebug.LOG )
@@ -5243,8 +5236,7 @@ public class CameraController2 extends CameraController {
 				captureSession.capture(requests.get(0), previewCaptureCallback, handler);
 			}
 
-			if( sounds_enabled ) // play shutter sound asap, otherwise user has the illusion of being slow to take photos
-				media_action_sound.play(MediaActionSound.SHUTTER_CLICK);
+			shutter_cb.onShutter();
 		}
 		catch(CameraAccessException e) {
 			if( MyDebug.LOG ) {
@@ -5293,9 +5285,7 @@ public class CameraController2 extends CameraController {
 				test_fake_flash_photo++;
 			}
 
-//			stillBuilder.set(CaptureRequest.NOISE_REDUCTION_MODE, CaptureRequest.NOISE_REDUCTION_MODE_OFF);
 			stillBuilder.set(CaptureRequest.COLOR_CORRECTION_ABERRATION_MODE, CaptureRequest.COLOR_CORRECTION_ABERRATION_MODE_OFF);
-//			stillBuilder.set(CaptureRequest.EDGE_MODE, CaptureRequest.EDGE_MODE_OFF);
 
 			clearPending();
 			// shouldn't add preview surface as a target - see note in takePictureAfterPrecapture()
@@ -5331,6 +5321,12 @@ public class CameraController2 extends CameraController {
 			expected_capture_time = getExposureTime();
 			if (expected_capture_time > 0) {
 				expected_capture_time = expected_capture_time/1000000L*n_burst+10L*(n_burst-1);
+			}
+
+			if (!previewIsVideoMode && optical_stabilization_if_necessary && expected_capture_time > 1000L/30) {
+				if( MyDebug.LOG )
+					Log.d(TAG, "optical stabilization enabled for capture session");
+				stillBuilder.set(CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE, CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE_ON);
 			}
 
 			is_filtering_blocked = false;
@@ -5409,8 +5405,7 @@ public class CameraController2 extends CameraController {
 				}.run();
 			}
 
-			if( sounds_enabled ) // play shutter sound asap, otherwise user has the illusion of being slow to take photos
-				media_action_sound.play(MediaActionSound.SHUTTER_CLICK);
+			shutter_cb.onShutter();
 		}
 		catch(CameraAccessException e) {
 			if( MyDebug.LOG ) {
@@ -5714,9 +5709,6 @@ public class CameraController2 extends CameraController {
 
 	@Override
 	public void initVideoRecorderPrePrepare(MediaRecorder video_recorder) {
-		// if we change where we play the START_VIDEO_RECORDING sound, make sure it can't be heard in resultant video
-		if( sounds_enabled )
-			media_action_sound.play(MediaActionSound.START_VIDEO_RECORDING);
 	}
 
 	@Override
@@ -5753,9 +5745,6 @@ public class CameraController2 extends CameraController {
 	public void reconnect() throws CameraControllerException {
 		if( MyDebug.LOG )
 			Log.d(TAG, "reconnect");
-		// if we change where we play the STOP_VIDEO_RECORDING sound, make sure it can't be heard in resultant video
-		if( sounds_enabled )
-			media_action_sound.play(MediaActionSound.STOP_VIDEO_RECORDING);
 		createPreviewRequest();
 		createCaptureSession(null, false);
 		/*if( MyDebug.LOG )

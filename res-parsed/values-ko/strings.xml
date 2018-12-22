@@ -24,6 +24,7 @@
 	<string name="unlimited">무제한</string>
 <!-- Translate me
 	<string name="device_default">Device default</string>
+	<string name="if_necessary">If necessary</string>
 -->
 	<string name="sorry">죄송합니다</string>
 
@@ -142,6 +143,7 @@
 <!-- Translate me
 	<string name="video_pause">Video paused</string>
 	<string name="video_resume">Video resumed</string>
+	<string name="backup_saved">Backup file was saved succesfully</string>
 
 -->
 	<string name="failed_to_open_camera_1">카메라를 여는 데 실패했습니다.</string>
@@ -178,6 +180,9 @@
 	<string name="speech_recognizer_unavailable">Speech recognizer unavailable</string>
 	<string name="open_files_saf_exception_ghost">No file dialog found on this device, ghost image option is not supported</string>
 	<string name="saf_permission_failed_open_image">Unable to open this image</string>
+	<string name="failed_to_save_backup">Failed to save backup file</string>
+	<string name="failed_to_read_backup">Failed to read backup file</string>
+	<string name="failed_to_restore_from_backup">Failed to restore settings from backup file</string>
 
 	<string name="no_permission">PERMISSIONS NOT AVAILABLE</string>
 
@@ -195,6 +200,7 @@
 -->
 	<string name="preference_reset_question">모든 오픈 카메라 설정을 초기화할까요?</string>
 <!-- Translate me
+	<string name="preference_restore_question">Are you sure you want to restore all settings from file? All current settings will be overwritten!</string>
 	<string name="dont_show_again">Don\'t show again</string>
 
 	<string name="mb_abbreviation">MB</string>
@@ -330,9 +336,9 @@
 -->
 	<string name="preference_screen_sounds">사운드 팩</string>
 	<string name="preference_shutter_sound">셔터 소리</string>
-	<string name="preference_shutter_sound_summary">사진을 촬영할때 소리를 재생합니다 (해제하려면 안드로이드 4.2 혹은 이후 버전이 필요합니다)</string>
+	<string name="preference_shutter_sound_summary">%s\n\n사진을 촬영할때 소리를 재생합니다 (해제하려면 안드로이드 4.2 혹은 이후 버전이 필요합니다)</string>
 <!-- Translate me
-	<string name="preference_shutter_sound_select">Choose shutter sound</string>
+	<string name="shutter_force_off">Force off</string>
 	<string name="shutter_android_2">Android 2</string>
 	<string name="shutter_android_4">Android 4</string>
 	<string name="shutter_1">Shutter 1 (short)</string>
@@ -340,6 +346,7 @@
 	<string name="shutter_3">Shutter 3 (long)</string>
 	<string name="shutter_4">Shutter 4 (long)</string>
 	<string name="shutter_unlock">Unlock sound</string>
+	<string name="preference_video_sound">Video start/stop sound</string>
 -->
 	<string name="preference_timer_beep">타이머 알림음</string>
 	<string name="preference_timer_beep_summary">타이머가 작동중이거나 연사 모드 지연시 알림음을 재생합니다</string>
@@ -481,6 +488,9 @@
 <!-- Translate me
 	<string name="preference_preview_max_size">Max preview size</string>
 	<string name="preference_preview_max_size_summary">Maximal preview size</string>
+	<string name="preference_preview_resolution">Preview resolution</string>
+	<string name="preference_preview_resolution_summary">Resolution of the preview. If this option was changed, previous one will be ignored. This setting is saved separately for each camera and photo/video mode.</string>
+	<string name="match_target_resolution">Match to target resolution</string>
 	<string name="preference_preview_location">Preview location</string>
 	<string name="preference_preview_location_summary">%s</string>
 	<string name="left_gap_for_buttons">Left, gap for buttons</string>
@@ -620,8 +630,17 @@
 	<string name="fr_landscape_macro">Landscape/Macro</string>
 	<string name="fr_room">Room</string>
 	<string name="fr_group">Group photo</string>
+	
+	<string name="preference_screen_calibration">Calibration</string>
 	<string name="preference_level_angle_calibration">Level angle calibration</string>
 	<string name="preference_level_angle_calibration_summary">%s\n\nCalibration value of level angle</string>
+	<string name="preference_min_focus_distance">Minimum focus distance</string>
+	<string name="preference_focus_distance_calibration">Focus distance calibration</string>
+	<string name="preference_focus_distance_calibration_summary">%s\n\nPositive values correspond to short distances, negative values to long distances.</string>
+	<string name="preference_row_space_y">Luma row space</string>
+	<string name="preference_row_space_y_summary">%s\n\nSpace between a rows in luminance channel. Used when uncompressed output option is enabled. This setting is saved separately for each camera.</string>
+	<string name="preference_row_space_uv">Chroma row space</string>
+	<string name="preference_row_space_uv_summary">%s\n\nSpace betweena rows in chroma channels. Used when uncompressed output option is enabled. This setting is saved separately for each camera.</string>
 
 	<string name="preference_screen_bug_fix">Bug fixes</string>
 	<string name="preference_startup_focus">Perform auto-focus on startup</string>
@@ -630,9 +649,6 @@
 	<string name="preference_force_face_focus_summary">Force focus when face detected in autofocus mode. Only one face supported.</string>
 	<string name="preference_center_focus">Center focus</string>
 	<string name="preference_center_focus_summary">Set focus zone in the center of the frame at startup</string>
-	<string name="preference_min_focus_distance">Minimum focus distance</string>
-	<string name="preference_focus_distance_calibration">Focus distance calibration</string>
-	<string name="preference_focus_distance_calibration_summary">Positive values correspond to short distances, negative values to long distances.</string>
 	<string name="preference_update_focus_for_video">Update focus mode</string>
 	<string name="preference_update_focus_for_video_summary">Workaround for bug on Samsung Galaxy S5 with UHD, where if the user switches to another (non-continuous-video) focus mode, then goes to Settings, then returns and records video, the preview freezes and the video is corrupted</string>
 	<string name="preference_camera2_fake_flash">Use alternative flash method</string>
@@ -656,9 +672,8 @@
 	<string name="preference_auto_stabilise">자동 안정화</string>
 	<string name="preference_auto_stabilise_summary">이미지가 회전되어 자동적으로 수평을 맞추게 됩니다 (사진 전용) (촬영이 느려질 수 있으며 메모리가 적은 기기에서는 실패할 수 있습니다)</string>
 <!-- Translate me
-	<string name="preference_raw">RAW</string>
-	<string name="preference_raw_summary">%s\n\nWhether to save in RAW (DNG) format</string>
-	<string name="jpeg_only">JPEG only</string>
+	<string name="preference_image_format">Image format</string>
+	<string name="preference_image_format_summary">%s</string>
 	<string name="jpeg_and_dng">JPEG and DNG (RAW)</string>
 	<string name="preference_flip_front_facing">Flip photo</string>
 	<string name="preference_flip_front_facing_summary">Flip horizontally photos from front camera</string>
@@ -693,13 +708,15 @@
 	<string name="preference_expo_bracketing_use_iso_summary">If possible, use ISO adjustment for creating the darker images</string>
 	<string name="preference_expo_bracketing_delay">Delay</string>
 	<string name="preference_expo_bracketing_delay_summary">%s\n\nThe delay between images is necessary for exposure compensation changing</string>
-	<string name="preference_category_hdr">HDR and DRO</string>
-	<string name="preference_category_hdr_summary">HDR and DRO settings</string>
 	<string name="preference_hdr_save_expo">Save all images for HDR mode</string>
 	<string name="preference_hdr_save_expo_summary">If enabled, when using HDR photo mode, the three base exposure images will be saved as well as the final HDR photo. Note this will make saving slower, especially if options like \"Stamp photos\" or Auto-level are also used.</string>
 	<string name="preference_hdr_deghost">Deghosting</string>
 	<string name="preference_hdr_tonemapping">Tone mapping</string>
 	<string name="preference_hdr_tonemapping_summary">%s\n\nAlgorithm to use for HDR tonemapping</string>
+	<string name="preference_align">Aligning</string>
+	<string name="preference_align_summary">%s\n\nAlign source images with base image</string>
+	<string name="only_align">Only align</string>
+	<string name="align_and_crop">Align and crop</string>
 	<string name="preference_hdr_unsharp_mask">Unsharp mask</string>
 	<string name="preference_hdr_unsharp_mask_summary">%s\n\nLevel of the unsharp mask filter during processing HDR and DRO</string>
 	<string name="preference_hdr_unsharp_mask_radius">Radius</string>
@@ -763,12 +780,16 @@
 -->
 	<string name="preference_screen_video_settings">동영상 설정</string>
 	<string name="video_quality">동영상 해상도</string>
+<!-- Translate me
+	<string name="preference_video_format">Video format</string>
+	<string name="preference_video_format_summary">%s\n\nVideo file format.</string>
+-->
 	<string name="preference_video_stabilization">비디오 안정화 사용</string>
 	<string name="preference_video_stabilization_summary">비디오 안정화는 미리보기 및 동영상 촬영시 카메라의 움직임으로 인해 발생하는 흔들림을 줄여줍니다</string>
 	<string name="preference_video_bitrate">비디오 비트레이트 (근사치)</string>
 	<string name="preference_video_bitrate_summary">%s\n\n동영상의 비트레이트 근사치를 설정합니다 (높을수록 고화질이지만 용량을 더 차지합니다; 비트레이트가 지원되지 않을 경우 동영상 녹화가 실패할 수 있습니다)</string>
 	<string name="preference_video_fps">비디오 프레임 비율 (근사치)</string>
-	<string name="preference_video_fps_summary">동영상의 프레임 비율(FPS)을 설정합니다 (근사치이므로 보장되지 않습니다; 프레임 비율이 지원되지 않을 경우 동영상 녹화가 실패할 수 있습니다)</string>
+	<string name="preference_video_fps_summary">%s\n\n동영상의 프레임 비율(FPS)을 설정합니다 (근사치이므로 보장되지 않습니다; 프레임 비율이 지원되지 않을 경우 동영상 녹화가 실패할 수 있습니다)</string>
 <!-- Translate me
 	<string name="preference_video_log">Video flat (log) profile</string>
 	<string name="vl_low">Low</string>
@@ -801,6 +822,12 @@
 -->
 	<string name="preference_record_audio">오디오 녹음</string>
 	<string name="preference_record_audio_summary">동영상 녹화시 오디오를 녹음합니다</string>
+<!-- Translate me
+	<string name="preference_record_audio_bitrate">Audio bitrate</string>
+	<string name="preference_record_audio_bitrate_summary">%s\n\nSet the bitrate of audio (higher means better sound quality, but takes up more disk space; may cause video recording to fail if bitrate not supported)</string>
+	<string name="preference_record_audio_sample_rate">Audio sample rate</string>
+	<string name="preference_record_audio_sample_rate_summary">%s</string>
+-->
 	<string name="preference_record_audio_src">오디오 음원</string>
 <!-- Translate me
 	<string name="as_camcorder">Camcorder</string>
@@ -861,6 +888,10 @@
 	<string name="preference_save_location">저장 위치</string>
 	<string name="preference_save_location_summary">사진/동영상 파일을 저장할 폴더를 선택합니다</string>
 <!-- Translate me
+	<string name="preference_save_video_location">Save video location</string>
+	<string name="preference_save_video_location_summary">%s\n\nFolder to save the video files in</string>
+	<string name="vf_same_as_photo">Same as for photo</string>
+	<string name="vf_folder">Folder...</string>
 	<string name="preference_using_saf">Use Storage Access Framework</string>
 	<string name="preference_using_saf_summary">Whether to use Android 5\'s Storage Access Framework for saving photos and videos</string>
 -->
@@ -905,8 +936,17 @@
 -->
 	<string name="preference_info">앱 및 디버그 정보</string>
 	<string name="about_copy_to_clipboard">클립보드로 복사</string>
+	
+<!-- Translate me
+	<string name="preference_screen_preferences_control">Preferences control</string>
+	<string name="preference_backup">Backup</string>
+	<string name="preference_backup_summary">Backup the settings to a file. Backup will be saved in photo/video folder.</string>
+	<string name="preference_restore">Restore</string>
+	<string name="preference_restore_summary">Restore the settings from backup.</string>
+-->
 	<string name="preference_reset">설정 초기화</string>
 	<string name="preference_reset_summary">모든 오픈 카메라 설정을 초기화합니다</string>
+
 	<string name="preference_advanced">고급 기능</string>
 
 	<string name="time_1_second">1초</string>

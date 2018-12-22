@@ -41,8 +41,8 @@ public interface ApplicationInterface {
 	boolean useTextureView();
 	Location getLocation(); // get current location - null if not available (or you don't care about geotagging)
 	int createOutputVideoMethod(); // return a VIDEOMETHOD_* value to specify how to create a video file
-	File createOutputVideoFile(String prefix) throws IOException; // will be called if createOutputVideoUsingSAF() returns VIDEOMETHOD_FILE
-	Uri createOutputVideoSAF(String prefix) throws IOException; // will be called if createOutputVideoUsingSAF() returns VIDEOMETHOD_SAF
+	File createOutputVideoFile(String prefix, String extension) throws IOException; // will be called if createOutputVideoUsingSAF() returns VIDEOMETHOD_FILE
+	Uri createOutputVideoSAF(String prefix, String extension) throws IOException; // will be called if createOutputVideoUsingSAF() returns VIDEOMETHOD_SAF
 	Uri createOutputVideoUri(); // will be called if createOutputVideoUsingSAF() returns VIDEOMETHOD_URI
 	VideoMaxFileSize getVideoMaxFileSizePref() throws NoFreeStorageException; // see VideoMaxFileSize class for details
 	boolean isRawPref(); // whether to enable RAW photos
@@ -73,8 +73,6 @@ public interface ApplicationInterface {
 	void cameraInOperation(boolean in_operation); // called when the camera starts/stops being operation (taking photos or recording video, including if preview is paused after taking a photo), use to disable GUI elements during camera operation
 	void turnFrontScreenFlashOn(); // called when front-screen "flash" required (for modes flash_frontscreen_auto, flash_frontscreen_on); the application should light up the screen, until cameraInOperation(false) is called
 	void cameraClosed();
-	void timerBeep(long remaining_time); // n.b., called once per second on timer countdown - so application can beep, or do whatever it likes
-	void shutterSound();
 
 	// methods that request actions
 	void layoutUI(); // application should layout UI that's on top of the preview
@@ -95,9 +93,6 @@ public interface ApplicationInterface {
 	void onPictureCompleted(); // called after all picture callbacks have been called and returned
 	void onContinuousFocusMove(boolean start); // called when focusing starts/stop in continuous picture mode (in photo mode only)
 
-	void disableSound();
-	void restoreSound();
-	
 	void faceDetected(boolean low);
 	
 	boolean isSetExpoMeteringArea();

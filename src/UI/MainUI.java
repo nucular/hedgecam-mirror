@@ -52,6 +52,7 @@ import android.widget.TextView;
 import android.widget.ZoomControls;
 
 import java.io.FileNotFoundException;
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -173,7 +174,7 @@ public class MainUI {
 	
 	private int[] buttons_location;
 	
-	public final int[] bottom_elements = {
+	public final int[] manual_control = {
 		R.id.focus_seekbar,
 		R.id.focus_bracketing_seekbar,
 		R.id.zoom,
@@ -210,7 +211,6 @@ public class MainUI {
 		R.id.exposure_seekbar_zoom,
 	};
 	
-
 	private ArrayList<Integer> hide_buttons = null;
 
 	public MainUI(MainActivity main_activity) {
@@ -220,6 +220,9 @@ public class MainUI {
 		this.resources = main_activity.getResources();
 		this.sharedPreferences = main_activity.getSharedPrefs();
 		
+		shutter_icon_material = sharedPreferences.getString(Prefs.SHUTTER_BUTTON_STYLE, "hedgecam").equals("material");
+		main_activity.findViewById(R.id.gallery).setBackgroundResource(shutter_icon_material ? R.drawable.rounded_gallery : R.drawable.gallery_bg);
+
 		buttons_location = new int[ctrl_panel_buttons.length];
 		for(int i = 0; i < ctrl_panel_buttons.length; i++) buttons_location[i] = 0;
 		
@@ -232,7 +235,6 @@ public class MainUI {
 				seekBar.setProgressTintList(progress_color);
 				seekBar.setThumbTintList(thumb_color);
 			}
-			
 		}
 
 		for(int id : zoom_controls) {
@@ -476,8 +478,10 @@ public class MainUI {
 				: resources.getDrawable(R.drawable.shutter_photo_selector).getIntrinsicWidth())
 				* shutter_size_mul);
 
-			int shutter_margin = (int)((shutter_icon_material ? 0 : resources.getDimensionPixelSize(R.dimen.default_shutter_margin))
-				* shutter_size_mul);
+			int shutter_margin = (int)(shutter_icon_material ?
+				-resources.getDimensionPixelSize(R.dimen.shutter_ring_margin)+scale :
+				resources.getDimensionPixelSize(R.dimen.default_shutter_margin) * shutter_size_mul);
+			
 			if (view.getVisibility() == View.VISIBLE) {
 				ind_margin_right = view.getWidth()+shutter_margin;
 				popup_anchor = R.id.take_photo;
@@ -497,7 +501,7 @@ public class MainUI {
 				setViewRotation(view, ui_rotation);
 //			}
 
-			if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.N ) {
+			if( main_activity.supportsVideoPause() ) {
 				int pause_width = (int)((shutter_icon_material
 					? resources.getDimensionPixelSize(R.dimen.pause_size)
 					: resources.getDrawable(R.drawable.pause_selector).getIntrinsicWidth())
@@ -519,15 +523,19 @@ public class MainUI {
 			}
 
 			view = main_activity.findViewById(R.id.gallery);
-			int gallery_width = system_ui_portrait ? view.getHeight() : view.getWidth();
+			int gallery_width = resources.getDimensionPixelSize(shutter_icon_material ? R.dimen.button_gallery_rounded_size : R.dimen.button_gallery_size);
 			int gallery_margin = (shutter_width+shutter_margin*2-gallery_width)/2;
 			layoutParams = (RelativeLayout.LayoutParams)view.getLayoutParams();
 			layoutParams.addRule(align_parent_top, RelativeLayout.TRUE);
 			layoutParams.addRule(align_parent_bottom, 0);
 			layoutParams.addRule(align_parent_left, 0);
 			layoutParams.addRule(align_parent_right, RelativeLayout.TRUE);
-			setMargins(layoutParams, 0, 0, gallery_margin+margin_right, 0);
+			layoutParams.width = gallery_width;
+			layoutParams.height = gallery_width;
+			setMargins(layoutParams, 0, gallery_margin, gallery_margin+margin_right, gallery_margin);
 			view.setLayoutParams(layoutParams);
+			int padding = resources.getDimensionPixelSize(shutter_icon_material ? R.dimen.button_gallery_rounded_padding : R.dimen.button_gallery_padding);
+			view.setPadding(padding, padding, padding, padding);
 			setViewRotation(view, ui_rotation);
 	
 			view = main_activity.findViewById(R.id.switch_video);
@@ -536,7 +544,9 @@ public class MainUI {
 			layoutParams.addRule(align_parent_bottom, RelativeLayout.TRUE);
 			layoutParams.addRule(align_parent_left, 0);
 			layoutParams.addRule(align_parent_right, RelativeLayout.TRUE);
-			setMargins(layoutParams, 0, 0, (shutter_width+shutter_margin*2-(system_ui_portrait ? view.getHeight() : view.getWidth()))/2+margin_right, 0);
+			layoutParams.width = gallery_width;
+			layoutParams.height = gallery_width;
+			setMargins(layoutParams, 0, gallery_margin, gallery_margin+margin_right, gallery_margin);
 			view.setLayoutParams(layoutParams);
 			setViewRotation(view, ui_rotation);
 
@@ -755,7 +765,7 @@ public class MainUI {
 							angle_start = 90;
 							angle_step = 0;
 						}
-						if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && main_activity.getPreview().isVideo()) hide_buttons = new ArrayList<>();
+						if (main_activity.supportsVideoPause() && main_activity.getPreview().isVideo()) hide_buttons = new ArrayList<>();
 					} else {
 						double y = Math.min(center_y-button_size/2, resources.getDimensionPixelSize(R.dimen.ctrl_panel_universal_y_max));
 						angle_start = (float)(180-Math.toDegrees(Math.atan2(y, buttons_shutter_gap+resources.getDimensionPixelSize(R.dimen.ctrl_panel_universal_x_start)))*2);
@@ -781,7 +791,7 @@ public class MainUI {
 						if (view.getVisibility() == View.VISIBLE && buttons_location[i] != 2) {
 							float angle = angle_start+angle_step*button;
 							// Free space for pause button
-							if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && gui_type == GUIType.Tablet && main_activity.getPreview().isVideo() && angle > 150) {
+							if (main_activity.supportsVideoPause() && gui_type == GUIType.Tablet && main_activity.getPreview().isVideo() && angle > 150) {
 								hide_buttons.add(ctrl_panel_buttons[i]);
 							}
 							int direction_y = 1;
@@ -856,7 +866,7 @@ public class MainUI {
 		}
 
 		layoutSeekbars();
-		layoutPopupView();
+		layoutPopupView(false);
 
 		setSelfieMode(main_activity.selfie_mode);
 		setAudioControl(main_activity.audio_control);
@@ -888,7 +898,7 @@ public class MainUI {
 		View view;
 		
 		boolean has_seekbars = false;
-		for(int id : bottom_elements) {
+		for(int id : manual_control) {
 			view = main_activity.findViewById(id);
 			if( view.getVisibility() == View.VISIBLE ) {
 				has_seekbars = true;
@@ -946,7 +956,7 @@ public class MainUI {
 					current_rotation += 360;
 			}
 
-			for(int id : bottom_elements) {
+			for(int id : manual_control) {
 				view = main_activity.findViewById(id);
 
 				if( view.getVisibility() == View.VISIBLE ) {
@@ -1059,7 +1069,7 @@ public class MainUI {
 		}
 	}
 
-	private void layoutPopupView() {
+	private void layoutPopupView(boolean only_params) {
 		boolean from_mode_panel = false;
 		for(int i = 0; i < ctrl_panel_buttons.length; i++) {
 			if (ctrl_panel_buttons[i] == popup_from) {
@@ -1068,7 +1078,7 @@ public class MainUI {
 				break;
 			}
 		}
-		View view = main_activity.findViewById(R.id.popup_container);
+		final View view = main_activity.findViewById(R.id.popup_container);
 		view.setAnimation(null);
 		RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams)view.getLayoutParams();
 		layoutParams.setMargins(0, 0, 0, 0);
@@ -1126,6 +1136,29 @@ public class MainUI {
 			}
 		}
 		view.setLayoutParams(layoutParams);
+		
+		if (only_params)
+			return;
+			
+		if (system_ui_portrait && orientation_changed && view.getVisibility() == View.VISIBLE) {
+			view.getViewTreeObserver().addOnGlobalLayoutListener(
+				new OnGlobalLayoutListener() {
+					@SuppressWarnings("deprecation")
+					@Override
+					public void onGlobalLayout() {
+						if( MyDebug.LOG )
+							Log.d(TAG, "onGlobalLayout()");
+						layoutPopupView(true);
+						// stop listening - only want to call this once!
+						if (Build.VERSION.SDK_INT > Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1) {
+							view.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+						} else {
+							view.getViewTreeObserver().removeGlobalOnLayoutListener(this);
+						}
+					}
+				}
+			);
+		}
 
 		setViewRotation(view, ui_rotation);
 		// reset:
@@ -1198,7 +1231,7 @@ public class MainUI {
 					if (shutter_icon_material) {
 						if (
 							main_activity.selfie_mode &&
-							(!sharedPreferences.getString(Prefs.BURST_MODE, "5").equals("1") ||
+							(!sharedPreferences.getString(Prefs.BURST_MODE, "1").equals("1") ||
 							!sharedPreferences.getString(Prefs.TIMER, "5").equals("0"))
 						) bg_resource = R.drawable.shutter_material_selfie_selector;
 						else bg_resource = R.drawable.shutter_material_photo_selector;
@@ -1218,7 +1251,11 @@ public class MainUI {
 			}
 
 			view = (ImageButton)main_activity.findViewById(R.id.switch_video);
-			view.setImageResource(is_video ? R.drawable.main_photo_camera : R.drawable.main_videocam);
+			view.setImageResource(
+				is_video ? 
+				(shutter_icon_material ? R.drawable.rounded_photo_camera : R.drawable.main_photo_camera) :
+				(shutter_icon_material ? R.drawable.rounded_videocam : R.drawable.main_videocam)
+			);
 			view.setContentDescription( resources.getString(is_video ? R.string.switch_to_photo : R.string.switch_to_video) );
 		}
 	}
@@ -1243,12 +1280,12 @@ public class MainUI {
 			if (shutter_icon_material) {
 				bg_resource = R.drawable.shutter_material_photo_selector;
 				if (main_activity.selfie_mode) {
-					if (!sharedPreferences.getString(Prefs.BURST_MODE, "5").equals("1") || !sharedPreferences.getString(Prefs.TIMER, "5").equals("0"))
+					if (!sharedPreferences.getString(Prefs.BURST_MODE, "1").equals("1") || !sharedPreferences.getString(Prefs.TIMER, "5").equals("0"))
 						bg_resource = R.drawable.shutter_material_selfie_selector;
 				}
 			} else {
 				resource = R.drawable.shutter_icon_photo;
-				if (Prefs.getPhotoMode() == Prefs.PhotoMode.FocusBracketing || (main_activity.selfie_mode && !sharedPreferences.getString(Prefs.BURST_MODE, "5").equals("1"))) resource = R.drawable.shutter_icon_burst;
+				if (Prefs.getPhotoMode() == Prefs.PhotoMode.FocusBracketing || (main_activity.selfie_mode && !sharedPreferences.getString(Prefs.BURST_MODE, "1").equals("1"))) resource = R.drawable.shutter_icon_burst;
 				else if (main_activity.selfie_mode && !sharedPreferences.getString(Prefs.TIMER, "5").equals("0")) resource = R.drawable.shutter_icon_timer;
 				bg_resource = R.drawable.shutter_photo_selector;
 			}
@@ -1524,7 +1561,7 @@ public class MainUI {
 				}
 
 				if( !main_activity.getPreview().isVideo() ) {
-					for(int id : bottom_elements) {
+					for(int id : manual_control) {
 						view = (View) main_activity.findViewById(id);
 						if (view.getVisibility() == View.VISIBLE){
 							view.setEnabled(enable);
@@ -1539,6 +1576,11 @@ public class MainUI {
 						}
 					}
 				} else {
+					view = (View) main_activity.findViewById(R.id.exposure);
+					if (view.getVisibility() == View.VISIBLE){
+						view.setEnabled(true);
+						view.setAlpha(1.0f);
+					}
 					// still allow popup in order to change flash mode when recording video
 					boolean enable_popup = false;
 					if( main_activity.getPreview().supportsFlash() ) {
@@ -1961,7 +2003,7 @@ public class MainUI {
 				Log.d(TAG, "create new popup_view");
 			popup_view = new PopupView(main_activity, popup_type);
 			popup_container.addView(popup_view);
-			layoutPopupView();
+			layoutPopupView(false);
 		}
 		else {
 			if( MyDebug.LOG )
@@ -1986,7 +2028,7 @@ public class MainUI {
 						Log.d(TAG, "onGlobalLayout()");
 					if( MyDebug.LOG )
 						Log.d(TAG, "time after global layout: " + (System.currentTimeMillis() - time_s));
-					layoutPopupView();
+					layoutPopupView(false);
 					if( MyDebug.LOG )
 						Log.d(TAG, "time after layoutUI: " + (System.currentTimeMillis() - time_s));
 					// stop listening - only want to call this once!
@@ -2075,11 +2117,6 @@ public class MainUI {
 		return ui_rotation_relative;
 	}
 	
-	// for testing
-	public View getPopupButton(String key) {
-		return popup_view.getPopupButton(key);
-	}
-
 	public PopupView getPopupView() {
 		return popup_view;
 	}
@@ -2855,6 +2892,7 @@ public class MainUI {
 						if( MyDebug.LOG )
 							Log.d(TAG, "doInBackground");
 						Uri uri = null;
+						String file_path = null;
 						Bitmap bitmap = null;
 
 						String source = sharedPreferences.getString(Prefs.GHOST_IMAGE_SOURCE, "last_photo");
@@ -2863,14 +2901,18 @@ public class MainUI {
 							if (media != null)
 								uri = media.uri;
 						} else {
-							String file = sharedPreferences.getString(Prefs.GHOST_IMAGE_FILE_SAF, "");
-							if (file.length() > 0)
-								uri = Uri.parse(file);
+							if (main_activity.getStorageUtils().isUsingSAF()) {
+								String file = sharedPreferences.getString(Prefs.GHOST_IMAGE_FILE_SAF, "");
+								if (file.length() > 0)
+									uri = Uri.parse(file);
+							} else {
+								file_path = sharedPreferences.getString(Prefs.GHOST_IMAGE_FILE, "");
+								if (file_path.length() == 0)
+									file_path = null;
+							}
 						}
 
-						if (uri != null) {
-							ExifInterface exif = null;
-
+						if (uri != null || file_path != null) {
 							View parent = (View)(overlay.getParent());
 							int parent_width = Math.max(parent.getMeasuredWidth(), parent.getMeasuredHeight());
 							int parent_height = Math.min(parent.getMeasuredWidth(), parent.getMeasuredHeight());
@@ -2879,35 +2921,55 @@ public class MainUI {
 								Log.d(TAG, "	parent_height: " + parent_height);
 							}
 
+							InputStream is = null;
+							ExifInterface exif = null;
 							try {
-								InputStream is = resolver.openInputStream(uri);
-								BitmapFactory.Options options = new BitmapFactory.Options();
-								options.inJustDecodeBounds = true;
-								BitmapFactory.decodeStream(is, null, options);
-								int bitmap_width = Math.max(options.outWidth, options.outHeight);
-								int bitmap_height = Math.min(options.outWidth, options.outHeight);
-								if( MyDebug.LOG ) {
-									Log.d(TAG, "	bitmap_width: " + bitmap_width);
-									Log.d(TAG, "	bitmap_height: " + bitmap_height);
-								}
-								int scale = Math.min(bitmap_width/parent_width, bitmap_height/parent_height);
-								if( MyDebug.LOG )
-									Log.d(TAG, "	scale: " + scale);
+								if (uri != null)
+									is = resolver.openInputStream(uri);
+								else
+									is = new FileInputStream(file_path);
 
-								is.close();
-								is = resolver.openInputStream(uri);
-								if (scale > 1) {
-									options.inJustDecodeBounds = false;
-									options.inSampleSize = scale;
-									bitmap = BitmapFactory.decodeStream(is, null, options);
-								} else {
-									bitmap = BitmapFactory.decodeStream(is);
+								if (is != null) {
+									BitmapFactory.Options options = new BitmapFactory.Options();
+									options.inJustDecodeBounds = true;
+									BitmapFactory.decodeStream(is, null, options);
+									int bitmap_width = Math.max(options.outWidth, options.outHeight);
+									int bitmap_height = Math.min(options.outWidth, options.outHeight);
+									if( MyDebug.LOG ) {
+										Log.d(TAG, "	bitmap_width: " + bitmap_width);
+										Log.d(TAG, "	bitmap_height: " + bitmap_height);
+									}
+									int scale = Math.min(bitmap_width/parent_width, bitmap_height/parent_height);
+									if( MyDebug.LOG )
+										Log.d(TAG, "	scale: " + scale);
+
+									is.close();
+
+									if (uri != null)
+										is = resolver.openInputStream(uri);
+									else
+										is = new FileInputStream(file_path);
+
+									if (scale > 1) {
+										options.inJustDecodeBounds = false;
+										options.inSampleSize = scale;
+										bitmap = BitmapFactory.decodeStream(is, null, options);
+									} else {
+										bitmap = BitmapFactory.decodeStream(is);
+									}
+									exif = new ExifInterface(is);
+									is.close();
 								}
-								exif = new ExifInterface(is);
-								is.close();
 							}
-							catch (FileNotFoundException idontneedthisshit) {}
-							catch (IOException idontneedthisshit) {}
+							catch (FileNotFoundException e) {}
+							catch (IOException e) {}
+							finally {
+								if (is != null) {
+									try {
+										is.close();
+									} catch (Throwable e) {}
+								}
+							}
 
 							if (bitmap != null) {
 								overlay_rotation = 0;

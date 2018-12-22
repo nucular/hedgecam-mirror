@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -45,7 +44,6 @@ import android.renderscript.Script;
 import android.renderscript.Type;
 import android.support.media.ExifInterface;
 import android.media.Image;
-import android.media.Image.Plane;
 import android.net.Uri;
 import android.os.Build;
 import android.renderscript.Allocation;
@@ -104,9 +102,12 @@ public class ImageSaver {
 		public String stamp_timeformat;
 		public String stamp_gpsformat;
 		
+		public String align;
+		
 		ProcessingSettings () {
 			save_base = SaveBase.NONE;
 			adjust_levels = 0;
+			align = "none";
 		}
 	}
 	
@@ -119,6 +120,7 @@ public class ImageSaver {
 	static class Request {
 		enum Type {
 			JPEG,
+			PNG,
 			RAW,
 			DUMMY
 		}
@@ -204,6 +206,7 @@ public class ImageSaver {
 	 *  successfully.
 	 */
 	boolean saveImageJpeg(boolean do_in_background,
+			boolean use_png,
 			Prefs.PhotoMode photo_mode,
 			List<CameraController.Photo> images,
 			String yuv_conversion,
@@ -221,6 +224,7 @@ public class ImageSaver {
 			Log.d(TAG, "number of images: " + images.size());
 		}
 		return saveImage(do_in_background,
+				use_png,
 				false,
 				photo_mode,
 				images,
@@ -251,6 +255,7 @@ public class ImageSaver {
 			Log.d(TAG, "do_in_background? " + do_in_background);
 		}
 		return saveImage(do_in_background,
+				false,
 				true,
 				photo_mode,
 				null,
@@ -269,6 +274,7 @@ public class ImageSaver {
 	/** Internal saveImage method to handle both JPEG and RAW.
 	 */
 	private boolean saveImage(boolean do_in_background,
+			boolean use_png,
 			boolean is_raw,
 			Prefs.PhotoMode photo_mode,
 			List<CameraController.Photo> images,
@@ -290,7 +296,7 @@ public class ImageSaver {
 		
 		//do_in_background = false;
 		
-		Request request = new Request(is_raw ? Request.Type.RAW : Request.Type.JPEG,
+		Request request = new Request(is_raw ? Request.Type.RAW : (use_png ? Request.Type.PNG : Request.Type.JPEG),
 				photo_mode,
 				images,
 				yuv_conversion,
@@ -381,7 +387,7 @@ public class ImageSaver {
 							Log.d(TAG, "request is raw");
 						success = saveImageNowRaw(request.dngCreator, request.image, request.prefix, request.current_date, true);
 					}
-					else if( request.type == Request.Type.JPEG ) {
+					else if( request.type == Request.Type.JPEG || request.type == Request.Type.PNG ) {
 						if( MyDebug.LOG )
 							Log.d(TAG, "request is jpeg");
 						success = saveImageNow(request, true);
@@ -454,14 +460,11 @@ public class ImageSaver {
 			Log.d(TAG, "loadBitmap");
 			Log.d(TAG, "mutable?: " + mutable);
 		}
-		if (photo.image != null) {
-			Allocation alloc = loadYUV(photo.image, yuv_conversion);
-			Bitmap bitmap = Bitmap.createBitmap(photo.image.getWidth(), photo.image.getHeight(), Bitmap.Config.ARGB_8888);
+		if (photo.y != null) {
+			Allocation alloc = loadYUV(photo, yuv_conversion);
+			Bitmap bitmap = Bitmap.createBitmap(photo.width, photo.height, Bitmap.Config.ARGB_8888);
 			
 			alloc.copyTo(bitmap);
-			
-			photo.image.close();
-			photo.image = null;
 			
 			return bitmap;
 		} else {
@@ -481,7 +484,7 @@ public class ImageSaver {
 		}
 	}
 	
-	private Allocation loadYUV(Image image, String conversion) {
+	private Allocation loadYUV(CameraController.Photo photo, String conversion) {
 		long time_s = System.currentTimeMillis();
 
 		RenderScript rs = main_activity.getRenderScript();
@@ -491,67 +494,28 @@ public class ImageSaver {
 			Log.d(TAG, "YUV performance: time after new ScriptC_yuv: " + (System.currentTimeMillis() - time_s));
 		}
 
-		Plane[] planes = image.getPlanes();
-		if( MyDebug.LOG ) {
-			Log.d(TAG, "YUV performance: time after getPlanes: " + (System.currentTimeMillis() - time_s));
-		}
+		yuvScript.set_y_pixel_stride(photo.pixelStrideY);
+		int row_space = Prefs.getRowSpaceYPref();
+		yuvScript.set_y_row_stride(row_space >= 0 ? photo.width+row_space : photo.rowStrideY);
 
-		ByteBuffer buffer = planes[0].getBuffer();
-		byte[] y;
-		if (buffer.hasArray()) {
-			y = buffer.array();
-		} else {
-			y = new byte[buffer.remaining()];
-			buffer.get(y);
-		}
-		if( MyDebug.LOG ) {
-			Log.d(TAG, "YUV performance: time after get buffer Y: " + (System.currentTimeMillis() - time_s));
-		}
-
-		buffer = planes[1].getBuffer();
-		byte[] u;
-		if (buffer.hasArray()) {
-			u = buffer.array();
-		} else {
-			u = new byte[buffer.remaining()];
-			buffer.get(u);
-		}
-		if( MyDebug.LOG ) {
-			Log.d(TAG, "YUV performance: time after get buffer U: " + (System.currentTimeMillis() - time_s));
-		}
-
-		buffer = planes[2].getBuffer();
-		byte[] v;
-		if (buffer.hasArray()) {
-			v = buffer.array();
-		} else {
-			v = new byte[buffer.remaining()];
-			buffer.get(v);
-		}
-		if( MyDebug.LOG ) {
-			Log.d(TAG, "YUV performance: time after get buffer V: " + (System.currentTimeMillis() - time_s));
-		}
-
-		yuvScript.set_y_pixel_stride(planes[0].getPixelStride());
-		yuvScript.set_y_row_stride(planes[0].getRowStride());
-
-		yuvScript.set_uv_pixel_stride(planes[1].getPixelStride());
-		yuvScript.set_uv_row_stride(planes[1].getRowStride());
+		yuvScript.set_uv_pixel_stride(photo.pixelStrideUV);
+		row_space = Prefs.getRowSpaceUVPref();
+		yuvScript.set_uv_row_stride(row_space >= 0 ? photo.width+row_space : photo.rowStrideUV);
 	
 		Type.Builder builder = new Type.Builder(rs, Element.U8(rs));
-		builder.setX(image.getWidth()).setY(image.getHeight());
+		builder.setX(photo.width).setY(photo.height);
 		Allocation in_y = Allocation.createTyped(rs, builder.create());
-		in_y.copyFrom(y);
+		in_y.copyFrom(photo.y);
 		yuvScript.set_inY(in_y);
 
 		builder = new Type.Builder(rs, Element.U8(rs));
-		builder.setX(u.length);
+		builder.setX(photo.u.length);
 		Allocation in_u = Allocation.createTyped(rs, builder.create());
-		in_u.copyFrom(u);
+		in_u.copyFrom(photo.u);
 		yuvScript.set_inU(in_u);
 
 		Allocation in_v = Allocation.createTyped(rs, builder.create());
-		in_v.copyFrom(v);
+		in_v.copyFrom(photo.v);
 		yuvScript.set_inV(in_v);
 
 		if( MyDebug.LOG ) {
@@ -559,8 +523,8 @@ public class ImageSaver {
 		}
 
 		builder = new Type.Builder(rs, Element.RGBA_8888(rs));
-		builder.setX(image.getWidth());
-		builder.setY(image.getHeight());
+		builder.setX(photo.width);
+		builder.setY(photo.height);
 		Allocation out = Allocation.createTyped(rs, builder.create());
 
 		if( MyDebug.LOG ) {
@@ -599,14 +563,11 @@ public class ImageSaver {
 		}
 
 		public void run() {
-			if (this.photo.image != null) {
-				Allocation alloc = loadYUV(photo.image, yuv_conversion);
-				this.bitmap = Bitmap.createBitmap(photo.image.getWidth(), photo.image.getHeight(), Bitmap.Config.ARGB_8888);
+			if (this.photo.y != null) {
+				Allocation alloc = loadYUV(photo, yuv_conversion);
+				this.bitmap = Bitmap.createBitmap(photo.width, photo.height, Bitmap.Config.ARGB_8888);
 				
 				alloc.copyTo(bitmap);
-				
-				photo.image.close();
-				photo.image = null;
 			} else {
 				this.bitmap = BitmapFactory.decodeByteArray(photo.jpeg, 0, photo.jpeg.length, options);
 			}
@@ -695,13 +656,14 @@ public class ImageSaver {
 		if( MyDebug.LOG )
 			Log.d(TAG, "saveImageNow");
 
-		if( request.type != Request.Type.JPEG ) {
+		if( request.type != Request.Type.JPEG && request.type != Request.Type.PNG) {
 			if( MyDebug.LOG )
-				Log.d(TAG, "saveImageNow called with non-jpeg request");
+				Log.d(TAG, "saveImageNow called with unsupported image format");
 			// throw runtime exception, as this is a programming error
 			throw new RuntimeException();
 		}
-		else if( request.images.size() == 0 ) {
+
+		if( request.images.size() == 0 ) {
 			if( MyDebug.LOG )
 				Log.d(TAG, "saveImageNow called with zero images");
 			// throw runtime exception, as this is a programming error
@@ -811,6 +773,8 @@ public class ImageSaver {
 					catch (NumberFormatException e) {n_tiles = 4;}
 
 					HDRProcessor.TonemappingAlgorithm tonemapping_algorithm = HDRProcessor.TonemappingAlgorithm.TONEMAPALGORITHM_REINHARD;
+					boolean align = false;
+					boolean crop_aligned = false;
 					if (request.photo_mode == Prefs.PhotoMode.HDR) {
 						switch (request.processing_settings.hdr_tonemapping) {
 							case "clamp":
@@ -829,8 +793,18 @@ public class ImageSaver {
 								tonemapping_algorithm = HDRProcessor.TonemappingAlgorithm.TONEMAPALGORITHM_REINHARD_NEW;
 								break;
 						}
+						
+						switch (request.processing_settings.align) {
+							case "align":
+								align = true;
+								break;
+							case "align_crop":
+								align = true;
+								crop_aligned = true;
+								break;
+						}
 					}
-					out_alloc = hdrProcessor.processHDR(bitmaps, true, null, (float)local_contrast/10, n_tiles, (float)unsharp_mask/10, unsharp_mask_radius, tonemapping_algorithm, request.processing_settings.hdr_deghost); // this will recycle all the bitmaps except bitmaps.get(0), which will contain the hdr image
+					out_alloc = hdrProcessor.processHDR(bitmaps, true, null, align, crop_aligned, (float)local_contrast/10, n_tiles, (float)unsharp_mask/10, unsharp_mask_radius, tonemapping_algorithm, request.processing_settings.hdr_deghost);
 				}
 				else {
 					Log.e(TAG, "shouldn't have offered HDR as an option if not on Android 5");
@@ -1162,13 +1136,21 @@ public class ImageSaver {
 		if( MyDebug.LOG )
 			Log.d(TAG, "saveSingleImageNow");
 
-		if( request.type != Request.Type.JPEG ) {
+		String extension;
+		boolean use_png = false;
+		if( request.type == Request.Type.JPEG ) {
+			extension = "jpg";
+		} else if (request.type == Request.Type.PNG) {
+			extension = "png";
+			use_png = true;
+		} else {
 			if( MyDebug.LOG )
-				Log.d(TAG, "saveImageNow called with non-jpeg request");
+				Log.d(TAG, "saveImageNow called with unsupported image format");
 			// throw runtime exception, as this is a programming error
 			throw new RuntimeException();
 		}
-		else if( photo.jpeg == null ) {
+
+		if( photo.jpeg == null ) {
 			if( MyDebug.LOG )
 				Log.d(TAG, "saveSingleImageNow called with no data");
 			// throw runtime exception, as this is a programming error
@@ -1190,19 +1172,20 @@ public class ImageSaver {
 
 		boolean text_stamp = request.processing_settings.stamp_text.length() > 0;
 		boolean need_bitmap = bitmap != null ||
-			photo.image != null ||
+			photo.y != null ||
 			alloc != null ||
 			request.processing_settings.do_auto_stabilise ||
 			request.processing_settings.mirror ||
 			request.processing_settings.stamp ||
 			text_stamp ||
-			(request.image_capture_intent && request.image_capture_intent_uri == null);
+			(request.image_capture_intent && request.image_capture_intent_uri == null) ||
+			use_png;
 	
 		if( need_bitmap || request.processing_settings.adjust_levels > 0 ) {
 			int rotation = getPhotoRotation(photo);
 
-			if (photo.image != null && alloc == null) {
-				alloc = loadYUV(photo.image, request.yuv_conversion);
+			if (photo.y != null && alloc == null) {
+				alloc = loadYUV(photo, request.yuv_conversion);
 			}
 
 			if( request.processing_settings.adjust_levels > 0 ) {
@@ -1361,10 +1344,10 @@ public class ImageSaver {
 				}
 			}
 			else if( storageUtils.isUsingSAF() ) {
-				saveUri = storageUtils.createOutputMediaFileSAF(request.prefix, filename_suffix, "jpg", current_date);
+				saveUri = storageUtils.createOutputMediaFileSAF(request.prefix, filename_suffix, extension, current_date);
 			}
 			else {
-				picFile = storageUtils.createOutputMediaFile(request.prefix, filename_suffix, "jpg", current_date);
+				picFile = storageUtils.createOutputMediaFile(request.prefix, filename_suffix, extension, current_date);
 				if( MyDebug.LOG )
 					Log.d(TAG, "save to: " + picFile.getAbsolutePath());
 			}
@@ -1372,7 +1355,7 @@ public class ImageSaver {
 			if( saveUri != null && picFile == null ) {
 				if( MyDebug.LOG )
 					Log.d(TAG, "saveUri: " + saveUri);
-				picFile = File.createTempFile("picFile", "jpg", main_activity.getCacheDir());
+				picFile = File.createTempFile("picFile", extension, main_activity.getCacheDir());
 				if( MyDebug.LOG )
 					Log.d(TAG, "temp picFile: " + picFile.getAbsolutePath());
 			}
@@ -1384,7 +1367,7 @@ public class ImageSaver {
 					if( bitmap != null ) {
 						if( MyDebug.LOG )
 							Log.d(TAG, "compress bitmap, quality " + request.image_quality);
-						bitmap.compress(Bitmap.CompressFormat.JPEG, request.image_quality, outputStream);
+						bitmap.compress(use_png ? Bitmap.CompressFormat.PNG : Bitmap.CompressFormat.JPEG, request.image_quality, outputStream);
 					}
 					else {
 						outputStream.write(photo.jpeg);
@@ -1403,42 +1386,44 @@ public class ImageSaver {
 					success = true;
 				}
 				if( picFile != null ) {
-					if( bitmap != null ) {
-						// need to update EXIF data!
-						if( MyDebug.LOG )
-							Log.d(TAG, "set Exif tags from data");
-						setExifFromData(request, photo.jpeg, picFile);
-					} else {
-						try {
-							ExifInterface exif = new ExifInterface(picFile.getAbsolutePath());
-							if( store_geo_direction ) {
-								if( MyDebug.LOG )
-									Log.d(TAG, "add GPS direction exif info");
-
-								modifyExif(exif, using_camera2, current_date, store_location, store_geo_direction, request.geo_direction);
-
-								if( MyDebug.LOG ) {
-									Log.d(TAG, "Save single image performance: time after adding GPS direction exif info: " + (System.currentTimeMillis() - time_s));
-								}
-							}
-							else if( needGPSTimestampHack(using_camera2, store_location) ) {
-								if( MyDebug.LOG )
-									Log.d(TAG, "remove GPS timestamp hack");
-
-								fixGPSTimestamp(exif, current_date);
-
-								if( MyDebug.LOG ) {
-									Log.d(TAG, "Save single image performance: time after removing GPS timestamp hack: " + (System.currentTimeMillis() - time_s));
-								}
-							}
-							setMetadata(exif, request.metadata);
-							exif.saveAttributes();
-						}
-						catch(NoClassDefFoundError exception) {
-							// have had Google Play crashes from new ExifInterface() elsewhere for Galaxy Ace4 (vivalto3g), Galaxy S Duos3 (vivalto3gvn), so also catch here just in case
+					if (!use_png) {
+						if( bitmap != null ) {
+							// need to update EXIF data!
 							if( MyDebug.LOG )
-								Log.e(TAG, "exif orientation NoClassDefFoundError");
-							exception.printStackTrace();
+								Log.d(TAG, "set Exif tags from data");
+							setExifFromData(request, photo.jpeg, picFile);
+						} else {
+							try {
+								ExifInterface exif = new ExifInterface(picFile.getAbsolutePath());
+								if( store_geo_direction ) {
+									if( MyDebug.LOG )
+										Log.d(TAG, "add GPS direction exif info");
+
+									modifyExif(exif, using_camera2, current_date, store_location, store_geo_direction, request.geo_direction);
+
+									if( MyDebug.LOG ) {
+										Log.d(TAG, "Save single image performance: time after adding GPS direction exif info: " + (System.currentTimeMillis() - time_s));
+									}
+								}
+								else if( needGPSTimestampHack(using_camera2, store_location) ) {
+									if( MyDebug.LOG )
+										Log.d(TAG, "remove GPS timestamp hack");
+
+									fixGPSTimestamp(exif, current_date);
+
+									if( MyDebug.LOG ) {
+										Log.d(TAG, "Save single image performance: time after removing GPS timestamp hack: " + (System.currentTimeMillis() - time_s));
+									}
+								}
+								setMetadata(exif, request.metadata);
+								exif.saveAttributes();
+							}
+							catch(NoClassDefFoundError exception) {
+								// have had Google Play crashes from new ExifInterface() elsewhere for Galaxy Ace4 (vivalto3g), Galaxy S Duos3 (vivalto3gvn), so also catch here just in case
+								if( MyDebug.LOG )
+									Log.e(TAG, "exif orientation NoClassDefFoundError");
+								exception.printStackTrace();
+							}
 						}
 					}
 

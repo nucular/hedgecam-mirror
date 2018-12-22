@@ -19,6 +19,7 @@
 	<string name="none">Немає</string>
 	<string name="unlimited">Нескінченно</string>
 	<string name="device_default">Типово для пристрою</string>
+	<string name="if_necessary">Якщо необхідно</string>
 	<string name="sorry">На жаль</string>
 
 	<string name="choose_save_location">Виберіть теку для збереження:</string>
@@ -107,6 +108,7 @@
 	<string name="video_max_filesize">Відео досягло максимального розміру</string>
 	<string name="video_pause">Запис відео призупинено</string>
 	<string name="video_resume">Запис відео продовжено</string>
+	<string name="backup_saved">Резервну копію створено</string>
 
 	<string name="failed_to_open_camera_1">Не вділося відкрити камеру.</string>
 	<string name="failed_to_open_camera_2">Можливо камера використовується</string>
@@ -133,6 +135,9 @@
 	<string name="speech_recognizer_unavailable">Розпізнавання мови недоступно</string>
 	<string name="open_files_saf_exception_ghost">Діалог відкриття файлів не знайдено, накладення зображення з файлу недоступно</string>
 	<string name="saf_permission_failed_open_image">Неможливо відкрити зображення</string>
+	<string name="failed_to_save_backup">Помилка при збереженні резервної копії</string>
+	<string name="failed_to_read_backup">Неможливо прочитати резервну копію</string>
+	<string name="failed_to_restore_from_backup">Неможливо відновити налаштування з обраної резервної копії</string>
 
 	<string name="no_permission">В ДОСТУПІ ВІДМОВЛЕНО</string>
 
@@ -148,6 +153,7 @@
 	<string name="raw_info">Файли DNG містять незжату і необроблену інформацію, отриману з сенсора камери. \n\nБільшість додатків для перегляду зображень не можуть відкривати файли DNG, для їх перегляду потрібне спеціалізоване ПО (Snapseed, Lightroom і т.д.). \n\nРежими обробки \"Відмітки\" та \"Автовирівнювання\" не працюють при збереженні фото в файли DNG.</string>
 	<string name="hdr_info">Режим HDR дозволяє робити знімки об\'єктів з великими перепадами яскравості. При створенні HDR-знімка, камера робить декілька знімків з різною експозицією, після чого отримані зображення склеюються в одне. \n\nЦей режим не підходить для зйомки динамічних сцен. \n\nЗбереження знімків, зроблених в цьому режимі відбувається значно довше, ніж в звичайному.</string>
 	<string name="preference_reset_question">Ви дійсно бажаєте скинути всі налаштування на стандартні значення?</string>
+	<string name="preference_restore_question">Ви дійсно бажаєте відновити налаштування з резервної копії? Всі поточні налаштування будуть перезаписані!</string>
 	<string name="dont_show_again">Надалі не показувати</string>
 
 	<string name="mb_abbreviation">МБ</string>
@@ -266,8 +272,8 @@
 
 	<string name="preference_screen_sounds">Звуки</string>
 	<string name="preference_shutter_sound">Звук затвору</string>
-	<string name="preference_shutter_sound_summary">Відтворення звуку під час зйомки</string>
-	<string name="preference_shutter_sound_select">Вибрати звук затвору</string>
+	<string name="preference_shutter_sound_summary">%s\n\nВідтворення звуку під час зйомки</string>
+	<string name="shutter_force_off">Викл примусово</string>
 
 
 	<string name="shutter_1">Затвор 1 (короткий)</string>
@@ -275,6 +281,7 @@
 	<string name="shutter_3">Затвор 3 (довгий)</string>
 	<string name="shutter_4">Затвор 4 (довгий)</string>
 	<string name="shutter_unlock">Звук розблокування</string>
+	<string name="preference_video_sound">Звук запису відео</string>
 	<string name="preference_timer_beep">Звук таймеру</string>
 	<string name="preference_timer_beep_summary">Подавати звуковий сигнал, коли таймер закінчить відлік</string>
 	<string name="preference_timer_speak">Озвучення таймеру</string>
@@ -392,6 +399,9 @@
 	<string name="preference_screen_preview">Попередній перегляд</string>
 	<string name="preference_preview_max_size">Максимальний розмір</string>
 	<string name="preference_preview_max_size_summary">Зображення заповнює вікно попередньго перегляду</string>
+	<string name="preference_preview_resolution">Роздільна здатність</string>
+	<string name="preference_preview_resolution_summary">Роздільна здатність попереднього перегляду. Якщо змінено, попередня опція буде проігнрірована. Зберігається окремо для кожної камери, а також для режимів фото/відео.</string>
+	<string name="match_target_resolution">Співпадає з фото/відео</string>
 	<string name="preference_preview_location">Розташування попереднього перегляду</string>
 	<string name="preference_preview_location_summary">%s</string>
 	<string name="left_gap_for_buttons">Ліворуч, відступ для кнопок</string>
@@ -507,8 +517,17 @@
 	<string name="fr_landscape_macro">Краєвид/Макро</string>
 	<string name="fr_room">Кімната</string>
 	<string name="fr_group">Групове фото</string>
+	
+	<string name="preference_screen_calibration">Калібрування</string>
 	<string name="preference_level_angle_calibration">Калібрування рівня</string>
 	<string name="preference_level_angle_calibration_summary">%s\n\nРучне калібрування рівня нахилу</string>
+	<string name="preference_min_focus_distance">Мінімальна фокусна відстань</string>
+	<string name="preference_focus_distance_calibration">Калібрування фокусної відстані</string>
+	<string name="preference_focus_distance_calibration_summary">%s\n\nПозитивні значення відповідають ближньої відстані, негативні - далекої.</string>
+	<string name="preference_row_space_y">Проміжок рядків яскравості</string>
+	<string name="preference_row_space_y_summary">%s\n\nПроміжок між рядками каналу яскравості. Використовується при включенні опції \"Незжате виведення\". Параметр зберігається окремо для кожної камери.</string>
+	<string name="preference_row_space_uv">Проміжок рядків кольоровості</string>
+	<string name="preference_row_space_uv_summary">%s\n\nПроміжок між рядками каналів кольоровості. Використовується при включенні опції \"Незжате виведення\". Параметр зберігається окремо для кожної камери.</string>
 
 	<string name="preference_screen_bug_fix">Вирішення проблем</string>
 	<string name="preference_startup_focus">Автофокус під час запуску</string>
@@ -517,9 +536,6 @@
 	<string name="preference_force_face_focus_summary">Примусове фокусування на обличчі при його роспізнаванні. Цей параметр працює лише у режиі фокусування \"Авто\" при роспізнанні одного обличчя</string>
 	<string name="preference_center_focus">Фокус у центрі</string>
 	<string name="preference_center_focus_summary">Встановити зону фокусування в центрі кадру під час запуску додатку</string>
-	<string name="preference_min_focus_distance">Мінімальна фокусна відстань</string>
-	<string name="preference_focus_distance_calibration">Калібрування фокусної відстані</string>
-	<string name="preference_focus_distance_calibration_summary">Позитивні значення відповідають ближньої відстані, негативні - далекої.</string>
 	<string name="preference_update_focus_for_video">Скидати режим фокусування</string>
 	<string name="preference_update_focus_for_video_summary">Виправляє помилку Samsung Galaxy S5, що приводить до завмирання попереднього перегляду і створення пошкодженого відеофайлу під час запису відео надвисокої чіткості після виходу з налаштувань</string>
 	<string name="preference_camera2_fake_flash">Альтернативний спалах</string>
@@ -530,6 +546,10 @@
 	<string name="preference_speed_up_sensors_summary">Збільшити частоту оновлення інформації від акселерометра та датчика магнітного поля</string>
 	<string name="preference_full_size_copy">Повнорозмірна копія</string>
 	<string name="preference_full_size_copy_summary">Створювати повнорозмірну стислу копію фото при використанні незжатого виведення. Використовуйте цю опцію якщо на вашому пристрої некоректно працює незжатий вивід фото (YUV)</string>
+	<string name="preference_reset_manual_mode">Скидати ручний режим</string>
+	<string name="preference_reset_manual_mode_summary">Скидати ручний режим ISO при підключенні до камери. Використовуйте цю опцію якщо автофокус працює неправильно після підключення до камери при включеному ручному режимі ISO</string>
+	<string name="preference_lock_preview_fps">Прив\'язка FPS попереднього перегляду</string>
+	<string name="preference_lock_preview_fps_summary">Прив\'язати частоту кадрів попереднього перегляду до частоти кадрів відео. Використовуйте цю опцію, якщо на вашому пристрої не працює регулювання частоти кадрів відео.</string>
 
 	<string name="preference_category_camera_quality">Фото та відео</string>
 
@@ -537,13 +557,12 @@
 	<string name="preference_quality">Якість зображення</string>
 	<string name="preference_auto_stabilise">Автовирівнювання</string>
 	<string name="preference_auto_stabilise_summary">Зображення буде автоматично вирівнюватися щодо горизонту. Не рекомендується на слабких пристроях. Перед використанням цієї функції рекомендується виконати калібрування рівня</string>
-	<string name="preference_raw">RAW</string>
-	<string name="preference_raw_summary">Зберігати в форматі RAW (DNG)</string>
-	<string name="jpeg_only">Лише JPEG</string>
+	<string name="preference_image_format">Формат зображень</string>
+	<string name="preference_image_format_summary">%s</string>
 	<string name="jpeg_and_dng">JPEG та DNG (RAW)</string>
 	<string name="preference_flip_front_facing">Дзеркальне відображення</string>
 	<string name="preference_flip_front_facing_summary">Дзеркальне відображення фото, зроблених передньою камерою</string>
-	<string name="preference_uncompressed_photo">Незжатий виведення</string>
+	<string name="preference_uncompressed_photo">Незжате виведення</string>
 	<string name="preference_uncompressed_photo_summary">Використовувати YUV 420 замість JPEG. Пошвидшує збереження та підвищуе якість зображення при використанні пост-обробки. Може працювати некоректно на деяких пристроях.</string>
 	<string name="preference_yuv_conversion">Перетворення YUV</string>
 	<string name="yuv_wide_range">Розширений діапазон</string>
@@ -574,13 +593,15 @@
 	<string name="preference_expo_bracketing_use_iso_summary">По можливості використовувати регулювання ISO при зйомці темних знімків</string>
 	<string name="preference_expo_bracketing_delay">Затримка</string>
 	<string name="preference_expo_bracketing_delay_summary">%s\n\nЗатримка між знімками, необхідна для установки компенсації експозиції</string>
-	<string name="preference_category_hdr">HDR та DRO</string>
-	<string name="preference_category_hdr_summary">Налаштування режимів HDR та DRO</string>
 	<string name="preference_hdr_save_expo">Зберігати всі зображення в режимі HDR</string>
 	<string name="preference_hdr_save_expo_summary">У режимі HDR зберігати 3 знімки експобрекетингу, що були використані під час створення HDR-знімка. Уповільнює процес збереження, особливо при включенні опції \ "Відмітки \" або автовирівнювання.</string>
 	<string name="preference_hdr_deghost">Усунення примар</string>
 	<string name="preference_hdr_tonemapping">Тональна компресія</string>
 	<string name="preference_hdr_tonemapping_summary">%s\n\nАлгоритм тональної компресії, який використовується при створенні HDR</string>
+	<string name="preference_align">Вирівнювання</string>
+	<string name="preference_align_summary">%s\n\nВирівняти вихідні зображення щодо базового</string>
+	<string name="only_align">Тільки вирівняти</string>
+	<string name="align_and_crop">Вирівняти та обрізати</string>
 	<string name="preference_hdr_unsharp_mask">Нерізка маска</string>
 	<string name="preference_hdr_unsharp_mask_summary">%s\n\nРівень впливу фільтра "Нерізка маска" при обробці HDR та DRO</string>
 	<string name="preference_hdr_unsharp_mask_radius">Радіус</string>
@@ -639,19 +660,21 @@
 
 	<string name="preference_screen_video_settings">Налаштування відео</string>
 	<string name="video_quality">Розширення відео</string>
+	<string name="preference_video_format">Формат</string>
+	<string name="preference_video_format_summary">%s\n\nФормат відеовайлів, що записуються.</string>
 	<string name="preference_video_stabilization">Стабілізація відео</string>
 	<string name="preference_video_stabilization_summary">Стабілізація відео зменшує тряску, через рух камерою</string>
-	<string name="preference_video_bitrate">Відео бітрейт (приблизно)</string>
-	<string name="preference_video_bitrate_summary">Вибір бітрейту відео (чим вище, тим краще якість, але файл буде займати більше місця на флеш-картці. Якщо бітрейт не підтримується, це може викликати помилку під час запису відео)</string>
-	<string name="preference_video_fps">Частота кадрів відео (приблизно)</string>
-	<string name="preference_video_fps_summary">Кількість кадрів на секунду (FPS) у відео (може викликати помилку під час запису, якщо частота не підтримується)</string>
+	<string name="preference_video_bitrate">Відео бітрейт</string>
+	<string name="preference_video_bitrate_summary">Вибір бітрейту відео (приблизно). Чим вище, тим краще якість, але файл буде займати більше місця на флеш-картці. Якщо бітрейт не підтримується, це може викликати помилку під час запису відео.</string>
+	<string name="preference_video_fps">Частота кадрів відео</string>
+	<string name="preference_video_fps_summary">%s\n\nКількість кадрів на секунду (FPS) у відео (приблизно). Може викликати помилку під час запису, якщо частота не підтримується.</string>
 	<string name="preference_video_log">Логарифмічне тональне відображення</string>
 	<string name="vl_low">Низько</string>
 	<string name="vl_medium">Середнє</string>
 	<string name="vl_strong">Сильно</string>
 	<string name="vl_extra_strong">Дуже сильно</string>
 	<string name="preference_video_log_summary">%s\n\nВикористовувати логарифмічне тональне відображення (Flat profile) під час запису відео</string>
-	<string name="video_log">Логарифмічн відображення</string>
+	<string name="video_log">Логарифмічне відображення</string>
 	<string name="preference_video_max_duration">Максимальна тривалість відео</string>
 	<string name="preference_video_max_duration_summary">Відеозапис припиниться, через вказаний час</string>
 	<string name="preference_video_restart">Записати нове відео, коли буде досягнуто ліміту</string>
@@ -673,6 +696,10 @@
 	<string name="preference_video_restart_max_filesize_summary">Розпочати новий відеозапис при досягненні максимального розміру файлу (обумовленого обмеженнями пристрою або вказаного користувачем)</string>
 	<string name="preference_record_audio">Запис звуку</string>
 	<string name="preference_record_audio_summary">Запис звуку під час запису відео</string>
+	<string name="preference_record_audio_bitrate">Бітрейт аудіо</string>
+	<string name="preference_record_audio_bitrate_summary">Вибір бітрейту аудіо. Чим вище, тим краще якість звуку, але файл буде займати більше місця на флеш-картці. Якщо бітрейт не підтримується, це може викликати помилку під час запису відео.</string>
+	<string name="preference_record_audio_sample_rate">Частота дискретизації</string>
+	<string name="preference_record_audio_sample_rate_summary">%s</string>
 	<string name="preference_record_audio_src">Джерело звуку</string>
 	<string name="as_camcorder">Відеокамера</string>
 	<string name="as_external_mic">Зовнішній мікрофон (якщо є)</string>
@@ -717,7 +744,11 @@
 
 	<string name="preference_screen_files">Файли</string>
 	<string name="preference_save_location">Тека збереження</string>
-	<string name="preference_save_location_summary">Ім\'я теки для збереження фото та відео (також може бути повний шлях)</string>
+	<string name="preference_save_location_summary">Ім\'я теки для збереження фото</string>
+	<string name="preference_save_video_location">Тека для відео</string>
+	<string name="preference_save_video_location_summary">%s\n\nТека для збереження відеофайлів</string>
+	<string name="vf_same_as_photo">Така ж, як для фото</string>
+	<string name="vf_folder">Тека...</string>
 	<string name="preference_using_saf">Використовувати Storage Access Framework</string>
 	<string name="preference_using_saf_summary">Для Android 5 використовувати Storage Access Framework для збереження фото та відео</string>
 	<string name="preference_save_photo_prefix">Префікс для фото</string>
@@ -753,8 +784,15 @@
 	<string name="preference_about_translation">Переклад</string>
 	<string name="preference_info">Інформація</string>
 	<string name="about_copy_to_clipboard">Копіювати до буферу</string>
+
+	<string name="preference_screen_preferences_control">Керування налаштуваннями</string>
+	<string name="preference_backup">Резервна копія</string>
+	<string name="preference_backup_summary">Зробити резервну копію налаштувань. Файл буде збережено в теці, що використовується для збереження фото/відео.</string>
+	<string name="preference_restore">Відновити</string>
+	<string name="preference_restore_summary">Відновити настройки з резервної копії.</string>
 	<string name="preference_reset">Скидання налаштувань</string>
 	<string name="preference_reset_summary">Скинути всі налаштування на стандартні значення</string>
+
 	<string name="preference_advanced">Для експертів</string>
 
 	<string name="time_1_second">1 секунда</string>

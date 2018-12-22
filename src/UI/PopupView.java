@@ -45,6 +45,7 @@ import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
+import android.widget.RelativeLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.ImageView.ScaleType;
@@ -75,23 +76,8 @@ public class PopupView extends LinearLayout {
 	private final int total_width;
 	private final int button_min_width;
 	private final int padding;
-
-	private int picture_size_index = -1;
-	private int video_size_index = -1;
-	private int video_capture_rate_index = -1;
-	private int timer_index = -1;
-	private int burst_mode_index = -1;
-	private int burst_interval_index = -1;
-	private int grid_index = -1;
-	private int stops_up_index = -1;
-	private int stops_down_index = -1;
-	private int hdr_tonemapping_index = -1;
-	private int hdr_unsharp_mask_index = -1;
-	private int hdr_unsharp_mask_radius_index = -1;
-	private int hdr_local_contrast_index = -1;
-	private int hdr_n_tiles_index = -1;
-	private int photos_count_index = -1;
 	
+	private final int max_buttons_count;
 	private final int elements_gap;
 	private int arrow_width;
 	private final int arrow_height;
@@ -106,8 +92,6 @@ public class PopupView extends LinearLayout {
 	private final boolean negative;
 	private ColorMatrixColorFilter neg_filter = null;
 
-	private final Map<String, View> popup_buttons = new Hashtable<>();
-	
 	private final Typeface icon_font;
 
 	public PopupView(Context context, PopupType popup_type) {
@@ -132,7 +116,6 @@ public class PopupView extends LinearLayout {
 		arrow_width = resources.getDimensionPixelSize(R.dimen.popup_arrow_width);
 		arrow_height = resources.getDimensionPixelSize(R.dimen.popup_arrow_height);
 		
-		int max_buttons_count = 6;
 		switch( sharedPreferences.getString(Prefs.POPUP_SIZE, "normal") ) {
 			case "small":
 				max_buttons_count = 5;
@@ -144,6 +127,8 @@ public class PopupView extends LinearLayout {
 			case "xlarge":
 				max_buttons_count = 8;
 				break;
+			default:
+				max_buttons_count = 6;
 		}
 		total_width = button_min_width*max_buttons_count;
 
@@ -207,7 +192,7 @@ public class PopupView extends LinearLayout {
 			List<String> supported_flash_values = preview.getSupportedFlashValues();
 			addTextButtonOptionsToPopup(supported_flash_values, getResources().getString(R.string.flash_mode),
 					R.array.flash_icons, R.array.flash_values, R.array.flash_entries, R.array.flash_keys,
-					preview.getCurrentFlashValue(), "TEST_FLASH", new ButtonOptionsPopupListener() {
+					preview.getCurrentFlashValue(), new ButtonOptionsPopupListener() {
 				@Override
 				public void onClick(String option) {
 					if( MyDebug.LOG )
@@ -231,7 +216,7 @@ public class PopupView extends LinearLayout {
 			}
 			addTextButtonOptionsToPopup(supported_focus_values, getResources().getString(R.string.focus_mode),
 					R.array.focus_mode_icons, R.array.focus_mode_values, R.array.focus_mode_entries, R.array.focus_mode_keys,
-					preview.getCurrentFocusValue(), "TEST_FOCUS", new ButtonOptionsPopupListener() {
+					preview.getCurrentFocusValue(), new ButtonOptionsPopupListener() {
 				@Override
 				public void onClick(String option) {
 					if( MyDebug.LOG )
@@ -265,7 +250,7 @@ public class PopupView extends LinearLayout {
 			List<String> supported_values = getSupportedPhotoModes(main_activity);
 			addTextButtonOptionsToPopup(supported_values, getResources().getString(R.string.photo_mode),
 					R.array.photo_mode_icons, R.array.photo_mode_values, R.array.photo_mode_entries, R.array.photo_mode_keys,
-					Prefs.getPhotoModePref(), "TEST_PHOTO_MODE", new ButtonOptionsPopupListener() {
+					Prefs.getPhotoModePref(), new ButtonOptionsPopupListener() {
 				@Override
 				public void onClick(String option) {
 					if( MyDebug.LOG )
@@ -279,7 +264,7 @@ public class PopupView extends LinearLayout {
 				List<String> supported_white_balances = preview.getSupportedWhiteBalances();
 				addRadioOptionsToPopup(supported_white_balances, getResources().getString(R.string.white_balance), "wb_",
 						Prefs.WHITE_BALANCE, sharedPreferences.getString(Prefs.WHITE_BALANCE, preview.getCameraController().getDefaultWhiteBalance()),
-						"TEST_WHITE_BALANCE", new RadioOptionsListener() {
+						new RadioOptionsListener() {
 					@Override
 					public void onClick(String selected_value) {
 						switchToWhiteBalance(selected_value);
@@ -292,7 +277,7 @@ public class PopupView extends LinearLayout {
 				List<String> supported_scene_modes = preview.getSupportedSceneModes();
 				addRadioOptionsToPopup(supported_scene_modes, getResources().getString(R.string.scene_mode), "sm_",
 						Prefs.SCENE_MODE, sharedPreferences.getString(Prefs.SCENE_MODE, preview.getCameraController().getDefaultSceneMode()),
-						"TEST_SCENE_MODE", new RadioOptionsListener() {
+						new RadioOptionsListener() {
 					@Override
 					public void onClick(String selected_value) {
 						if( preview.getCameraController() != null ) {
@@ -315,7 +300,7 @@ public class PopupView extends LinearLayout {
 				List<String> supported_color_effects = preview.getSupportedColorEffects();
 				addRadioOptionsToPopup(supported_color_effects, getResources().getString(R.string.color_effect), "ce_",
 						Prefs.COLOR_EFFECT, sharedPreferences.getString(Prefs.COLOR_EFFECT, preview.getCameraController().getDefaultColorEffect()),
-						"TEST_COLOR_EFFECT", new RadioOptionsListener() {
+						new RadioOptionsListener() {
 					@Override
 					public void onClick(String selected_value) {
 						if( preview.getCameraController() != null ) {
@@ -332,7 +317,7 @@ public class PopupView extends LinearLayout {
 				final String current_iso = Prefs.getISOPref();
 				addRadioOptionsToPopup(supported_isos, getResources().getString(R.string.iso), "iso_",
 						Prefs.getISOKey(), current_iso,
-						"TEST_ISO", new RadioOptionsListener() {
+						new RadioOptionsListener() {
 					@Override
 					public void onClick(String selected_value) {
 						Prefs.setISOPref(selected_value);
@@ -353,7 +338,7 @@ public class PopupView extends LinearLayout {
 			if (!main_activity.getMainUI().isVisible(R.id.flash_mode)) {
 				List<String> supported_flash_values = preview.getSupportedFlashValues();
 				addButtonOptionsToPopup(supported_flash_values, R.array.flash_icons, R.array.flash_values, R.array.flash_keys,
-						getResources().getString(R.string.flash_mode), preview.getCurrentFlashValue(), "TEST_FLASH",
+						getResources().getString(R.string.flash_mode), preview.getCurrentFlashValue(),
 						new ButtonOptionsPopupListener() {
 					@Override
 					public void onClick(String option) {
@@ -379,7 +364,7 @@ public class PopupView extends LinearLayout {
 					}
 				}
 				addButtonOptionsToPopup(supported_focus_values, R.array.focus_mode_icons, R.array.focus_mode_values, R.array.focus_mode_keys,
-						getResources().getString(R.string.focus_mode), preview.getCurrentFocusValue(), "TEST_FOCUS",
+						getResources().getString(R.string.focus_mode), preview.getCurrentFocusValue(),
 						new ButtonOptionsPopupListener() {
 					@Override
 					public void onClick(String option) {
@@ -416,7 +401,7 @@ public class PopupView extends LinearLayout {
 					List<String> supported_isos = getSupportedISOs(main_activity);
 					final String current_iso = Prefs.getISOPref();
 					// n.b., we hardcode the string "ISO" as we don't want it translated - firstly more consistent with the ISO values returned by the driver, secondly need to worry about the size of the buttons, so don't want risk of a translated string being too long
-					addButtonOptionsToPopup(supported_isos, 0, 0, 0, "ISO", current_iso, "TEST_ISO", new ButtonOptionsPopupListener() {
+					addButtonOptionsToPopup(supported_isos, 0, 0, 0, "ISO", current_iso, new ButtonOptionsPopupListener() {
 						@Override
 						public void onClick(String option) {
 							if( MyDebug.LOG )
@@ -439,7 +424,7 @@ public class PopupView extends LinearLayout {
 					List<String> supported_values = getSupportedPhotoModes(main_activity);
 					if( supported_values.size() > 1 ) {
 						addButtonOptionsToPopup(supported_values, R.array.photo_mode_icons, R.array.photo_mode_values, R.array.photo_mode_keys,
-								getResources().getString(R.string.photo_mode), Prefs.getPhotoModePref(), "TEST_PHOTO_MODE",
+								getResources().getString(R.string.photo_mode), Prefs.getPhotoModePref(),
 								new ButtonOptionsPopupListener() {
 							@Override
 							public void onClick(String option) {
@@ -480,7 +465,7 @@ public class PopupView extends LinearLayout {
 				
 				if( sharedPreferences.getBoolean(Prefs.POPUP_OPTICAL_STABILIZATION, false) &&  preview.getCameraController() != null) {
 					final List<String> modes = preview.getCameraController().getAvailableOpticalStabilizationModes();
-					if (modes.size() == 2) {
+					if (modes.size() == 3) {
 						final String mode = preview.getCameraController().getOpticalStabilizationMode();
 						if (mode != null) {
 							addCheckBoxToPopup(getResources().getString(R.string.preference_optical_stabilization), mode.equals("on"), new CompoundButton.OnCheckedChangeListener() {
@@ -503,448 +488,224 @@ public class PopupView extends LinearLayout {
 
 				if (sharedPreferences.getBoolean(Prefs.POPUP_RESOLUTION, true)) {
 					if (!preview.isVideo()) {
-						final List<CameraController.Size> picture_sizes = preview.getSupportedPictureSizes();
-						picture_size_index = preview.getCurrentPictureSizeIndex();
-						final List<String> picture_size_strings = new ArrayList<>();
-						for(CameraController.Size picture_size : picture_sizes) {
-							// don't display MP here, as call to Preview.getMPString() here would contribute to poor performance!
-							String size_string = picture_size.width + " x " + picture_size.height;
-							picture_size_strings.add(size_string);
-						}
-						addArrayOptionsToPopup(picture_size_strings, getResources().getString(R.string.preference_resolution),
-								false, picture_size_index, false, true, "PHOTO_RESOLUTIONS", new ArrayOptionsPopupListener() {
-							final Handler handler = new Handler();
-							final Runnable update_runnable = new Runnable() {
+						addTitleToPopup(getResources().getString(R.string.preference_resolution));
+						this.addView(new ArrayOptions(
+							preview.getSupportedPictureSizes(),
+							Prefs.getResolutionPreferenceKey(),
+							preview.getCurrentPictureSizeIndex(),
+							new ArrayOptionsPopupListener() {
 								@Override
-								public void run() {
-									if( MyDebug.LOG )
-										Log.d(TAG, "update settings due to resolution change");
-									main_activity.updateForSettings("", true); // keep the popupview open
+								public void onChanged() {
+									updateForSettingsDelayed();
 								}
-							};
-
-							private void update() {
-								if( picture_size_index == -1 )
-									return;
-								CameraController.Size new_size = picture_sizes.get(picture_size_index);
-								String resolution_string = new_size.width + " " + new_size.height;
-								SharedPreferences sharedPreferences = main_activity.getSharedPrefs();
-								SharedPreferences.Editor editor = sharedPreferences.edit();
-								editor.putString(Prefs.getResolutionPreferenceKey(), resolution_string);
-								editor.apply();
-
-								// make it easier to scroll through the list of resolutions without a pause each time
-								handler.removeCallbacks(update_runnable);
-								handler.postDelayed(update_runnable, 400);
 							}
-							@Override
-							public int onClickPrev() {
-								if( picture_size_index != -1 && picture_size_index > 0 ) {
-									picture_size_index--;
-									update();
-									return picture_size_index;
-								}
-								return -1;
-							}
-							@Override
-							public int onClickNext() {
-								if( picture_size_index != -1 && picture_size_index < picture_sizes.size()-1 ) {
-									picture_size_index++;
-									update();
-									return picture_size_index;
-								}
-								return -1;
-							}
-						});
+						));
 					} else {
+						addTitleToPopup(getResources().getString(R.string.video_quality));
+
 						List<String> video_sizes = preview.getSupportedVideoQuality(Prefs.getVideoFPSPref());
 						if( video_sizes.size() == 0 ) {
 							Log.e(TAG, "can't find any supported video sizes for current fps!");
 							// fall back to unfiltered list
 							video_sizes = preview.getVideoQualityHander().getSupportedVideoQuality();
 						}
-						final List<String> video_sizes_f = video_sizes;
-						video_size_index = 0; // default to largest
-						for(int i=0;i<video_sizes.size();i++) {
-							String video_size = video_sizes.get(i);
-							if( video_size.equals(preview.getVideoQualityHander().getCurrentVideoQuality()) ) {
-								video_size_index = i;
-								break;
-							}
-						}
-						if( MyDebug.LOG )
-							Log.d(TAG, "video_size_index:" + video_size_index);
-						final List<String> video_size_strings = new ArrayList<>();
-						for(String video_size : video_sizes) {
-							String quality_string = preview.getCamcorderProfileDescriptionShort(video_size);
-							video_size_strings.add(quality_string);
-						}
-						addArrayOptionsToPopup(video_size_strings, getResources().getString(R.string.video_quality),
-								false, video_size_index, false, true, "VIDEO_RESOLUTIONS", new ArrayOptionsPopupListener() {
-							final Handler handler = new Handler();
-							final Runnable update_runnable = new Runnable() {
+						this.addView(new ArrayOptions(
+							video_sizes,
+							Prefs.getVideoQualityPreferenceKey(),
+							preview.getVideoQualityHander().getCurrentVideoQuality(),
+							new ArrayOptionsPopupListener() {
 								@Override
-								public void run() {
-									if( MyDebug.LOG )
-										Log.d(TAG, "update settings due to video resolution change");
-									main_activity.updateForSettings("", true); // keep the popupview open
+								public void onChanged() {
+									updateForSettingsDelayed();
 								}
-							};
-
-							private void update() {
-								if( video_size_index == -1 )
-									return;
-								String quality = video_sizes_f.get(video_size_index);
-								SharedPreferences sharedPreferences = main_activity.getSharedPrefs();
-								SharedPreferences.Editor editor = sharedPreferences.edit();
-								editor.putString(Prefs.getVideoQualityPreferenceKey(), quality);
-								editor.apply();
-
-								// make it easier to scroll through the list of resolutions without a pause each time
-								handler.removeCallbacks(update_runnable);
-								handler.postDelayed(update_runnable, 400);
 							}
-							@Override
-							public int onClickPrev() {
-								if( video_size_index != -1 && video_size_index > 0 ) {
-									video_size_index--;
-									update();
-									return video_size_index;
-								}
-								return -1;
-							}
-							@Override
-							public int onClickNext() {
-								if( video_size_index != -1 && video_size_index < video_sizes_f.size()-1 ) {
-									video_size_index++;
-									update();
-									return video_size_index;
-								}
-								return -1;
-							}
-						});
+						));
 					}
 				}
 
-				if (preview.isVideo() && sharedPreferences.getBoolean(Prefs.POPUP_CAPTURE_RATE, true)) {
-					final List<Float> capture_rate_values = preview.getSupportedVideoCaptureRates();
-					if( capture_rate_values.size() > 1 ) {
-						if( MyDebug.LOG )
-							Log.d(TAG, "add slow motion / timelapse video options");
-							//fixme
-						float capture_rate_value = sharedPreferences.getFloat(Prefs.CAPTURE_RATE, 1.0f);
-						final List<String> capture_rate_str = new ArrayList<>();
-						int capture_rate_std_index = -1;
-						for(int i=0;i<capture_rate_values.size();i++) {
-							float this_capture_rate = capture_rate_values.get(i);
-							if( Math.abs(1.0f - this_capture_rate) < 1.0e-5 ) {
-								capture_rate_str.add(getResources().getString(R.string.default_str));
-								capture_rate_std_index = i;
+				if (preview.isVideo()) {
+					if (sharedPreferences.getBoolean(Prefs.POPUP_VIDEO_BITRATE, false)) {
+						addArrayOptionsToPopup(
+							getResources().getString(R.string.preference_video_bitrate),
+							false,
+							Arrays.asList(getResources().getStringArray(R.array.preference_video_bitrate_entries)),
+							Arrays.asList(getResources().getStringArray(R.array.preference_video_bitrate_values)),
+							Prefs.VIDEO_BITRATE,
+							"default",
+							false, 
+							null
+						);
+					}
+
+					if (sharedPreferences.getBoolean(Prefs.POPUP_VIDEO_FPS, false)) {
+						final List<String> entries = Arrays.asList(getResources().getStringArray(R.array.preference_video_fps_entries));
+						final List<String> values = Arrays.asList(getResources().getStringArray(R.array.preference_video_fps_values));
+						addArrayOptionsToPopup(
+							getResources().getString(R.string.preference_video_fps),
+							false,
+							entries,
+							values,
+							Prefs.VIDEO_FPS,
+							"default",
+							false, 
+							new ArrayOptionsPopupListener() {
+								@Override
+								public void onValueChanged(String value) {
+									main_activity.updateForSettings(getResources().getString(R.string.preference_video_fps) + ": "+ entries.get(values.indexOf(value)), true);
+								}
 							}
-							else {
-								capture_rate_str.add("" + this_capture_rate + "x");
-							}
-							if( Math.abs(capture_rate_value - this_capture_rate) < 1.0e-5 ) {
-								video_capture_rate_index = i;
-							}
-						}
-						if( video_capture_rate_index == -1 ) {
+						);
+					}
+
+					if (sharedPreferences.getBoolean(Prefs.POPUP_CAPTURE_RATE, true)) {
+						final List<Float> capture_rate_values = preview.getSupportedVideoCaptureRates();
+						if( capture_rate_values.size() > 1 ) {
 							if( MyDebug.LOG )
-								Log.d(TAG, "can't find video_capture_rate_index");
-							// default to no slow motion or timelapse
-							video_capture_rate_index = capture_rate_std_index;
-							if( video_capture_rate_index == -1 ) {
-								Log.e(TAG, "can't find capture_rate_std_index");
-								video_capture_rate_index = 0;
+								Log.d(TAG, "add slow motion / timelapse video options");
+								//fixme
+							final List<String> entries = new ArrayList<>();
+							final List<String> values = new ArrayList<>();
+							for(Float this_capture_rate : capture_rate_values) {
+								if( Math.abs(1.0f - this_capture_rate) < 1.0e-5 ) {
+									entries.add(getResources().getString(R.string.default_str));
+								}
+								else {
+									entries.add(Float.toString(this_capture_rate) + "x");
+								}
+								values.add(Float.toString(this_capture_rate));
 							}
+							
+							addArrayOptionsToPopup(
+								getResources().getString(R.string.preference_video_capture_rate),
+								false,
+								entries,
+								values,
+								Prefs.CAPTURE_RATE,
+								Float.toString(1.0f),
+								false, 
+								new ArrayOptionsPopupListener() {
+									private boolean was_slow_motion = Prefs.getVideoCaptureRateFactor() < 1.0f-1.0e-5f;
+									
+									@Override
+									public void onValueChanged(String value) {
+										float capture_rate = 1.0f;
+										try {
+											capture_rate = Float.parseFloat(value);
+										} catch (NumberFormatException e) {}
+										boolean slow_motion = (capture_rate < 1.0f-1.0e-5f);
+										boolean keep_popup = was_slow_motion == slow_motion;
+										was_slow_motion = slow_motion;
+										
+										main_activity.updateForSettings(getResources().getString(R.string.preference_video_capture_rate) + ": " + entries.get(values.indexOf(value)), keep_popup);
+									}
+								}
+							);
 						}
-						addArrayOptionsToPopup(capture_rate_str, getResources().getString(R.string.preference_video_capture_rate), false, video_capture_rate_index, false, false, "VIDEOCAPTURERATE", new ArrayOptionsPopupListener() {
-							private int old_video_capture_rate_index = video_capture_rate_index;
-
-							private void update() {
-								if( video_capture_rate_index == -1 )
-									return;
-								float new_capture_rate_value = capture_rate_values.get(video_capture_rate_index);
-								SharedPreferences.Editor editor = sharedPreferences.edit();
-								// fixme
-								editor.putFloat(Prefs.CAPTURE_RATE, new_capture_rate_value);
-								editor.apply();
-								float old_capture_rate_value = capture_rate_values.get(old_video_capture_rate_index);
-								boolean old_slow_motion = (old_capture_rate_value < 1.0f-1.0e-5f);
-								boolean new_slow_motion = (new_capture_rate_value < 1.0f-1.0e-5f);
-								// if changing to/from a slow motion mode, this will in general switch on/off high fps frame
-								// rates, which changes the available video resolutions, so we need to re-open the popup
-								boolean keep_popup = old_slow_motion == new_slow_motion;
-								if( MyDebug.LOG ) {
-									Log.d(TAG, "update settings due to capture rate change");
-									Log.d(TAG, "old_capture_rate_value: " + old_capture_rate_value);
-									Log.d(TAG, "new_capture_rate_value: " + new_capture_rate_value);
-								}
-								old_video_capture_rate_index = video_capture_rate_index;
-
-								main_activity.updateForSettings(null, keep_popup);
-							}
-							@Override
-							public int onClickPrev() {
-								if( video_capture_rate_index != -1 && video_capture_rate_index > 0 ) {
-									video_capture_rate_index--;
-									update();
-									return video_capture_rate_index;
-								}
-								return -1;
-							}
-							@Override
-							public int onClickNext() {
-								if( video_capture_rate_index != -1 && video_capture_rate_index < capture_rate_values.size()-1 ) {
-									video_capture_rate_index++;
-									update();
-									return video_capture_rate_index;
-								}
-								return -1;
-							}
-						});
 					}
 				}
 
 				if (main_activity.selfie_mode && sharedPreferences.getBoolean(Prefs.POPUP_TIMER, true)) {
-					final String [] timer_values = getResources().getStringArray(R.array.preference_timer_values);
-					String [] timer_entries = getResources().getStringArray(R.array.preference_timer_entries);
-					String timer_value = sharedPreferences.getString(Prefs.TIMER, "0");
-					timer_index = Arrays.asList(timer_values).indexOf(timer_value);
-					if( timer_index == -1 ) {
-						if( MyDebug.LOG )
-							Log.d(TAG, "can't find timer_value " + timer_value + " in timer_values!");
-						timer_index = 0;
-					}
-					addArrayOptionsToPopup(Arrays.asList(timer_entries), getResources().getString(R.string.preference_timer),
-							false, timer_index, false, false, "TIMER", new ArrayOptionsPopupListener() {
-						private void update() {
-							if( timer_index == -1 )
-								return;
-							String new_timer_value = timer_values[timer_index];
-							SharedPreferences sharedPreferences = main_activity.getSharedPrefs();
-							SharedPreferences.Editor editor = sharedPreferences.edit();
-							editor.putString(Prefs.TIMER, new_timer_value);
-							editor.apply();
-							
-							main_activity.getMainUI().setTakePhotoIcon();
-						}
-						@Override
-						public int onClickPrev() {
-							if( timer_index != -1 && timer_index > 0 ) {
-								timer_index--;
-								update();
-								return timer_index;
+					addArrayOptionsToPopup(
+						getResources().getString(R.string.preference_timer),
+						false,
+						Arrays.asList(getResources().getStringArray(R.array.preference_timer_entries)),
+						Arrays.asList(getResources().getStringArray(R.array.preference_timer_values)),
+						Prefs.TIMER,
+						"5",
+						false, 
+						new ArrayOptionsPopupListener() {
+							@Override
+							public void onValueChanged(String value) {
+								main_activity.getMainUI().setTakePhotoIcon();
 							}
-							return -1;
 						}
-						@Override
-						public int onClickNext() {
-							if( timer_index != -1 && timer_index < timer_values.length-1 ) {
-								timer_index++;
-								update();
-								return timer_index;
-							}
-							return -1;
-						}
-					});
+					);
 				}
 
 				if (!preview.isVideo()) {
 					final Prefs.PhotoMode photo_mode = Prefs.getPhotoMode();
 					if (photo_mode == Prefs.PhotoMode.FocusBracketing || photo_mode == Prefs.PhotoMode.FastBurst || photo_mode == Prefs.PhotoMode.NoiseReduction) {
-						final String pref_key;
-						switch (photo_mode) {
-							case FastBurst:
-								pref_key = Prefs.FAST_BURST_COUNT;
-								break;
-							case NoiseReduction:
-								pref_key = Prefs.NR_COUNT;
-								break;
-							default:
-								pref_key = Prefs.FB_COUNT;
-						}
-
 						if (sharedPreferences.getBoolean(Prefs.POPUP_PHOTOS_COUNT, true)) {
-							final String [] photos_count_values = getResources().getStringArray(R.array.preference_photos_count_values);
-							String photos_count_value = sharedPreferences.getString(pref_key, "3");
-							photos_count_index = Arrays.asList(photos_count_values).indexOf(photos_count_value);
-							if( photos_count_index == -1 ) {
-								if( MyDebug.LOG )
-									Log.d(TAG, "can't find photos_count_value " + photos_count_value + " in photos_count_values!");
-								photos_count_index = 0;
+							final List<String> values = Arrays.asList(getResources().getStringArray(R.array.preference_photos_count_values));
+							final String pref_key;
+							switch (photo_mode) {
+								case FastBurst:
+									pref_key = Prefs.FAST_BURST_COUNT;
+									break;
+								case NoiseReduction:
+									pref_key = Prefs.NR_COUNT;
+									break;
+								default:
+									pref_key = Prefs.FB_COUNT;
 							}
-							addArrayOptionsToPopup(Arrays.asList(photos_count_values), getResources().getString(R.string.preference_photos_count),
-									false, photos_count_index, false, false, "PHOTOS_COUNT", new ArrayOptionsPopupListener() {
-								private void update() {
-									if( photos_count_index == -1 )
-										return;
-									String new_photos_count_value = photos_count_values[photos_count_index];
-									SharedPreferences sharedPreferences = main_activity.getSharedPrefs();
-									SharedPreferences.Editor editor = sharedPreferences.edit();
-									editor.putString(pref_key, new_photos_count_value);
-									editor.apply();
 
-									if ((photo_mode == Prefs.PhotoMode.FastBurst || photo_mode == Prefs.PhotoMode.NoiseReduction) && preview.getCameraController() != null ) {
-										int count;
-										try {count = Integer.parseInt(new_photos_count_value);}
-										catch (NumberFormatException e) {count = 3;}
-										preview.getCameraController().setWantBurstCount(count);
+							addArrayOptionsToPopup(
+								getResources().getString(R.string.preference_photos_count),
+								false,
+								values,
+								values,
+								pref_key,
+								"3",
+								false, 
+								new ArrayOptionsPopupListener() {
+									@Override
+									public void onValueChanged(String value) {
+										if ((photo_mode == Prefs.PhotoMode.FastBurst || photo_mode == Prefs.PhotoMode.NoiseReduction) && preview.getCameraController() != null ) {
+											int count;
+											try {count = Integer.parseInt(value);}
+											catch (NumberFormatException e) {count = 3;}
+											preview.getCameraController().setWantBurstCount(count);
+										}
 									}
 								}
-								@Override
-								public int onClickPrev() {
-									if( photos_count_index != -1 && photos_count_index > 0 ) {
-										photos_count_index--;
-										update();
-										return photos_count_index;
-									}
-									return -1;
-								}
-								@Override
-								public int onClickNext() {
-									if( photos_count_index != -1 && photos_count_index < photos_count_values.length-1 ) {
-										photos_count_index++;
-										update();
-										return photos_count_index;
-									}
-									return -1;
-								}
-							});
+							);
 						}
 					} else if (main_activity.selfie_mode) {
 						if (sharedPreferences.getBoolean(Prefs.POPUP_BURST_MODE, true)) {
-							final String [] burst_mode_values = getResources().getStringArray(R.array.preference_burst_mode_values);
-							String [] burst_mode_entries = getResources().getStringArray(R.array.preference_burst_mode_entries);
-							String burst_mode_value = sharedPreferences.getString(Prefs.BURST_MODE, "1");
-							burst_mode_index = Arrays.asList(burst_mode_values).indexOf(burst_mode_value);
-							if( burst_mode_index == -1 ) {
-								if( MyDebug.LOG )
-									Log.d(TAG, "can't find burst_mode_value " + burst_mode_value + " in burst_mode_values!");
-								burst_mode_index = 0;
-							}
-							addArrayOptionsToPopup(Arrays.asList(burst_mode_entries), getResources().getString(R.string.preference_burst_mode),
-									false, burst_mode_index, false, false, "BURST_MODE", new ArrayOptionsPopupListener() {
-								private void update() {
-									if( burst_mode_index == -1 )
-										return;
-									String new_burst_mode_value = burst_mode_values[burst_mode_index];
-									SharedPreferences sharedPreferences = main_activity.getSharedPrefs();
-									SharedPreferences.Editor editor = sharedPreferences.edit();
-									editor.putString(Prefs.BURST_MODE, new_burst_mode_value);
-									editor.apply();
-									
-									main_activity.getMainUI().setTakePhotoIcon();
-								}
-								@Override
-								public int onClickPrev() {
-									if( burst_mode_index != -1 && burst_mode_index > 0 ) {
-										burst_mode_index--;
-										update();
-										return burst_mode_index;
+							addArrayOptionsToPopup(
+								getResources().getString(R.string.preference_burst_mode),
+								false,
+								Arrays.asList(getResources().getStringArray(R.array.preference_burst_mode_entries)),
+								Arrays.asList(getResources().getStringArray(R.array.preference_burst_mode_values)),
+								Prefs.BURST_MODE,
+								"1",
+								false, 
+								new ArrayOptionsPopupListener() {
+									@Override
+									public void onValueChanged(String value) {
+										main_activity.getMainUI().setTakePhotoIcon();
 									}
-									return -1;
 								}
-								@Override
-								public int onClickNext() {
-									if( burst_mode_index != -1 && burst_mode_index < burst_mode_values.length-1 ) {
-										burst_mode_index++;
-										update();
-										return burst_mode_index;
-									}
-									return -1;
-								}
-							});
+							);
 						}
 						
 						if (sharedPreferences.getBoolean(Prefs.POPUP_BURST_INTERVAL, true)) {
-							final String [] burst_interval_values = getResources().getStringArray(R.array.preference_burst_interval_values);
-							String [] burst_interval_entries = getResources().getStringArray(R.array.preference_burst_interval_entries);
-							String burst_interval_value = sharedPreferences.getString(Prefs.BURST_INTERVAL, "2");
-							burst_interval_index = Arrays.asList(burst_interval_values).indexOf(burst_interval_value);
-							if( burst_interval_index == -1 ) {
-								if( MyDebug.LOG )
-									Log.d(TAG, "can't find burst_interval_value " + burst_interval_value + " in burst_interval_values!");
-								burst_interval_index = 0;
-							}
-							addArrayOptionsToPopup(Arrays.asList(burst_interval_entries), getResources().getString(R.string.preference_burst_interval),
-									false, burst_interval_index, false, false, "burst_interval", new ArrayOptionsPopupListener() {
-								private void update() {
-									if( burst_interval_index == -1 )
-										return;
-									String new_burst_interval_value = burst_interval_values[burst_interval_index];
-									SharedPreferences sharedPreferences = main_activity.getSharedPrefs();
-									SharedPreferences.Editor editor = sharedPreferences.edit();
-									editor.putString(Prefs.BURST_INTERVAL, new_burst_interval_value);
-									editor.apply();
-								}
-								@Override
-								public int onClickPrev() {
-									if( burst_interval_index != -1 && burst_interval_index > 0 ) {
-										burst_interval_index--;
-										update();
-										return burst_interval_index;
-									}
-									return -1;
-								}
-								@Override
-								public int onClickNext() {
-									if( burst_interval_index != -1 && burst_interval_index < burst_interval_values.length-1 ) {
-										burst_interval_index++;
-										update();
-										return burst_interval_index;
-									}
-									return -1;
-								}
-							});
+							addArrayOptionsToPopup(
+								getResources().getString(R.string.preference_burst_interval),
+								false,
+								Arrays.asList(getResources().getStringArray(R.array.preference_burst_interval_entries)),
+								Arrays.asList(getResources().getStringArray(R.array.preference_burst_interval_values)),
+								Prefs.BURST_INTERVAL,
+								"2",
+								false, 
+								null
+							);
 						}
 					}
 				}
 
 				if (sharedPreferences.getBoolean(Prefs.POPUP_GRID, true)) {
-					final String [] grid_values = getResources().getStringArray(R.array.preference_grid_values);
-					String [] grid_entries = getResources().getStringArray(R.array.preference_grid_entries);
-					String grid_value = sharedPreferences.getString(Prefs.GRID, "preference_grid_none");
-					grid_index = Arrays.asList(grid_values).indexOf(grid_value);
-					if( grid_index == -1 ) {
-						if( MyDebug.LOG )
-							Log.d(TAG, "can't find grid_value " + grid_value + " in grid_values!");
-						grid_index = 0;
-					}
-					addArrayOptionsToPopup(Arrays.asList(grid_entries), getResources().getString(R.string.grid),
-							false, grid_index, true, false, "GRID", new ArrayOptionsPopupListener() {
-						private void update() {
-							if( grid_index == -1 )
-								return;
-							String new_grid_value = grid_values[grid_index];
-							SharedPreferences sharedPreferences = main_activity.getSharedPrefs();
-							SharedPreferences.Editor editor = sharedPreferences.edit();
-							editor.putString(Prefs.GRID, new_grid_value);
-							editor.apply();
-						}
-						@Override
-						public int onClickPrev() {
-							if( grid_index != -1 ) {
-								grid_index--;
-								if( grid_index < 0 )
-									grid_index += grid_values.length;
-								update();
-								return grid_index;
-							}
-							return -1;
-						}
-						@Override
-						public int onClickNext() {
-							if( grid_index != -1 ) {
-								grid_index++;
-								if( grid_index >= grid_values.length )
-									grid_index -= grid_values.length;
-								update();
-								return grid_index;
-							}
-							return -1;
-						}
-					});
+					addArrayOptionsToPopup(
+						getResources().getString(R.string.grid),
+						false,
+						Arrays.asList(getResources().getStringArray(R.array.preference_grid_entries)),
+						Arrays.asList(getResources().getStringArray(R.array.preference_grid_values)),
+						Prefs.GRID,
+						"preference_grid_none",
+						true,
+						null
+					);
+					
 				}
 
 				if( sharedPreferences.getBoolean(Prefs.POPUP_GHOST_IMAGE, false)) {
@@ -963,360 +724,121 @@ public class PopupView extends LinearLayout {
 				if (!preview.isVideo()) {
 					final Prefs.PhotoMode photo_mode = Prefs.getPhotoMode();
 					if ((photo_mode == Prefs.PhotoMode.ExpoBracketing || photo_mode == Prefs.PhotoMode.HDR) && sharedPreferences.getBoolean(Prefs.POPUP_EXPO_BRACKETING_STOPS, true)) {
-						final String [] stops_values = getResources().getStringArray(R.array.preference_expo_bracketing_stops_values);
-						{
-							final String pref_key;
-							switch (photo_mode) {
-								case HDR:
-									pref_key = Prefs.HDR_STOPS_UP;
-									break;
-								default:
-									pref_key = Prefs.EXPO_BRACKETING_STOPS_UP;
-							}
+						final List<String> values = Arrays.asList(getResources().getStringArray(R.array.preference_expo_bracketing_stops_values));
 
-							String stops_value = sharedPreferences.getString(pref_key, "2");
-							stops_up_index = Arrays.asList(stops_values).indexOf(stops_value);
-							if( stops_up_index == -1 ) {
-								if( MyDebug.LOG )
-									Log.d(TAG, "can't find stops_value " + stops_value + " in stops_values!");
-								stops_up_index = 0;
-							}
-							addArrayOptionsToPopup(Arrays.asList(stops_values), getResources().getString(R.string.preference_expo_bracketing_stops_up),
-									false, stops_up_index, false, false, "STOPS", new ArrayOptionsPopupListener() {
-								private void update() {
-									if( stops_up_index == -1 )
-										return;
-									String new_stops_value = stops_values[stops_up_index];
-									SharedPreferences sharedPreferences = main_activity.getSharedPrefs();
-									SharedPreferences.Editor editor = sharedPreferences.edit();
-									editor.putString(pref_key, new_stops_value);
-									editor.apply();
-
+						addArrayOptionsToPopup(
+							getResources().getString(R.string.preference_expo_bracketing_stops_up),
+							false,
+							values,
+							values,
+							photo_mode == Prefs.PhotoMode.HDR ? Prefs.HDR_STOPS_UP : Prefs.EXPO_BRACKETING_STOPS_UP,
+							"2",
+							false, 
+							new ArrayOptionsPopupListener() {
+								@Override
+								public void onValueChanged(String value) {
 									preview.setupExpoBracketing(preview.getCameraController());
 								}
-								@Override
-								public int onClickPrev() {
-									if( stops_up_index != -1 && stops_up_index > 0 ) {
-										stops_up_index--;
-										update();
-										return stops_up_index;
-									}
-									return -1;
-								}
-								@Override
-								public int onClickNext() {
-									if( stops_up_index != -1 && stops_up_index < stops_values.length-1 ) {
-										stops_up_index++;
-										update();
-										return stops_up_index;
-									}
-									return -1;
-								}
-							});
-						}
-						{
-							final String pref_key;
-							switch (photo_mode) {
-								case HDR:
-									pref_key = Prefs.HDR_STOPS_DOWN;
-									break;
-								default:
-									pref_key = Prefs.EXPO_BRACKETING_STOPS_DOWN;
 							}
+						);
 
-							String stops_value = sharedPreferences.getString(pref_key, "2");
-							stops_down_index = Arrays.asList(stops_values).indexOf(stops_value);
-							if( stops_down_index == -1 ) {
-								if( MyDebug.LOG )
-									Log.d(TAG, "can't find stops_value " + stops_value + " in stops_values!");
-								stops_down_index = 0;
-							}
-							addArrayOptionsToPopup(Arrays.asList(stops_values), getResources().getString(R.string.preference_expo_bracketing_stops_down),
-									false, stops_down_index, false, false, "STOPS", new ArrayOptionsPopupListener() {
-								private void update() {
-									if( stops_down_index == -1 )
-										return;
-									String new_stops_value = stops_values[stops_down_index];
-									SharedPreferences sharedPreferences = main_activity.getSharedPrefs();
-									SharedPreferences.Editor editor = sharedPreferences.edit();
-									editor.putString(pref_key, new_stops_value);
-									editor.apply();
-
+						addArrayOptionsToPopup(
+							getResources().getString(R.string.preference_expo_bracketing_stops_down),
+							false,
+							values,
+							values,
+							photo_mode == Prefs.PhotoMode.HDR ? Prefs.HDR_STOPS_DOWN : Prefs.EXPO_BRACKETING_STOPS_DOWN,
+							"2",
+							false, 
+							new ArrayOptionsPopupListener() {
+								@Override
+								public void onValueChanged(String value) {
 									preview.setupExpoBracketing(preview.getCameraController());
 								}
-								@Override
-								public int onClickPrev() {
-									if( stops_down_index != -1 && stops_down_index > 0 ) {
-										stops_down_index--;
-										update();
-										return stops_down_index;
-									}
-									return -1;
-								}
-								@Override
-								public int onClickNext() {
-									if( stops_down_index != -1 && stops_down_index < stops_values.length-1 ) {
-										stops_down_index++;
-										update();
-										return stops_down_index;
-									}
-									return -1;
-								}
-							});
-						}
+							}
+						);
 					}
 					if(photo_mode == Prefs.PhotoMode.HDR) {
 						if(sharedPreferences.getBoolean(Prefs.POPUP_HDR_DEGHOST, true)) {
-							// Костыль
-							View view = new LinearLayout(main_activity);
-							view.setPadding(0, elements_gap, 0, 0);
-							
-							CheckBox checkBox = new CheckBox(main_activity);
-							checkBox.setText(getResources().getString(R.string.preference_hdr_deghost));
-							checkBox.setTextColor(negative ? Color.BLACK : Color.WHITE);
-							checkBox.setTextSize(TypedValue.COMPLEX_UNIT_PX, text_size_main);
-							checkBox.setChecked(sharedPreferences.getBoolean(Prefs.HDR_DEGHOST, true));
-
-							checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-								public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-									final SharedPreferences sharedPreferences = main_activity.getSharedPrefs();
-									SharedPreferences.Editor editor = sharedPreferences.edit();
-									editor.putBoolean(Prefs.HDR_DEGHOST, isChecked);
-									editor.apply();
-
-									main_activity.getMainUI().closePopup(); // don't need to destroy popup
-								}
-							});
-
-							this.addView(view);
-							this.addView(checkBox);
+							addCheckBoxToPopup(
+								getResources().getString(R.string.preference_hdr_deghost),
+								Prefs.HDR_DEGHOST, true,
+								null
+/*								new CheckBoxPopupListener() {
+									@Override
+									public void onCheckedChanged(boolean isChecked) {
+										main_activity.getMainUI().closePopup(); // don't need to destroy popup
+									}
+								}*/
+							);
 						}
 						if (sharedPreferences.getBoolean(Prefs.POPUP_HDR_TONEMAPPING, true)) {
-							final String [] hdr_tonemapping_values = getResources().getStringArray(R.array.preference_hdr_tonemapping_values);
-							String [] hdr_tonemapping_entries = getResources().getStringArray(R.array.preference_hdr_tonemapping_entries);
-							String hdr_tonemapping_value = sharedPreferences.getString(Prefs.HDR_TONEMAPPING, "reinhard");
-							hdr_tonemapping_index = Arrays.asList(hdr_tonemapping_values).indexOf(hdr_tonemapping_value);
-							if( hdr_tonemapping_index == -1 ) {
-								if( MyDebug.LOG )
-									Log.d(TAG, "can't find value " + hdr_tonemapping_value + " in hdr_tonemapping_values!");
-								hdr_tonemapping_index = 0;
-							}
-							addArrayOptionsToPopup(Arrays.asList(hdr_tonemapping_entries), getResources().getString(R.string.preference_hdr_tonemapping),
-									false, hdr_tonemapping_index, true, false, "HDR_TONEMAPPING", new ArrayOptionsPopupListener() {
-								private void update() {
-									if( hdr_tonemapping_index == -1 )
-										return;
-									String new_hdr_tonemapping_value = hdr_tonemapping_values[hdr_tonemapping_index];
-									SharedPreferences sharedPreferences = main_activity.getSharedPrefs();
-									SharedPreferences.Editor editor = sharedPreferences.edit();
-									editor.putString("preference_hdr_tonemapping", new_hdr_tonemapping_value);
-									editor.apply();
-								}
-								@Override
-								public int onClickPrev() {
-									if( hdr_tonemapping_index != -1 ) {
-										hdr_tonemapping_index--;
-										if( hdr_tonemapping_index < 0 )
-											hdr_tonemapping_index += hdr_tonemapping_values.length;
-										update();
-										return hdr_tonemapping_index;
-									}
-									return -1;
-								}
-								@Override
-								public int onClickNext() {
-									if( hdr_tonemapping_index != -1 ) {
-										hdr_tonemapping_index++;
-										if( hdr_tonemapping_index >= hdr_tonemapping_values.length )
-											hdr_tonemapping_index -= hdr_tonemapping_values.length;
-										update();
-										return hdr_tonemapping_index;
-									}
-									return -1;
-								}
-							});
+							addArrayOptionsToPopup(
+								getResources().getString(R.string.preference_hdr_tonemapping),
+								false,
+								Arrays.asList(getResources().getStringArray(R.array.preference_hdr_tonemapping_entries)),
+								Arrays.asList(getResources().getStringArray(R.array.preference_hdr_tonemapping_values)),
+								Prefs.HDR_TONEMAPPING,
+								"reinhard",
+								true, 
+								null
+							);
 						}
 					}
 
 					if (photo_mode == Prefs.PhotoMode.HDR || photo_mode == Prefs.PhotoMode.DRO) { 
 						if (sharedPreferences.getBoolean(Prefs.POPUP_HDR_UNSHARP_MASK, true)) {
-							final String [] hdr_unsharp_mask_values = getResources().getStringArray(R.array.preference_hdr_local_contrast_values);
-							String [] hdr_unsharp_mask_entries = getResources().getStringArray(R.array.preference_hdr_local_contrast_entries);
-							String hdr_unsharp_mask_value = sharedPreferences.getString(Prefs.HDR_UNSHARP_MASK, "1");
-							hdr_unsharp_mask_index = Arrays.asList(hdr_unsharp_mask_values).indexOf(hdr_unsharp_mask_value);
-							if( hdr_unsharp_mask_index == -1 ) {
-								if( MyDebug.LOG )
-									Log.d(TAG, "can't find value " + hdr_unsharp_mask_value + " in hdr_unsharp_mask_values!");
-								hdr_unsharp_mask_index = 0;
-							}
-							addArrayOptionsToPopup(Arrays.asList(hdr_unsharp_mask_entries), getResources().getString(R.string.preference_hdr_unsharp_mask),
-									false, hdr_unsharp_mask_index, false, false, "HDR_UNSHARP_MASK", new ArrayOptionsPopupListener() {
-								private void update() {
-									if( hdr_unsharp_mask_index == -1 )
-										return;
-									String new_hdr_unsharp_mask_value = hdr_unsharp_mask_values[hdr_unsharp_mask_index];
-									SharedPreferences sharedPreferences = main_activity.getSharedPrefs();
-									SharedPreferences.Editor editor = sharedPreferences.edit();
-									editor.putString("preference_hdr_unsharp_mask", new_hdr_unsharp_mask_value);
-									editor.apply();
-								}
-								@Override
-								public int onClickPrev() {
-									if( hdr_unsharp_mask_index != -1 ) {
-										hdr_unsharp_mask_index--;
-										if( hdr_unsharp_mask_index < 0 )
-											hdr_unsharp_mask_index += hdr_unsharp_mask_values.length;
-										update();
-										return hdr_unsharp_mask_index;
-									}
-									return -1;
-								}
-								@Override
-								public int onClickNext() {
-									if( hdr_unsharp_mask_index != -1 ) {
-										hdr_unsharp_mask_index++;
-										if( hdr_unsharp_mask_index >= hdr_unsharp_mask_values.length )
-											hdr_unsharp_mask_index -= hdr_unsharp_mask_values.length;
-										update();
-										return hdr_unsharp_mask_index;
-									}
-									return -1;
-								}
-							});
+							addArrayOptionsToPopup(
+								getResources().getString(R.string.preference_hdr_unsharp_mask),
+								false,
+								Arrays.asList(getResources().getStringArray(R.array.preference_hdr_local_contrast_entries)),
+								Arrays.asList(getResources().getStringArray(R.array.preference_hdr_local_contrast_values)),
+								photo_mode == Prefs.PhotoMode.HDR ? Prefs.HDR_UNSHARP_MASK : Prefs.DRO_UNSHARP_MASK,
+								"1",
+								false, 
+								null
+							);
 						}
+
 						if (sharedPreferences.getBoolean(Prefs.POPUP_HDR_UNSHARP_MASK_RADIUS, true)) {
-							final String [] hdr_unsharp_mask_radius_values = getResources().getStringArray(R.array.preference_radius_values);
-							String hdr_unsharp_mask_radius_value = sharedPreferences.getString(Prefs.HDR_UNSHARP_MASK_RADIUS, "5");
-							hdr_unsharp_mask_radius_index = Arrays.asList(hdr_unsharp_mask_radius_values).indexOf(hdr_unsharp_mask_radius_value);
-							if( hdr_unsharp_mask_radius_index == -1 ) {
-								if( MyDebug.LOG )
-									Log.d(TAG, "can't find value " + hdr_unsharp_mask_radius_value + " in hdr_unsharp_mask_radius_values!");
-								hdr_unsharp_mask_radius_index = 0;
-							}
-							addArrayOptionsToPopup(Arrays.asList(hdr_unsharp_mask_radius_values), getResources().getString(R.string.preference_hdr_unsharp_mask_radius),
-									false, hdr_unsharp_mask_radius_index, false, false, "HDR_UNSHARP_MASK_RADIUS", new ArrayOptionsPopupListener() {
-								private void update() {
-									if( hdr_unsharp_mask_radius_index == -1 )
-										return;
-									String new_hdr_unsharp_mask_radius_value = hdr_unsharp_mask_radius_values[hdr_unsharp_mask_radius_index];
-									SharedPreferences sharedPreferences = main_activity.getSharedPrefs();
-									SharedPreferences.Editor editor = sharedPreferences.edit();
-									editor.putString("preference_hdr_unsharp_mask_radius", new_hdr_unsharp_mask_radius_value);
-									editor.apply();
-								}
-								@Override
-								public int onClickPrev() {
-									if( hdr_unsharp_mask_radius_index != -1 ) {
-										hdr_unsharp_mask_radius_index--;
-										if( hdr_unsharp_mask_radius_index < 0 )
-											hdr_unsharp_mask_radius_index += hdr_unsharp_mask_radius_values.length;
-										update();
-										return hdr_unsharp_mask_radius_index;
-									}
-									return -1;
-								}
-								@Override
-								public int onClickNext() {
-									if( hdr_unsharp_mask_radius_index != -1 ) {
-										hdr_unsharp_mask_radius_index++;
-										if( hdr_unsharp_mask_radius_index >= hdr_unsharp_mask_radius_values.length )
-											hdr_unsharp_mask_radius_index -= hdr_unsharp_mask_radius_values.length;
-										update();
-										return hdr_unsharp_mask_radius_index;
-									}
-									return -1;
-								}
-							});
+							List<String> values = Arrays.asList(getResources().getStringArray(R.array.preference_radius_values));
+							addArrayOptionsToPopup(
+								getResources().getString(R.string.preference_hdr_unsharp_mask_radius),
+								false,
+								values,
+								values,
+								photo_mode == Prefs.PhotoMode.HDR ? Prefs.HDR_UNSHARP_MASK_RADIUS : Prefs.DRO_UNSHARP_MASK_RADIUS,
+								"5",
+								false, 
+								null
+							);
 						}
+
 						if (sharedPreferences.getBoolean(Prefs.POPUP_HDR_LOCAL_CONTRAST, true)) {
-							final String [] hdr_local_contrast_values = getResources().getStringArray(R.array.preference_hdr_local_contrast_values);
-							String [] hdr_local_contrast_entries = getResources().getStringArray(R.array.preference_hdr_local_contrast_entries);
-							String hdr_local_contrast_value = sharedPreferences.getString(Prefs.HDR_LOCAL_CONTRAST, "5");
-							hdr_local_contrast_index = Arrays.asList(hdr_local_contrast_values).indexOf(hdr_local_contrast_value);
-							if( hdr_local_contrast_index == -1 ) {
-								if( MyDebug.LOG )
-									Log.d(TAG, "can't find value " + hdr_local_contrast_value + " in hdr_local_contrast_values!");
-								hdr_local_contrast_index = 0;
-							}
-							addArrayOptionsToPopup(Arrays.asList(hdr_local_contrast_entries), getResources().getString(R.string.preference_hdr_local_contrast),
-									false, hdr_local_contrast_index, false, false, "HDR_LOCAL_CONTRAST", new ArrayOptionsPopupListener() {
-								private void update() {
-									if( hdr_local_contrast_index == -1 )
-										return;
-									String new_hdr_local_contrast_value = hdr_local_contrast_values[hdr_local_contrast_index];
-									SharedPreferences sharedPreferences = main_activity.getSharedPrefs();
-									SharedPreferences.Editor editor = sharedPreferences.edit();
-									editor.putString("preference_hdr_local_contrast", new_hdr_local_contrast_value);
-									editor.apply();
-								}
-								@Override
-								public int onClickPrev() {
-									if( hdr_local_contrast_index != -1 ) {
-										hdr_local_contrast_index--;
-										if( hdr_local_contrast_index < 0 )
-											hdr_local_contrast_index += hdr_local_contrast_values.length;
-										update();
-										return hdr_local_contrast_index;
-									}
-									return -1;
-								}
-								@Override
-								public int onClickNext() {
-									if( hdr_local_contrast_index != -1 ) {
-										hdr_local_contrast_index++;
-										if( hdr_local_contrast_index >= hdr_local_contrast_values.length )
-											hdr_local_contrast_index -= hdr_local_contrast_values.length;
-										update();
-										return hdr_local_contrast_index;
-									}
-									return -1;
-								}
-							});
+							addArrayOptionsToPopup(
+								getResources().getString(R.string.preference_hdr_local_contrast),
+								false,
+								Arrays.asList(getResources().getStringArray(R.array.preference_hdr_local_contrast_entries)),
+								Arrays.asList(getResources().getStringArray(R.array.preference_hdr_local_contrast_values)),
+								photo_mode == Prefs.PhotoMode.HDR ? Prefs.HDR_LOCAL_CONTRAST : Prefs.DRO_LOCAL_CONTRAST,
+								"5",
+								false, 
+								null
+							);
 						}
 
 						if (sharedPreferences.getBoolean(Prefs.POPUP_HDR_N_TILES, true)) {
-							final String [] hdr_n_tiles_values = getResources().getStringArray(R.array.preference_hdr_n_tiles_values);
-							String hdr_n_tiles_value = sharedPreferences.getString(Prefs.HDR_N_TILES, "4");
-							hdr_n_tiles_index = Arrays.asList(hdr_n_tiles_values).indexOf(hdr_n_tiles_value);
-							if( hdr_n_tiles_index == -1 ) {
-								if( MyDebug.LOG )
-									Log.d(TAG, "can't find value " + hdr_n_tiles_value + " in hdr_n_tiles_values!");
-								hdr_n_tiles_index = 0;
-							}
-							addArrayOptionsToPopup(Arrays.asList(hdr_n_tiles_values), getResources().getString(R.string.preference_hdr_n_tiles),
-									false, hdr_n_tiles_index, false, false, "HDR_TILES", new ArrayOptionsPopupListener() {
-								private void update() {
-									if( hdr_n_tiles_index == -1 )
-										return;
-									String new_hdr_n_tiles_value = hdr_n_tiles_values[hdr_n_tiles_index];
-									SharedPreferences sharedPreferences = main_activity.getSharedPrefs();
-									SharedPreferences.Editor editor = sharedPreferences.edit();
-									editor.putString("preference_hdr_n_tiles", new_hdr_n_tiles_value);
-									editor.apply();
-								}
-								@Override
-								public int onClickPrev() {
-									if( hdr_n_tiles_index != -1 ) {
-										hdr_n_tiles_index--;
-										if( hdr_n_tiles_index < 0 )
-											hdr_n_tiles_index += hdr_n_tiles_values.length;
-										update();
-										return hdr_n_tiles_index;
-									}
-									return -1;
-								}
-								@Override
-								public int onClickNext() {
-									if( hdr_n_tiles_index != -1 ) {
-										hdr_n_tiles_index++;
-										if( hdr_n_tiles_index >= hdr_n_tiles_values.length )
-											hdr_n_tiles_index -= hdr_n_tiles_values.length;
-										update();
-										return hdr_n_tiles_index;
-									}
-									return -1;
-								}
-							});
+							List<String> values = Arrays.asList(getResources().getStringArray(R.array.preference_hdr_n_tiles_values));
+							addArrayOptionsToPopup(
+								getResources().getString(R.string.preference_hdr_n_tiles),
+								false,
+								values,
+								values,
+								photo_mode == Prefs.PhotoMode.HDR ? Prefs.HDR_N_TILES : Prefs.DRO_N_TILES,
+								"4",
+								false, 
+								null
+							);
 						}
 					}
 				}
@@ -1327,7 +849,7 @@ public class PopupView extends LinearLayout {
 						List<String> supported_white_balances = preview.getSupportedWhiteBalances();
 						addExpandableRadioOptionsToPopup(supported_white_balances, getResources().getString(R.string.white_balance), "wb_",
 								Prefs.WHITE_BALANCE, sharedPreferences.getString(Prefs.WHITE_BALANCE, preview.getCameraController().getDefaultWhiteBalance()),
-								"TEST_WHITE_BALANCE", new RadioOptionsListener() {
+								new RadioOptionsListener() {
 							@Override
 							public void onClick(String selected_value) {
 								switchToWhiteBalance(selected_value);
@@ -1339,7 +861,7 @@ public class PopupView extends LinearLayout {
 						List<String> supported_scene_modes = preview.getSupportedSceneModes();
 						addExpandableRadioOptionsToPopup(supported_scene_modes, getResources().getString(R.string.scene_mode), "sm_",
 								Prefs.SCENE_MODE, sharedPreferences.getString(Prefs.SCENE_MODE, preview.getCameraController().getDefaultSceneMode()),
-								"TEST_SCENE_MODE", new RadioOptionsListener() {
+								new RadioOptionsListener() {
 							@Override
 							public void onClick(String selected_value) {
 								if( preview.getCameraController() != null ) {
@@ -1361,7 +883,7 @@ public class PopupView extends LinearLayout {
 						List<String> supported_color_effects = preview.getSupportedColorEffects();
 						addExpandableRadioOptionsToPopup(supported_color_effects, getResources().getString(R.string.color_effect), "ce_",
 								Prefs.COLOR_EFFECT, sharedPreferences.getString(Prefs.COLOR_EFFECT, preview.getCameraController().getDefaultColorEffect()),
-								"TEST_COLOR_EFFECT", new RadioOptionsListener() {
+								new RadioOptionsListener() {
 							@Override
 							public void onClick(String selected_value) {
 								if( preview.getCameraController() != null ) {
@@ -1415,7 +937,6 @@ public class PopupView extends LinearLayout {
 		int keys_id,
 		String prefix_string,
 		String current_value,
-		String test_key,
 		final ButtonOptionsPopupListener listener
 	) {
 		if( MyDebug.LOG )
@@ -1582,13 +1103,8 @@ public class PopupView extends LinearLayout {
 					Log.d(TAG, "addButtonOptionsToPopup time 2.3: " + (System.nanoTime() - debug_time));
 				view.setTag(supported_option);
 				view.setOnClickListener(on_click_listener);
-				if( MyDebug.LOG )
-					Log.d(TAG, "addButtonOptionsToPopup time 2.35: " + (System.nanoTime() - debug_time));
-				this.popup_buttons.put(test_key + "_" + supported_option, view);
 				if( MyDebug.LOG ) {
 					Log.d(TAG, "addButtonOptionsToPopup time 2.4: " + (System.nanoTime() - debug_time));
-					Log.d(TAG, "added to popup_buttons: " + test_key + "_" + supported_option + " view: " + view);
-					Log.d(TAG, "popup_buttons is now: " + popup_buttons);
 				}
 			}
 			if( MyDebug.LOG )
@@ -1644,7 +1160,6 @@ public class PopupView extends LinearLayout {
 		int names_id,
 		int keys_id,
 		String current_value,
-		String test_key,
 		final ButtonOptionsPopupListener listener
 	) {
 
@@ -1718,7 +1233,6 @@ public class PopupView extends LinearLayout {
 						listener.onClick(supported_option);
 					}
 				});
-				this.popup_buttons.put(test_key + "_" + supported_option, button);
 			}
 
 			this.addView(ll2);
@@ -1754,7 +1268,6 @@ public class PopupView extends LinearLayout {
 		final String prefix,
 		final String preference_key,
 		final String current_option,
-		final String test_key,
 		final RadioOptionsListener listener
 	) {
 		if( MyDebug.LOG )
@@ -1764,7 +1277,7 @@ public class PopupView extends LinearLayout {
 
 			final RadioGroup rg = new RadioGroup(this.getContext());
 			rg.setOrientation(RadioGroup.VERTICAL);
-			addRadioOptionsToGroup(rg, supported_options, title, prefix, preference_key,  current_option, test_key, listener);
+			addRadioOptionsToGroup(rg, supported_options, title, prefix, preference_key,  current_option, listener);
 			this.addView(rg);
 		}
 	}
@@ -1775,7 +1288,6 @@ public class PopupView extends LinearLayout {
 		final String prefix,
 		final String preference_key,
 		final String current_option,
-		final String test_key,
 		final RadioOptionsListener listener
 	) {
 		if( MyDebug.LOG )
@@ -1799,12 +1311,11 @@ public class PopupView extends LinearLayout {
 			final RadioGroup rg = new RadioGroup(this.getContext());
 			rg.setOrientation(RadioGroup.VERTICAL);
 			if (expand_lists) {
-				addRadioOptionsToGroup(rg, supported_options, title, prefix, preference_key,  current_option, test_key, listener);
+				addRadioOptionsToGroup(rg, supported_options, title, prefix, preference_key,  current_option, listener);
 				rg.setVisibility(View.VISIBLE);
 			} else {
 				rg.setVisibility(View.GONE);
 			}
-			this.popup_buttons.put(test_key, rg);
 			if( MyDebug.LOG )
 				Log.d(TAG, "addRadioOptionsToPopup time 2: " + (System.nanoTime() - debug_time));
 
@@ -1824,7 +1335,7 @@ public class PopupView extends LinearLayout {
 					}
 					else {
 						if( rg.getChildCount() == 0 ) {
-							addRadioOptionsToGroup(rg, supported_options, title, prefix, preference_key,  current_option, test_key, listener);
+							addRadioOptionsToGroup(rg, supported_options, title, prefix, preference_key,  current_option, listener);
 						}
 						rg.setVisibility(View.VISIBLE);
 						final ScrollView popup_container = (ScrollView) main_activity.findViewById(R.id.popup_container);
@@ -1871,7 +1382,6 @@ public class PopupView extends LinearLayout {
 		final String prefix,
 		final String preference_key,
 		final String current_option,
-		final String test_key,
 		final RadioOptionsListener listener
 	) {
 		if( MyDebug.LOG )
@@ -1940,117 +1450,275 @@ public class PopupView extends LinearLayout {
 			});
 			if( MyDebug.LOG )
 				Log.d(TAG, "addRadioOptionsToGroup time 7: " + (System.nanoTime() - debug_time));
-			this.popup_buttons.put(test_key + "_" + supported_option, button);
-			if( MyDebug.LOG )
-				Log.d(TAG, "addRadioOptionsToGroup time 8: " + (System.nanoTime() - debug_time));
 		}
 		if( MyDebug.LOG )
 			Log.d(TAG, "addRadioOptionsToGroup time total: " + (System.nanoTime() - debug_time));
 	}
 	
 	private abstract class ArrayOptionsPopupListener {
-		public abstract int onClickPrev();
-		public abstract int onClickNext();
+		public void onValueChanged(String value) {};
+		public void onChanged() {};
 	}
-	
+
 	private void addArrayOptionsToPopup(
-		final List<String> supported_options,
 		final String title,
 		final boolean title_in_options,
-		final int current_index,
+		final List<String> entries,
+		final List<String> values,
+		final String pref_key,
+		final String default_value,
 		final boolean cyclic,
-		final boolean reverse,
-		final String test_key,
 		final ArrayOptionsPopupListener listener
 	) {
-		if( supported_options != null && current_index != -1 ) {
-			if( !title_in_options ) {
-				addTitleToPopup(title);
+		if( !title_in_options ) {
+			addTitleToPopup(title);
+		}
+		
+		this.addView(new ArrayOptions(entries, values, pref_key, default_value, cyclic, listener));
+	}
+	
+
+	private class ArrayOptions extends LinearLayout {
+
+		private TextView text_view;
+		private Button prev_button;
+		private Button next_button;
+		
+		private List<String> entries;
+		private List<String> values;
+		private List<CameraController.Size> picture_sizes;
+		private List<String> video_qualities;
+		private String pref_key;
+		private int values_count;
+		private int current_index;
+		private boolean cyclic = false;
+		private String title = null;
+
+		private ArrayOptionsPopupListener listener;
+
+		// Entry-value pair
+		public ArrayOptions(
+			final List<String> entries,
+			final List<String> values,
+			final String pref_key,
+			final String default_value,
+			final boolean cyclic,
+			final ArrayOptionsPopupListener listener
+		) {
+			super(PopupView.this.getContext());
+
+			this.entries = entries;
+			this.values = values;
+			this.pref_key = pref_key;
+			String value = sharedPreferences.getString(pref_key, default_value);
+			current_index = values.indexOf(value);
+			if( current_index == -1 ) {
+				if( MyDebug.LOG )
+					Log.d(TAG, "can't find value " + value + " in values!");
+				current_index = values.indexOf(default_value);
+				if( current_index == -1 )
+					current_index = 0;
 			}
+			this.values_count = values.size();
 
-			LinearLayout ll2 = new LinearLayout(this.getContext());
-			ll2.setOrientation(LinearLayout.HORIZONTAL);
-			
-			final TextView resolution_text_view = new TextView(this.getContext());
-			if( title_in_options )
-				resolution_text_view.setText(title + ": " + supported_options.get(current_index));
-			else
-				resolution_text_view.setText(supported_options.get(current_index));
-			resolution_text_view.setTextColor(negative ? Color.BLACK :Color.WHITE);
-			resolution_text_view.setGravity(Gravity.CENTER);
-			resolution_text_view.setTextSize(TypedValue.COMPLEX_UNIT_PX, text_size_main);
+			this.cyclic = cyclic;
+			this.listener = listener;
+
+			init(false);
+
+			if (!this.cyclic)
+				updateButtonsVisibility();
+
+			updateText();
+		}
+
+		// Picture size
+		public ArrayOptions(
+			List<CameraController.Size> picture_sizes,
+			final String pref_key,
+			final int current_index,
+			final ArrayOptionsPopupListener listener
+		) {
+			super(PopupView.this.getContext());
+
+			this.picture_sizes = picture_sizes;
+			this.pref_key = pref_key;
+			this.current_index = current_index;
+			if( this.current_index == -1 ) {
+				this.current_index = 0;
+			}
+			this.values_count = picture_sizes.size();
+
+			this.cyclic = false;
+			this.listener = listener;
+
+			init(true);
+			updateButtonsVisibility();
+			updateText();
+		}
+
+		// Video quality
+		public ArrayOptions(
+			final List<String> video_qualities,
+			final String pref_key,
+			final String value,
+			final ArrayOptionsPopupListener listener
+		) {
+			super(PopupView.this.getContext());
+
+			this.video_qualities = video_qualities;
+			this.pref_key = pref_key;
+			current_index = video_qualities.indexOf(value);
+			if( current_index == -1 ) {
+				if( MyDebug.LOG )
+					Log.d(TAG, "can't find value " + value + " in values!");
+				current_index = 0;
+			}
+			this.values_count = video_qualities.size();
+
+			this.cyclic = false;
+			this.listener = listener;
+
+			init(true);
+			updateButtonsVisibility();
+			updateText();
+		}
+
+		private void init(boolean reverse_buttons) {
+			setOrientation(LinearLayout.HORIZONTAL);
+			setVerticalGravity(Gravity.CENTER_VERTICAL);
+			text_view = new TextView(PopupView.this.getContext());
+			text_view.setTextColor(negative ? Color.BLACK :Color.WHITE);
+			text_view.setGravity(Gravity.CENTER);
+			text_view.setTextSize(TypedValue.COMPLEX_UNIT_PX, text_size_main);
 			LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT, 1.0f);
-			resolution_text_view.setLayoutParams(params);
+			params.setMargins(-arrow_width, 0, -arrow_width, 0);
+			text_view.setLayoutParams(params);
 
-			final int padding = 0;
-			final Button prev_button = new Button(this.getContext());
+			prev_button = new Button(PopupView.this.getContext());
 			if (icon_font != null) {
 				prev_button.setTypeface(icon_font);
 			}
 			prev_button.setBackgroundColor(Color.TRANSPARENT); // workaround for Android 6 crash!
-			ll2.addView(prev_button);
+			addView(prev_button);
 			prev_button.setText("<");
 			prev_button.setTextColor(negative ? Color.DKGRAY :Color.LTGRAY);
 			prev_button.setTextSize(TypedValue.COMPLEX_UNIT_PX, text_size_arrow);
-			prev_button.setPadding(padding, padding, padding, padding);
+			prev_button.setPadding(0,0,0,0);
 			ViewGroup.LayoutParams vg_params = prev_button.getLayoutParams();
 			vg_params.width = arrow_width;
 			vg_params.height = arrow_height;
 			prev_button.setLayoutParams(vg_params);
-			this.popup_buttons.put(test_key + "_PREV", prev_button);
 
-			ll2.addView(resolution_text_view);
-			this.popup_buttons.put(test_key, resolution_text_view);
 
-			final Button next_button = new Button(this.getContext());
+			next_button = new Button(PopupView.this.getContext());
 			if (icon_font != null) {
 				next_button.setTypeface(icon_font);
 			}
 			next_button.setBackgroundColor(Color.TRANSPARENT); // workaround for Android 6 crash!
-			ll2.addView(next_button);
+			addView(text_view);
+			addView(next_button);
 			next_button.setText(">");
 			next_button.setTextColor(negative ? Color.DKGRAY :Color.LTGRAY);
 			next_button.setTextSize(TypedValue.COMPLEX_UNIT_PX, text_size_arrow);
-			next_button.setPadding(padding, padding, padding, padding);
+			next_button.setPadding(0,0,0,0);
 			vg_params = next_button.getLayoutParams();
 			vg_params.width = arrow_width;
 			vg_params.height = arrow_height;
 			next_button.setLayoutParams(vg_params);
-			this.popup_buttons.put(test_key + "_NEXT", next_button);
-
-			(reverse ? next_button : prev_button).setVisibility( (cyclic || current_index > 0) ? View.VISIBLE : View.INVISIBLE);
-			(reverse ? prev_button : next_button).setVisibility( (cyclic || current_index < supported_options.size()-1) ? View.VISIBLE : View.INVISIBLE);
+			
+			if (reverse_buttons) {
+				Button button = prev_button;
+				prev_button = next_button;
+				next_button = button;
+			}
 
 			prev_button.setOnClickListener(new View.OnClickListener() {
 				@Override
 				public void onClick(View v) {
-					int new_index = reverse ? listener.onClickNext() : listener.onClickPrev();
-					if( new_index != -1 ) {
-						if( title_in_options )
-							resolution_text_view.setText(title + ": " + supported_options.get(new_index));
-						else
-							resolution_text_view.setText(supported_options.get(new_index));
-						(reverse ? next_button : prev_button).setVisibility( (cyclic || new_index > 0) ? View.VISIBLE : View.INVISIBLE);
-						(reverse ? prev_button : next_button).setVisibility( (cyclic || new_index < supported_options.size()-1) ? View.VISIBLE : View.INVISIBLE);
+					if (cyclic || current_index > 0) {
+						current_index--;
+						if (current_index < 0)
+							current_index = values_count-1;
+
+						if (!cyclic)
+							updateButtonsVisibility();
+						updateText();
+						valueChanged();
 					}
 				}
 			});
 			next_button.setOnClickListener(new View.OnClickListener() {
 				@Override
 				public void onClick(View v) {
-					int new_index = reverse ? listener.onClickPrev() : listener.onClickNext();
-					if( new_index != -1 ) {
-						if( title_in_options )
-							resolution_text_view.setText(title + ": " + supported_options.get(new_index));
-						else
-							resolution_text_view.setText(supported_options.get(new_index));
-						(reverse ? next_button : prev_button).setVisibility( (cyclic || new_index > 0) ? View.VISIBLE : View.INVISIBLE);
-						(reverse ? prev_button : next_button).setVisibility( (cyclic || new_index < supported_options.size()-1) ? View.VISIBLE : View.INVISIBLE);
+					if (cyclic || current_index < values_count-1) {
+						current_index++;
+						if (current_index == values_count)
+							current_index = 0;
+
+						if (!cyclic)
+							updateButtonsVisibility();
+						updateText();
+						valueChanged();
 					}
 				}
 			});
+		}
+		
+		private void valueChanged() {
+			String value = null;
+			if (values != null) {
+				value = values.get(current_index);
+			} else if (picture_sizes != null) {
+				CameraController.Size size = picture_sizes.get(current_index);
+				value = size.width + " " + size.height;
+			} else if (video_qualities != null) {
+				value = video_qualities.get(current_index);
+			}
+			
+			if (value != null) {
+				SharedPreferences.Editor editor = sharedPreferences.edit();
+				editor.putString(pref_key, value);
+				editor.apply();
+			}
+			
+			if (listener == null)
+				return;
 
-			this.addView(ll2);
+			if (values != null)
+				listener.onValueChanged(value);
+			else
+				listener.onChanged();
+
+		}
+		
+		private void updateText() {
+			if (entries != null) {
+				if (this.title != null)
+					text_view.setText(title + ": " + entries.get(current_index));
+				else
+					text_view.setText(entries.get(current_index));
+			} else if (picture_sizes != null) {
+				CameraController.Size size = picture_sizes.get(current_index);
+				if (max_buttons_count >= 8)
+					text_view.setText(size.width + " x " + size.height + " " + main_activity.getPreview().getAspectRatioMPString(size.width, size.height));
+				else if (max_buttons_count >= 6)
+					text_view.setText(size.width + " x " + size.height + " (" + main_activity.getPreview().getMPString(size.width, size.height) + ")");
+				else
+					text_view.setText(size.width + " x " + size.height);
+			} else if (video_qualities != null) {
+				if (max_buttons_count >= 8)
+					text_view.setText(main_activity.getPreview().getCamcorderProfileDescriptionMedium(video_qualities.get(current_index)));
+				else if (max_buttons_count >= 6)
+					text_view.setText(main_activity.getPreview().getCamcorderProfileDescriptionAR(video_qualities.get(current_index)));
+				else
+					text_view.setText(main_activity.getPreview().getCamcorderProfileDescriptionShort(video_qualities.get(current_index)));
+			}
+		}
+
+		private void updateButtonsVisibility() {
+			prev_button.setVisibility(this.current_index > 0 ? View.VISIBLE : View.INVISIBLE);
+			next_button.setVisibility(this.current_index < values_count-1 ? View.VISIBLE : View.INVISIBLE);
 		}
 	}
 
@@ -2071,7 +1739,8 @@ public class PopupView extends LinearLayout {
 				editor.putBoolean(preference_key, isChecked);
 				editor.apply();
 				
-				listener.onCheckedChanged(isChecked);
+				if (listener != null)
+					listener.onCheckedChanged(isChecked);
 				
 				main_activity.getMainUI().closePopup(); // don't need to destroy popup
 			}
@@ -2225,15 +1894,22 @@ public class PopupView extends LinearLayout {
 		if (update_icon) main_activity.getMainUI().setPhotoModeIcon();
 		main_activity.getMainUI().destroyPopup(); // need to recreate popup for new selection
 	}
-
-	// for testing
-	public View getPopupButton(String key) {
-		if( MyDebug.LOG ) {
-			Log.d(TAG, "getPopupButton(" + key + "): " + popup_buttons.get(key));
-			Log.d(TAG, "this: " + this);
-			Log.d(TAG, "popup_buttons: " + popup_buttons);
-		}
-		return popup_buttons.get(key);
-	}
 	
+	final Handler update_handler = new Handler();
+	final Runnable update_runnable = new Runnable() {
+		@Override
+		public void run() {
+			if( MyDebug.LOG )
+				Log.d(TAG, "update settings due to video resolution change");
+			main_activity.updateForSettings("", true); // keep the popupview open
+			main_activity.getMainUI().setOverlayImage();
+		}
+	};
+
+	private void updateForSettingsDelayed() {
+		// make it easier to scroll through the list of resolutions without a pause each time
+		update_handler.removeCallbacks(update_runnable);
+		update_handler.postDelayed(update_runnable, 400);
+	}
+
 }

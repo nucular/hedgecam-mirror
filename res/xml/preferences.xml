@@ -37,7 +37,7 @@
 				android:defaultValue="false"
 				/>
 
-			<ListPreference
+			<com.caddish_hedgehog.hedgecam2.UI.SeekBarArrayPreference
 				android:key="preference_timer"
 				android:title="@string/preference_timer"
 				android:summary="%s"
@@ -48,24 +48,25 @@
 				android:dependency="selfie_mode"
 				/>
 
-			<ListPreference 
+			<com.caddish_hedgehog.hedgecam2.UI.SeekBarArrayPreference
 				android:key="preference_burst_mode"
 				android:title="@string/preference_burst_mode"
 				android:summary="%s"
 				android:icon="@drawable/ic_burst_mode"
 				android:entries="@array/preference_burst_mode_entries"
 				android:entryValues="@array/preference_burst_mode_values"
-				android:defaultValue="5"
+				android:defaultValue="1"
 				android:dependency="selfie_mode"
 				/>
 
-			<ListPreference
+			<com.caddish_hedgehog.hedgecam2.UI.SeekBarArrayPreference
 				android:key="preference_burst_interval"
 				android:title="@string/preference_burst_interval"
 				android:summary="%s"
 				android:icon="@drawable/ic_burst_timer"
 				android:entries="@array/preference_burst_interval_entries"
 				android:entryValues="@array/preference_burst_interval_values"
+				app:checkBoxValue="0"
 				android:defaultValue="2"
 				android:dependency="selfie_mode"
 				/>
@@ -111,13 +112,14 @@
 				android:dependency="audio_control"
 				/>
 
-			<ListPreference 
+			<com.caddish_hedgehog.hedgecam2.UI.SeekBarArrayPreference
 				android:key="preference_audio_noise_control_sensitivity"
 				android:title="@string/preference_audio_noise_control_sensitivity"
 				android:summary="@string/preference_audio_noise_control_sensitivity_summary"
 				android:entries="@array/preference_audio_noise_control_sensitivity_entries"
 				android:entryValues="@array/preference_audio_noise_control_sensitivity_values"
 				android:defaultValue="0"
+				app:reverse="true"
 				android:dependency="audio_control"
 				/>
 		</PreferenceScreen>
@@ -127,21 +129,20 @@
 			android:title="@string/preference_screen_sounds"
 			android:icon="@drawable/ic_speaker"
 			android:persistent="false">
-
-			<CheckBoxPreference
-				android:key="preference_shutter_sound"
-				android:title="@string/preference_shutter_sound"
-				android:summary="@string/preference_shutter_sound_summary"
-				android:defaultValue="true"
-				/>
 	
 			<ListPreference 
 				android:key="preference_shutter_sound_select"
-				android:title="@string/preference_shutter_sound_select"
-				android:summary="%s"
+				android:title="@string/preference_shutter_sound"
+				android:summary="@string/preference_shutter_sound_summary"
 				android:entries="@array/preference_shutter_sound_entries"
 				android:entryValues="@array/preference_shutter_sound_values"
 				android:defaultValue="default"
+				/>
+
+			<CheckBoxPreference
+				android:key="preference_video_sound"
+				android:title="@string/preference_video_sound"
+				android:defaultValue="true"
 				/>
 
 			<CheckBoxPreference
@@ -172,12 +173,13 @@
 				android:defaultValue="false"
 				/>
 
-			<ListPreference 
+			<com.caddish_hedgehog.hedgecam2.UI.SeekBarArrayPreference
 				android:key="preference_sound_volume"
 				android:title="@string/preference_sound_volume"
 				android:summary="%s"
 				android:entries="@array/preference_sound_volume_entries"
 				android:entryValues="@array/preference_sound_volume_values"
+				app:reverse="true"
 				android:defaultValue="max"
 				/>
 
@@ -708,6 +710,18 @@
 						/>
 
 					<CheckBoxPreference
+						android:key="preference_popup_video_bitrate"
+						android:title="@string/preference_video_bitrate"
+						android:defaultValue="false"
+						/>
+
+					<CheckBoxPreference
+						android:key="preference_popup_video_fps"
+						android:title="@string/preference_video_fps"
+						android:defaultValue="false"
+						/>
+
+					<CheckBoxPreference
 						android:key="preference_popup_capture_rate"
 						android:title="@string/preference_video_capture_rate"
 						android:defaultValue="true"
@@ -1056,7 +1070,14 @@
 				android:key="preference_preview_max_size"
 				android:title="@string/preference_preview_max_size"
 				android:summary="@string/preference_preview_max_size_summary"
-				android:defaultValue="true"
+				android:defaultValue="false"
+				/>
+
+			<ListPreference 
+				android:key="preference_preview_resolution"
+				android:title="@string/preference_preview_resolution"
+				android:summary="@string/preference_preview_resolution_summary"
+				android:defaultValue="auto"
 				/>
 
 			<ListPreference 
@@ -1078,7 +1099,7 @@
 				/>
 
 			<!--  if we move this to another PreferenceGroup, we should update code for the findPreference() call -->
-			<ListPreference 
+			<com.caddish_hedgehog.hedgecam2.UI.SeekBarArrayPreference 
 				android:key="preference_preview_max_expo"
 				android:title="@string/preference_preview_max_expo"
 				android:summary="@string/preference_preview_max_expo_summary"
@@ -1273,7 +1294,7 @@
 				android:defaultValue="preference_grid_none"
 				/>
 			
-			<ListPreference 
+			<com.caddish_hedgehog.hedgecam2.UI.SeekBarArrayPreference 
 				android:key="preference_grid_alpha"
 				android:title="@string/preference_grid_alpha"
 				android:summary="%s"
@@ -1474,15 +1495,14 @@
 				android:summary="@string/preference_multitouch_zoom_summary"
 				android:defaultValue="true"
 				/>
-<!--
-			<EditTextPreference
-				android:key="preference_calibrated_level_angle"
-				android:title="@string/preference_level_angle_calibration"
-				android:summary="@string/preference_level_angle_calibration_summary"
-				android:defaultValue="0"
-				android:inputType="numberDecimal|numberSigned"
-				/>
--->
+
+		</PreferenceScreen>
+		<PreferenceScreen
+			android:key="preference_screen_calibration"
+			android:title="@string/preference_screen_calibration"
+			android:icon="@drawable/ic_calibration"
+			android:persistent="false">
+
 			<com.caddish_hedgehog.hedgecam2.UI.SeekBarFloatPreference
 				android:key="preference_calibrated_level_angle"
 				android:title="@string/preference_level_angle_calibration"
@@ -1493,7 +1513,54 @@
 				app:fstep="0.1"
 				android:defaultValue="0.0"
 				/>
+
+			<com.caddish_hedgehog.hedgecam2.UI.SeekBarCheckBoxPreference
+				android:key="preference_min_focus_distance"
+				android:title="@string/preference_min_focus_distance"
+				android:summary="%s"
+				android:text="@string/centimetres_abbreviation"
+				app:min="2"
+				android:max="20"
+				app:checkBoxTitle="@string/default_str"
+				app:checkBoxValue="default"
+				android:defaultValue="default"
+				/>
+
+			<com.caddish_hedgehog.hedgecam2.UI.SeekBarFloatPreference
+				android:key="preference_focus_distance_calibration"
+				android:title="@string/preference_focus_distance_calibration"
+				android:summary="@string/preference_focus_distance_calibration_summary"
+				app:fmin="-1.0"
+				app:fmax="1.0"
+				app:fstep="0.01"
+				android:defaultValue="0.0"
+				/>
+
+			<com.caddish_hedgehog.hedgecam2.UI.SeekBarCheckBoxPreference
+				android:key="preference_row_space_y"
+				android:title="@string/preference_row_space_y"
+				android:summary="@string/preference_row_space_y_summary"
+				app:min="0"
+				android:max="64"
+				app:checkBoxTitle="@string/default_str"
+				app:checkBoxValue="default"
+				android:dependency="preference_uncompressed_photo"
+				android:defaultValue="default"
+				/>
+
+			<com.caddish_hedgehog.hedgecam2.UI.SeekBarCheckBoxPreference
+				android:key="preference_row_space_uv"
+				android:title="@string/preference_row_space_uv"
+				android:summary="@string/preference_row_space_uv_summary"
+				app:min="0"
+				android:max="64"
+				app:checkBoxTitle="@string/default_str"
+				app:checkBoxValue="default"
+				android:dependency="preference_uncompressed_photo"
+				android:defaultValue="default"
+				/>
 		</PreferenceScreen>
+
 		<PreferenceScreen
 			android:key="preference_screen_bug_fix"
 			android:title="@string/preference_screen_bug_fix"
@@ -1522,33 +1589,6 @@
 				android:title="@string/preference_center_focus"
 				android:summary="@string/preference_center_focus_summary"
 				android:defaultValue="false"
-				/>
-
-			<ListPreference 
-				android:key="preference_min_focus_distance"
-				android:title="@string/preference_min_focus_distance"
-				android:summary="%s"
-				android:entries="@array/preference_min_focus_distance_entries"
-				android:entryValues="@array/preference_min_focus_distance_values"
-				android:defaultValue="default"
-				/>
-<!--
-			<EditTextPreference
-				android:key="preference_focus_distance_calibration"
-				android:title="@string/preference_focus_distance_calibration"
-				android:summary="@string/preference_focus_distance_calibration_summary"
-				android:defaultValue="0"
-				android:inputType="numberDecimal|numberSigned"
-				/>
--->
-			<com.caddish_hedgehog.hedgecam2.UI.SeekBarFloatPreference
-				android:key="preference_focus_distance_calibration"
-				android:title="@string/preference_focus_distance_calibration"
-				android:summary="@string/preference_focus_distance_calibration_summary"
-				app:fmin="-1.0"
-				app:fmax="1.0"
-				app:fstep="0.01"
-				android:defaultValue="0.0"
 				/>
 
 			<!--  if we move this to another PreferenceGroup, we should update code to remove this Preference -->
@@ -1622,11 +1662,12 @@
 			android:persistent="false">
 	
 			<!--  if we move this to another PreferenceGroup, we should update code to remove this Preference -->
-			<ListPreference 
+			<com.caddish_hedgehog.hedgecam2.UI.SeekBarArrayPreference 
 				android:key="preference_resolution"
 				android:title="@string/preference_resolution"
 				android:summary="%s"
 				android:icon="@drawable/ic_photo_size_select_large"
+				app:reverse="true"
 				/>
 
 			<com.caddish_hedgehog.hedgecam2.UI.SeekBarPreference
@@ -1639,13 +1680,6 @@
 				android:defaultValue="90"
 				/>
 				
-<!--			<ListPreference 
-				android:key="preference_quality"
-				android:title="@string/preference_quality"
-				android:summary="%s"
-				android:defaultValue="90"
-				/>
--->
 			<SwitchPreference
 				android:key="preference_auto_stabilise"
 				android:title="@string/preference_auto_stabilise"
@@ -1655,12 +1689,12 @@
 
 			<!--  if we move this to another PreferenceGroup, we should update code to remove this Preference -->
 			<ListPreference 
-				android:key="preference_raw"
-				android:title="@string/preference_raw"
-				android:summary="@string/preference_raw_summary"
-				android:entries="@array/preference_raw_entries"
-				android:entryValues="@array/preference_raw_values"
-				android:defaultValue="preference_raw_no"
+				android:key="preference_image_format"
+				android:title="@string/preference_image_format"
+				android:summary="@string/preference_image_format_summary"
+				android:entries="@array/preference_image_format_entries"
+				android:entryValues="@array/preference_image_format_values"
+				android:defaultValue="jpeg"
 				/>
 
 			<CheckBoxPreference
@@ -1773,7 +1807,7 @@
 					/>
 
 				<!--  if we move this to another PreferenceGroup, we should update code to remove this Preference -->
-				<ListPreference
+				<com.caddish_hedgehog.hedgecam2.UI.SeekBarArrayPreference
 					android:key="preference_expo_bracketing_stops_up"
 					android:title="@string/preference_expo_bracketing_stops_up"
 					android:summary="@string/preference_expo_bracketing_stops_up_summary"
@@ -1783,7 +1817,7 @@
 					/>
 
 				<!--  if we move this to another PreferenceGroup, we should update code to remove this Preference -->
-				<ListPreference
+				<com.caddish_hedgehog.hedgecam2.UI.SeekBarArrayPreference
 					android:key="preference_expo_bracketing_stops"
 					android:title="@string/preference_expo_bracketing_stops_down"
 					android:summary="@string/preference_expo_bracketing_stops_down_summary"
@@ -1809,7 +1843,7 @@
 					/>
 
 				<!--  if we move this to another PreferenceGroup, we should update code to remove this Preference -->
-				<ListPreference
+				<com.caddish_hedgehog.hedgecam2.UI.SeekBarArrayPreference
 					android:key="preference_expo_bracketing_delay"
 					android:title="@string/preference_expo_bracketing_delay"
 					android:summary="@string/preference_expo_bracketing_delay_summary"
@@ -1821,8 +1855,7 @@
 
 			<PreferenceScreen
 				android:key="preference_category_hdr"
-				android:title="@string/preference_category_hdr"
-				android:summary="@string/preference_category_hdr_summary"
+				android:title="@string/photo_mode_hdr"
 				android:icon="@drawable/ctrl_mode_hdr"
 				android:persistent="false">
 				<!--  if we move this to another PreferenceGroup, we should update code to remove this Preference -->
@@ -1834,7 +1867,7 @@
 					/>
 
 				<!--  if we move this to another PreferenceGroup, we should update code to remove this Preference -->
-				<ListPreference
+				<com.caddish_hedgehog.hedgecam2.UI.SeekBarArrayPreference
 					android:key="preference_hdr_stops_up"
 					android:title="@string/preference_expo_bracketing_stops_up"
 					android:summary="@string/preference_expo_bracketing_stops_up_summary"
@@ -1844,13 +1877,23 @@
 					/>
 
 				<!--  if we move this to another PreferenceGroup, we should update code to remove this Preference -->
-				<ListPreference
+				<com.caddish_hedgehog.hedgecam2.UI.SeekBarArrayPreference
 					android:key="preference_hdr_stops"
 					android:title="@string/preference_expo_bracketing_stops_down"
 					android:summary="@string/preference_expo_bracketing_stops_down_summary"
 					android:entries="@array/preference_expo_bracketing_stops_values"
 					android:entryValues="@array/preference_expo_bracketing_stops_values"
 					android:defaultValue="2"
+					/>
+
+				<!--  if we move this to another PreferenceGroup, we should update code to remove this Preference -->
+				<ListPreference
+					android:key="preference_hdr_align"
+					android:title="@string/preference_align"
+					android:summary="@string/preference_align_summary"
+					android:entries="@array/preference_align_entries"
+					android:entryValues="@array/preference_align_values"
+					android:defaultValue="align_crop"
 					/>
 
 				<!--  if we move this to another PreferenceGroup, we should update code to remove this Preference -->
@@ -1871,7 +1914,7 @@
 					/>
 
 				<!--  if we move this to another PreferenceGroup, we should update code to remove this Preference -->
-				<ListPreference
+				<com.caddish_hedgehog.hedgecam2.UI.SeekBarArrayPreference
 					android:key="preference_hdr_unsharp_mask"
 					android:title="@string/preference_hdr_unsharp_mask"
 					android:summary="@string/preference_hdr_unsharp_mask_summary"
@@ -1881,7 +1924,7 @@
 					/>
 
 				<!--  if we move this to another PreferenceGroup, we should update code to remove this Preference -->
-				<ListPreference
+				<com.caddish_hedgehog.hedgecam2.UI.SeekBarArrayPreference
 					android:key="preference_hdr_unsharp_mask_radius"
 					android:title="@string/preference_hdr_unsharp_mask_radius"
 					android:summary="@string/preference_hdr_unsharp_mask_radius_summary"
@@ -1891,7 +1934,7 @@
 					/>
 
 				<!--  if we move this to another PreferenceGroup, we should update code to remove this Preference -->
-				<ListPreference
+				<com.caddish_hedgehog.hedgecam2.UI.SeekBarArrayPreference
 					android:key="preference_hdr_local_contrast"
 					android:title="@string/preference_hdr_local_contrast"
 					android:summary="@string/preference_hdr_local_contrast_summary"
@@ -1901,7 +1944,7 @@
 					/>
 
 				<!--  if we move this to another PreferenceGroup, we should update code to remove this Preference -->
-				<ListPreference
+				<com.caddish_hedgehog.hedgecam2.UI.SeekBarArrayPreference
 					android:key="preference_hdr_n_tiles"
 					android:title="@string/preference_hdr_n_tiles"
 					android:summary="@string/preference_hdr_n_tiles_summary"
@@ -1929,12 +1972,69 @@
 			</PreferenceScreen>
 
 			<PreferenceScreen
+				android:key="preference_category_dro"
+				android:title="@string/photo_mode_dro"
+				android:icon="@drawable/ctrl_mode_dro"
+				android:persistent="false">
+
+				<!--  if we move this to another PreferenceGroup, we should update code to remove this Preference -->
+				<com.caddish_hedgehog.hedgecam2.UI.SeekBarArrayPreference
+					android:key="preference_dro_unsharp_mask"
+					android:title="@string/preference_hdr_unsharp_mask"
+					android:summary="@string/preference_hdr_unsharp_mask_summary"
+					android:entries="@array/preference_hdr_local_contrast_entries"
+					android:entryValues="@array/preference_hdr_local_contrast_values"
+					android:defaultValue="1"
+					/>
+
+				<!--  if we move this to another PreferenceGroup, we should update code to remove this Preference -->
+				<com.caddish_hedgehog.hedgecam2.UI.SeekBarArrayPreference
+					android:key="preference_dro_unsharp_mask_radius"
+					android:title="@string/preference_hdr_unsharp_mask_radius"
+					android:summary="@string/preference_hdr_unsharp_mask_radius_summary"
+					android:entries="@array/preference_radius_values"
+					android:entryValues="@array/preference_radius_values"
+					android:defaultValue="5"
+					/>
+
+				<!--  if we move this to another PreferenceGroup, we should update code to remove this Preference -->
+				<com.caddish_hedgehog.hedgecam2.UI.SeekBarArrayPreference
+					android:key="preference_dro_local_contrast"
+					android:title="@string/preference_hdr_local_contrast"
+					android:summary="@string/preference_hdr_local_contrast_summary"
+					android:entries="@array/preference_hdr_local_contrast_entries"
+					android:entryValues="@array/preference_hdr_local_contrast_values"
+					android:defaultValue="5"
+					/>
+
+				<!--  if we move this to another PreferenceGroup, we should update code to remove this Preference -->
+				<com.caddish_hedgehog.hedgecam2.UI.SeekBarArrayPreference
+					android:key="preference_dro_n_tiles"
+					android:title="@string/preference_hdr_n_tiles"
+					android:summary="@string/preference_hdr_n_tiles_summary"
+					android:entries="@array/preference_hdr_n_tiles_values"
+					android:entryValues="@array/preference_hdr_n_tiles_values"
+					android:defaultValue="4"
+					/>
+
+				<ListPreference 
+					android:key="preference_dro_adjust_levels"
+					android:title="@string/preference_adjust_levels"
+					android:summary="%s"
+					android:entries="@array/preference_adjust_levels_entries"
+					android:entryValues="@array/preference_adjust_levels_values"
+					android:defaultValue="0"
+					/>
+
+			</PreferenceScreen>
+
+			<PreferenceScreen
 				android:key="preference_category_focus_bracketing"
 				android:title="@string/photo_mode_focus_bracketing"
 				android:summary="@string/preference_category_fb_summary"
 				android:icon="@drawable/ctrl_mode_focusbracketing"
 				android:persistent="false">
-				<ListPreference
+				<com.caddish_hedgehog.hedgecam2.UI.SeekBarArrayPreference
 					android:key="preference_fb_count"
 					android:title="@string/preference_photos_count"
 					android:summary="%s"
@@ -1942,7 +2042,7 @@
 					android:entryValues="@array/preference_photos_count_values"
 					android:defaultValue="3"
 					/>
-				<ListPreference
+				<com.caddish_hedgehog.hedgecam2.UI.SeekBarArrayPreference
 					android:key="preference_fb_focus_time"
 					android:title="@string/preference_fb_focus_time"
 					android:summary="@string/preference_fb_focus_time_summary"
@@ -1958,7 +2058,7 @@
 				android:summary="@string/preference_category_fast_burst_summary"
 				android:icon="@drawable/ctrl_mode_burst"
 				android:persistent="false">
-				<ListPreference
+				<com.caddish_hedgehog.hedgecam2.UI.SeekBarArrayPreference
 					android:key="preference_fast_burst_count"
 					android:title="@string/preference_photos_count"
 					android:summary="%s"
@@ -1981,7 +2081,7 @@
 				android:summary="@string/preference_category_nr_summary"
 				android:icon="@drawable/ctrl_mode_noise_reduction"
 				android:persistent="false">
-				<ListPreference
+				<com.caddish_hedgehog.hedgecam2.UI.SeekBarArrayPreference
 					android:key="preference_nr_count"
 					android:title="@string/preference_photos_count"
 					android:summary="%s"
@@ -2133,10 +2233,20 @@
 			android:persistent="false">
 
 			<!--  if we move this to another PreferenceGroup, we should update code to remove this Preference -->
-			<ListPreference 
+			<com.caddish_hedgehog.hedgecam2.UI.SeekBarArrayPreference 
 				android:key="preference_video_quality"
 				android:title="@string/video_quality"
+				app:reverse="true"
 				android:summary="%s"
+				/>
+
+			<ListPreference 
+				android:key="preference_video_format"
+				android:title="@string/preference_video_format"
+				android:summary="@string/preference_video_format_summary"
+				android:entries="@array/preference_video_format_entries"
+				android:entryValues="@array/preference_video_format_values"
+				android:defaultValue="default"
 				/>
 
 			<!--  if we move this to another PreferenceGroup, we should update code for the findPreference() call -->
@@ -2147,26 +2257,30 @@
 				android:defaultValue="false"
 				/>
 
-			<ListPreference 
+			<com.caddish_hedgehog.hedgecam2.UI.SeekBarArrayPreference 
 				android:key="preference_video_bitrate"
 				android:title="@string/preference_video_bitrate"
 				android:summary="@string/preference_video_bitrate_summary"
 				android:entries="@array/preference_video_bitrate_entries"
 				android:entryValues="@array/preference_video_bitrate_values"
+				app:checkBoxValue="default"
+				app:defaultSeekBarValue="20000000"
 				android:defaultValue="default"
 				/>
 
-			<ListPreference 
+			<com.caddish_hedgehog.hedgecam2.UI.SeekBarArrayPreference 
 				android:key="preference_video_fps"
 				android:title="@string/preference_video_fps"
 				android:summary="@string/preference_video_fps_summary"
 				android:entries="@array/preference_video_fps_entries"
 				android:entryValues="@array/preference_video_fps_values"
+				app:checkBoxValue="default"
+				app:defaultSeekBarValue="30"
 				android:defaultValue="default"
 				/>
 
 			<!--  if we move this to another PreferenceGroup, we should update code for the findPreference() call -->
-			<ListPreference
+			<com.caddish_hedgehog.hedgecam2.UI.SeekBarArrayPreference
 				android:key="preference_video_log"
 				android:title="@string/preference_video_log"
 				android:summary="@string/preference_video_log_summary"
@@ -2175,16 +2289,17 @@
 				android:defaultValue="off"
 				/>
 
-			<ListPreference 
+			<com.caddish_hedgehog.hedgecam2.UI.SeekBarArrayPreference 
 				android:key="preference_video_max_duration"
 				android:title="@string/preference_video_max_duration"
 				android:summary="@string/preference_video_max_duration_summary"
 				android:entries="@array/preference_video_max_duration_entries"
 				android:entryValues="@array/preference_video_max_duration_values"
+				app:checkBoxValue="0"
 				android:defaultValue="0"
 				/>
 
-			<ListPreference 
+			<com.caddish_hedgehog.hedgecam2.UI.SeekBarArrayPreference 
 				android:key="preference_video_restart"
 				android:title="@string/preference_video_restart"
 				android:summary="@string/preference_video_restart_summary"
@@ -2193,12 +2308,13 @@
 				android:defaultValue="0"
 				/>
 
-			<ListPreference 
+			<com.caddish_hedgehog.hedgecam2.UI.SeekBarArrayPreference 
 				android:key="preference_video_max_filesize"
 				android:title="@string/preference_video_max_filesize"
 				android:summary="@string/preference_video_max_filesize_summary"
 				android:entries="@array/preference_video_max_filesize_entries"
 				android:entryValues="@array/preference_video_max_filesize_values"
+				app:checkBoxValue="0"
 				android:defaultValue="0"
 				/>
 
@@ -2214,6 +2330,26 @@
 				android:title="@string/preference_record_audio"
 				android:summary="@string/preference_record_audio_summary"
 				android:defaultValue="true"
+				/>
+
+			<com.caddish_hedgehog.hedgecam2.UI.SeekBarArrayPreference 
+				android:key="preference_record_audio_bitrate"
+				android:title="@string/preference_record_audio_bitrate"
+				android:summary="@string/preference_record_audio_bitrate_summary"
+				android:entries="@array/preference_record_audio_bitrate_entries"
+				android:entryValues="@array/preference_record_audio_bitrate_values"
+				android:defaultValue="default"
+				android:dependency="preference_record_audio"
+				/>
+
+			<ListPreference 
+				android:key="preference_record_audio_sample_rate"
+				android:title="@string/preference_record_audio_sample_rate"
+				android:summary="@string/preference_record_audio_sample_rate_summary"
+				android:entries="@array/preference_record_audio_sample_rate_entries"
+				android:entryValues="@array/preference_record_audio_sample_rate_values"
+				android:defaultValue="default"
+				android:dependency="preference_record_audio"
 				/>
 
 			<ListPreference 
@@ -2314,12 +2450,13 @@
 				android:summary="@string/preference_optical_stabilization_summary"
 				/>
 
-			<ListPreference 
+			<com.caddish_hedgehog.hedgecam2.UI.SeekBarArrayPreference 
 				android:key="preference_smart_filter"
 				android:title="@string/preference_smart_filter"
 				android:summary="@string/preference_smart_filter_summary"
 				android:entries="@array/preference_smart_filter_entries"
 				android:entryValues="@array/preference_smart_filter_values"
+				app:checkBoxValue="0"
 				android:defaultValue="0"
 				/>
 
@@ -2354,14 +2491,6 @@
 				android:inputType="text"
 				android:defaultValue="OpenCamera"
 				/>
-	
-			<!--  if we move this to another PreferenceGroup, we should update code to remove this Preference -->
-			<CheckBoxPreference
-				android:key="preference_using_saf"
-				android:title="@string/preference_using_saf"
-				android:summary="@string/preference_using_saf_summary"
-				android:defaultValue="false"
-				/>
 
 			<EditTextPreference
 				android:key="preference_save_photo_prefix"
@@ -2373,6 +2502,16 @@
 				android:defaultValue="IMG_"
 				/>
 
+			<ListPreference
+				android:key="preference_save_video_folder"
+				android:title="@string/preference_save_video_location"
+				android:summary="@string/preference_save_video_location_summary"
+				android:icon="@drawable/ic_folder"
+				android:entries="@array/preference_video_folder_entries"
+				android:entryValues="@array/preference_video_folder_values"
+				android:defaultValue="same_as_photo"
+				/>
+
 			<EditTextPreference
 				android:key="preference_save_video_prefix"
 				android:title="@string/preference_save_video_prefix"
@@ -2381,6 +2520,14 @@
 				android:dialogMessage="@string/preference_save_video_prefix_summary"
 				android:inputType="text"
 				android:defaultValue="VID_"
+				/>
+
+			<!--  if we move this to another PreferenceGroup, we should update code to remove this Preference -->
+			<CheckBoxPreference
+				android:key="preference_using_saf"
+				android:title="@string/preference_using_saf"
+				android:summary="@string/preference_using_saf_summary"
+				android:defaultValue="false"
 				/>
 
 			<ListPreference
@@ -2467,13 +2614,34 @@
 			android:icon="@drawable/ic_info_outline"
 			/>
 
-		<Preference
-			android:key="preference_reset"  
-			android:title="@string/preference_reset"
-			android:summary="@string/preference_reset_summary"  
-			android:icon="@drawable/ic_restore"
-			/>
+		<PreferenceScreen
+			android:key="preference_screen_preferences_control"
+			android:title="@string/preference_screen_preferences_control"
+			android:icon="@drawable/ic_settings"
+			android:persistent="false">
 
-		</PreferenceCategory>
+			<Preference
+				android:key="preference_backup"  
+				android:title="@string/preference_backup"
+				android:summary="@string/preference_backup_summary"  
+				android:icon="@drawable/ic_settings_backup"
+				/>
+
+			<Preference
+				android:key="preference_restore"  
+				android:title="@string/preference_restore"
+				android:summary="@string/preference_restore_summary"  
+				android:icon="@drawable/ic_settings_restore"
+				/>
+
+			<Preference
+				android:key="preference_reset"  
+				android:title="@string/preference_reset"
+				android:summary="@string/preference_reset_summary"  
+				android:icon="@drawable/ic_restore"
+				/>
+		</PreferenceScreen>
+
+	</PreferenceCategory>
 		
 </PreferenceScreen>

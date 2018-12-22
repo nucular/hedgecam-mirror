@@ -23,6 +23,9 @@
 	<string name="none">"Keiner"</string>
 	<string name="unlimited">Unbegrenzt</string>
 	<string name="device_default">Standard</string>
+<!-- Translate me
+	<string name="if_necessary">If necessary</string>
+-->
 	<string name="sorry">Entschuldigung</string>
 
 	<string name="choose_save_location">Speicherort auswählen:</string>
@@ -127,7 +130,10 @@
 	<string name="video_max_filesize">Video hat die Maximalgröße erreicht</string>
 	<string name="video_pause">Videoaufnahme pausiert</string>
 	<string name="video_resume">Videoaufnahme fortgesetzt</string>
+<!-- Translate me
+	<string name="backup_saved">Backup file was saved succesfully</string>
 
+-->
 	<string name="failed_to_open_camera_1">FEHLER BEIM ÖFFNEN DER KAMERA.</string>
 	<string name="failed_to_open_camera_2">KAMERA VIELLEICHT IN BENUTZUNG</string>
 	<string name="failed_to_open_camera_3">VON EINER ANDEREN ANWENDUNG?</string>
@@ -155,7 +161,12 @@
 -->
 	<string name="open_files_saf_exception_ghost">Kein Datei-Dialog möglich, die Geisterbilder-Option wird nicht unterstützt</string>
 	<string name="saf_permission_failed_open_image">Bild kann nicht geöffnet werden</string>
+<!-- Translate me
+	<string name="failed_to_save_backup">Failed to save backup file</string>
+	<string name="failed_to_read_backup">Failed to read backup file</string>
+	<string name="failed_to_restore_from_backup">Failed to restore settings from backup file</string>
 
+-->
 	<string name="no_permission">BERECHTIGUNGEN NICHT VERFÜGBAR</string>
 
 	<string name="permission_record_audio_not_available">Mikrofon Berechtigung nicht verfügbar</string>
@@ -170,6 +181,9 @@
 	<string name="raw_info">DNG Dateien enthalten das unkomprimierte und unbearbeitete Bild der Kamera.\n\nDie meisten Galery Apps werden mit DNG Bildern nicht umgehen können. stattdessen werden spezielle Programme wie Snapseed oder Lightroom benötigt.\n\nBeachte, dass "Stamp photos" und "Autostabilisierung" nur auf JPEG Bilder angewendet, aber nicht auf DNG Bilder.\n\nDNG Dateien benötigen viel Platz. Ein Fileexplorer mag nützlich sein um bei Bedarf Bilder zu löschen.\n\nDNG Dateien werden nur in Standard oder DRO Foto Modis geschrieben.</string>
 	<string name="hdr_info">Der HDR Mode ist nützlich für Aufnahmen mit starken Helligkeitsunterschieden. Dabei werden mehrere Aufnahmen unterschiedlicher Belichtungszeiten zu einem Bild kombiniert\n\nBeachte das HDR nicht für schnell bewegte Szenen geeignet ist und die Farbwiedergabe verfälscht.\n\nAufnahmen im HDR Modus sind langsamer.</string>
 	<string name="preference_reset_question">Sind Sie sich sicher, alle Einstellungen von HedgeCam auf die Standardwerte zurückzusetzen?</string>
+<!-- Translate me
+	<string name="preference_restore_question">Are you sure you want to restore all settings from file? All current settings will be overwritten!</string>
+-->
 	<string name="dont_show_again">Nicht wieder zeigen</string>
 
 	<string name="mb_abbreviation">MB</string>
@@ -306,9 +320,9 @@
 
 	<string name="preference_screen_sounds">Töne</string>
 	<string name="preference_shutter_sound">Auslöseton</string>
-	<string name="preference_shutter_sound_summary">Abspielen eines Tones bei der Aufnahme (benötigt Android 4.2 oder höher zum Deaktivieren)</string>
+	<string name="preference_shutter_sound_summary">%s\n\nAbspielen eines Tones bei der Aufnahme (benötigt Android 4.2 oder höher zum Deaktivieren)</string>
 <!-- Translate me
-	<string name="preference_shutter_sound_select">Choose shutter sound</string>
+	<string name="shutter_force_off">Force off</string>
 	<string name="shutter_android_2">Android 2</string>
 	<string name="shutter_android_4">Android 4</string>
 	<string name="shutter_1">Shutter 1 (short)</string>
@@ -316,6 +330,7 @@
 	<string name="shutter_3">Shutter 3 (long)</string>
 	<string name="shutter_4">Shutter 4 (long)</string>
 	<string name="shutter_unlock">Unlock sound</string>
+	<string name="preference_video_sound">Video start/stop sound</string>
 -->
 	<string name="preference_timer_beep">Timer-Signalton</string>
 	<string name="preference_timer_beep_summary">Beim Herunterzählen der Auslöseverzögerung einen Signalton ausgeben</string>
@@ -455,6 +470,9 @@
 <!-- Translate me
 	<string name="preference_preview_max_size">Max preview size</string>
 	<string name="preference_preview_max_size_summary">Maximal preview size</string>
+	<string name="preference_preview_resolution">Preview resolution</string>
+	<string name="preference_preview_resolution_summary">Resolution of the preview. If this option was changed, previous one will be ignored. This setting is saved separately for each camera and photo/video mode.</string>
+	<string name="match_target_resolution">Match to target resolution</string>
 	<string name="preference_preview_location">Preview location</string>
 	<string name="preference_preview_location_summary">%s</string>
 	<string name="left_gap_for_buttons">Left, gap for buttons</string>
@@ -592,8 +610,17 @@
 	<string name="fr_landscape_macro">Landscape/Macro</string>
 	<string name="fr_room">Room</string>
 	<string name="fr_group">Group photo</string>
+	
+	<string name="preference_screen_calibration">Calibration</string>
 	<string name="preference_level_angle_calibration">Level angle calibration</string>
 	<string name="preference_level_angle_calibration_summary">%s\n\nCalibration value of level angle</string>
+	<string name="preference_min_focus_distance">Minimum focus distance</string>
+	<string name="preference_focus_distance_calibration">Focus distance calibration</string>
+	<string name="preference_focus_distance_calibration_summary">%s\n\nPositive values correspond to short distances, negative values to long distances.</string>
+	<string name="preference_row_space_y">Luma row space</string>
+	<string name="preference_row_space_y_summary">%s\n\nSpace between a rows in luminance channel. Used when uncompressed output option is enabled. This setting is saved separately for each camera.</string>
+	<string name="preference_row_space_uv">Chroma row space</string>
+	<string name="preference_row_space_uv_summary">%s\n\nSpace betweena rows in chroma channels. Used when uncompressed output option is enabled. This setting is saved separately for each camera.</string>
 
 	<string name="preference_screen_bug_fix">Bug fixes</string>
 -->
@@ -604,9 +631,6 @@
 	<string name="preference_force_face_focus_summary">Force focus when face detected in autofocus mode. Only one face supported.</string>
 	<string name="preference_center_focus">Center focus</string>
 	<string name="preference_center_focus_summary">Set focus zone in the center of the frame at startup</string>
-	<string name="preference_min_focus_distance">Minimum focus distance</string>
-	<string name="preference_focus_distance_calibration">Focus distance calibration</string>
-	<string name="preference_focus_distance_calibration_summary">Positive values correspond to short distances, negative values to long distances.</string>
 	<string name="preference_update_focus_for_video">Update focus mode</string>
 	<string name="preference_update_focus_for_video_summary">Workaround for bug on Samsung Galaxy S5 with UHD, where if the user switches to another (non-continuous-video) focus mode, then goes to Settings, then returns and records video, the preview freezes and the video is corrupted</string>
 -->
@@ -631,10 +655,9 @@
 	<string name="preference_quality">Bildqualität</string>
 	<string name="preference_auto_stabilise">Bildlagekorrektur</string>
 	<string name="preference_auto_stabilise_summary">Die Aufnahme wird automatisch waagerecht ausgerichtet (nur bei Fotos, Aufnahme dauert länger und kann bei kleinem Gerätespeicher fehlschlagen)</string>
-	<string name="preference_raw">RAW</string>
 <!-- Translate me
-	<string name="preference_raw_summary">%s\n\nWhether to save in RAW (DNG) format</string>
-	<string name="jpeg_only">JPEG only</string>
+	<string name="preference_image_format">Image format</string>
+	<string name="preference_image_format_summary">%s</string>
 	<string name="jpeg_and_dng">JPEG and DNG (RAW)</string>
 	<string name="preference_flip_front_facing">Flip photo</string>
 	<string name="preference_flip_front_facing_summary">Flip horizontally photos from front camera</string>
@@ -671,8 +694,6 @@
 	<string name="preference_expo_bracketing_use_iso_summary">If possible, use ISO adjustment for creating the darker images</string>
 	<string name="preference_expo_bracketing_delay">Delay</string>
 	<string name="preference_expo_bracketing_delay_summary">%s\n\nThe delay between images is necessary for exposure compensation changing</string>
-	<string name="preference_category_hdr">HDR and DRO</string>
-	<string name="preference_category_hdr_summary">HDR and DRO settings</string>
 -->
 	<string name="preference_hdr_save_expo">Alle Bilder der HDR Aufnahme speichern</string>
 	<string name="preference_hdr_save_expo_summary">Wenn aktiviert, dann werden im HDR Modus die drei Basis Belichtungsbilder zusammen mit dem HDR Foto gespeichert. Beachte, dass die Aufnahmen verlangsamt, besonders wenn Optionen wie \"Stamp photos\" oder Autostabilisieung verwendet werden.</string>
@@ -680,6 +701,10 @@
 	<string name="preference_hdr_deghost">Deghosting</string>
 	<string name="preference_hdr_tonemapping">Tone mapping</string>
 	<string name="preference_hdr_tonemapping_summary">%s\n\nAlgorithm to use for HDR tonemapping</string>
+	<string name="preference_align">Aligning</string>
+	<string name="preference_align_summary">%s\n\nAlign source images with base image</string>
+	<string name="only_align">Only align</string>
+	<string name="align_and_crop">Align and crop</string>
 	<string name="preference_hdr_unsharp_mask">Unsharp mask</string>
 	<string name="preference_hdr_unsharp_mask_summary">%s\n\nLevel of the unsharp mask filter during processing HDR and DRO</string>
 	<string name="preference_hdr_unsharp_mask_radius">Radius</string>
@@ -747,12 +772,16 @@
 
 	<string name="preference_screen_video_settings">Video-Einstellungen…</string>
 	<string name="video_quality">Video-Auflösung</string>
+<!-- Translate me
+	<string name="preference_video_format">Video format</string>
+	<string name="preference_video_format_summary">%s\n\nVideo file format.</string>
+-->
 	<string name="preference_video_stabilization">Video-Stabilisierung</string>
 	<string name="preference_video_stabilization_summary">Die Video-Stabilisierung reduziert das Bildwackeln in der Vorschau und der Aufnahme</string>
 	<string name="preference_video_bitrate">Video-Bitrate (durchschnittlich)</string>
 	<string name="preference_video_bitrate_summary">%s\n\nEinstellung der durchschnittlichen Bitrate der Videoaufnahme (je höher umso besser die Qualität und höher die Dateigröße). Nicht alle Geräte unterstützen alle Bitraten</string>
 	<string name="preference_video_fps">Bildwiederholfrequenz</string>
-	<string name="preference_video_fps_summary">Einstellung der Bildwiederholrate (FPS) der Videoaufnahme. Dieser Wert kann nicht immer garantiert werden. Nicht alle Geräte unterstützen alle Raten</string>
+	<string name="preference_video_fps_summary">%s\n\nEinstellung der Bildwiederholrate (FPS) der Videoaufnahme. Dieser Wert kann nicht immer garantiert werden. Nicht alle Geräte unterstützen alle Raten</string>
 	<string name="preference_video_log">Flaches (Log-) Video-Profil</string>
 <!-- Translate me
 	<string name="vl_low">Low</string>
@@ -783,6 +812,12 @@
 	<string name="preference_video_restart_max_filesize_summary">Legt fest, ob die Videoaufnahme neugestartet wird, sobald das geräte-definierte oder das benutzerdefinierte Maximum erreicht ist.</string>
 	<string name="preference_record_audio">Ton aufzeichnen</string>
 	<string name="preference_record_audio_summary">Wenn aktiviert, wird das Video mit Ton aufgenommen.</string>
+<!-- Translate me
+	<string name="preference_record_audio_bitrate">Audio bitrate</string>
+	<string name="preference_record_audio_bitrate_summary">%s\n\nSet the bitrate of audio (higher means better sound quality, but takes up more disk space; may cause video recording to fail if bitrate not supported)</string>
+	<string name="preference_record_audio_sample_rate">Audio sample rate</string>
+	<string name="preference_record_audio_sample_rate_summary">%s</string>
+-->
 	<string name="preference_record_audio_src">Audio-Quelle</string>
 <!-- Translate me
 	<string name="as_camcorder">Camcorder</string>
@@ -840,6 +875,12 @@
 -->
 	<string name="preference_save_location">Speicherort</string>
 	<string name="preference_save_location_summary">Ordner, wo die Fotos/Videos gespeichert werden</string>
+<!-- Translate me
+	<string name="preference_save_video_location">Save video location</string>
+	<string name="preference_save_video_location_summary">%s\n\nFolder to save the video files in</string>
+	<string name="vf_same_as_photo">Same as for photo</string>
+	<string name="vf_folder">Folder...</string>
+-->
 	<string name="preference_using_saf">Benutze Storage Access Framework</string>
 	<string name="preference_using_saf_summary">Für das Speichern der Fotos/Videos Androids Storage Access Framework verwenden</string>
 	<string name="preference_save_photo_prefix">Foto-Präfix</string>
@@ -881,8 +922,17 @@
 -->
 	<string name="preference_info">Anwendungs- und Debug-Informationen</string>
 	<string name="about_copy_to_clipboard">In die Zwischenablage kopieren</string>
+	
+<!-- Translate me
+	<string name="preference_screen_preferences_control">Preferences control</string>
+	<string name="preference_backup">Backup</string>
+	<string name="preference_backup_summary">Backup the settings to a file. Backup will be saved in photo/video folder.</string>
+	<string name="preference_restore">Restore</string>
+	<string name="preference_restore_summary">Restore the settings from backup.</string>
+-->
 	<string name="preference_reset">Einstellungen zurücksetzen</string>
 	<string name="preference_reset_summary">Standard-Einstellungen von HedgeCam wiederherstellen</string>
+
 	<string name="preference_advanced">Erweiterte Funktionen</string>
 
 	<string name="time_1_second">1 Sekunde</string>

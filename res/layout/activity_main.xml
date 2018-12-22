@@ -55,7 +55,6 @@
 		android:padding="@dimen/button_gallery_padding"
 		android:scaleType="fitCenter"
 		android:contentDescription="@string/gallery"
-		android:src="@drawable/gallery_blank"
 		android:onClick="clickedGallery"
 		android:background="@drawable/gallery_bg"
 		style="?android:attr/borderlessButtonStyle"
@@ -63,15 +62,16 @@
 
 	<ImageButton
 		android:id="@+id/switch_video"
-		android:layout_width="wrap_content"
-		android:layout_height="wrap_content"
+		android:layout_width="@dimen/button_gallery_size"
+		android:layout_height="@dimen/button_gallery_size"
 		android:layout_alignParentRight="true"
 		android:layout_alignParentBottom="true"
-		android:padding="10dp"
-		android:scaleType="fitCenter"
+		android:padding="0dp"
+		android:scaleType="center"
 		android:contentDescription="@string/switch_to_video"
 		android:src="@drawable/main_videocam"
 		android:onClick="clickedSwitchVideo"
+		android:background="@null"
 		style="?android:attr/borderlessButtonStyle"
 		/>
 
