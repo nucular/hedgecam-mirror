@@ -18,14 +18,15 @@ public class CameraControllerManager2 extends CameraControllerManager {
 	private static final String TAG = "HedgeCam/CControllerManager2";
 
 	private final Context context;
+	private final CameraManager manager;
 
 	public CameraControllerManager2(Context context) {
 		this.context = context;
+		this.manager = (CameraManager)context.getSystemService(Context.CAMERA_SERVICE);
 	}
 
 	@Override
 	public int getNumberOfCameras() {
-		CameraManager manager = (CameraManager)context.getSystemService(Context.CAMERA_SERVICE);
 		try {
 			return manager.getCameraIdList().length;
 		}
@@ -43,7 +44,6 @@ public class CameraControllerManager2 extends CameraControllerManager {
 
 	@Override
 	public boolean isFrontFacing(int cameraId) {
-		CameraManager manager = (CameraManager)context.getSystemService(Context.CAMERA_SERVICE);
 		try {
 			String cameraIdS = manager.getCameraIdList()[cameraId];
 			CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraIdS);
@@ -91,7 +91,6 @@ public class CameraControllerManager2 extends CameraControllerManager {
 	}
 
 	public boolean hasLevel(int cameraId, int level) {
-		CameraManager manager = (CameraManager)context.getSystemService(Context.CAMERA_SERVICE);
 		try {
 			String cameraIdS = manager.getCameraIdList()[cameraId];
 			CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraIdS);

@@ -1100,8 +1100,8 @@ public class ImageSaver {
 					if( MyDebug.LOG )
 						Log.d(TAG, "stamp date");
 					// doesn't respect user preferences such as 12/24 hour - see note about in draw() about DateFormat.getTimeInstance()
-					String date_stamp = TextFormatter.getDateString(request.processing_settings.stamp_dateformat, request.current_date);
-					String time_stamp = TextFormatter.getTimeString(request.processing_settings.stamp_timeformat, request.current_date);
+					String date_stamp = StringUtils.getDateString(request.processing_settings.stamp_dateformat, request.current_date);
+					String time_stamp = StringUtils.getTimeString(request.processing_settings.stamp_timeformat, request.current_date);
 					if( MyDebug.LOG ) {
 						Log.d(TAG, "date_stamp: " + date_stamp);
 						Log.d(TAG, "time_stamp: " + time_stamp);
@@ -1118,7 +1118,7 @@ public class ImageSaver {
 						applicationInterface.drawTextOnPhoto(canvas, p, datetime_stamp, width, height, line_count);
 						line_count++;
 					}
-					String gps_stamp = main_activity.getTextFormatter().getGPSString(request.processing_settings.stamp_gpsformat, request.store_location, request.location, request.processing_settings.stamp_store_address, request.processing_settings.stamp_store_altitude, request.store_geo_direction, request.geo_direction);
+					String gps_stamp = StringUtils.getGPSString(request.processing_settings.stamp_gpsformat, request.store_location, request.location, request.processing_settings.stamp_store_address, request.processing_settings.stamp_store_altitude, request.store_geo_direction, request.geo_direction);
 					if( gps_stamp.length() > 0 ) {
 						if( MyDebug.LOG )
 							Log.d(TAG, "stamp with location_string: " + gps_stamp);

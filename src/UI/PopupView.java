@@ -8,6 +8,7 @@ import com.caddish_hedgehog.hedgecam2.R;
 import com.caddish_hedgehog.hedgecam2.CameraController.CameraController;
 import com.caddish_hedgehog.hedgecam2.Preview.Preview;
 import com.caddish_hedgehog.hedgecam2.UI.IconView;
+import com.caddish_hedgehog.hedgecam2.StringUtils;
 import com.caddish_hedgehog.hedgecam2.Utils;
 
 import java.util.ArrayList;
@@ -326,7 +327,7 @@ public class PopupView extends LinearLayout {
 							main_activity.getMainUI().setExposureIcon();
 						}
 
-						main_activity.updateForSettings(preview.getISOString(selected_value));
+						main_activity.updateForSettings(StringUtils.getISOString(selected_value));
 						main_activity.getMainUI().setISOIcon();
 						main_activity.getMainUI().destroyPopup(); // need to recreate popup for new selection
 					}
@@ -421,7 +422,7 @@ public class PopupView extends LinearLayout {
 								main_activity.getMainUI().setExposureIcon();
 							}
 
-							main_activity.updateForSettings(preview.getISOString(option));
+							main_activity.updateForSettings(StringUtils.getISOString(option));
 							main_activity.getMainUI().destroyPopup(); // need to recreate popup for new selection
 						}
 					});
@@ -493,10 +494,18 @@ public class PopupView extends LinearLayout {
 				if (Prefs.getBoolean(Prefs.POPUP_RESOLUTION, true)) {
 					if (!preview.isVideo()) {
 						addTitleToPopup(getResources().getString(R.string.preference_resolution));
+						
+						CameraController.Size current_picture_size = preview.getCurrentPictureSize();
+						
+						List<CameraController.Size> filtered_picture_sizes = new ArrayList<>();
+						for (CameraController.Size size : preview.getSupportedPictureSizes()) {
+							if (size.equals(current_picture_size) || Prefs.getBoolean("show_resolution_" + camera_id + "_" + size.width + "_" + size.height, true))
+								filtered_picture_sizes.add(size);
+						}
 						this.addView(new ArrayOptions(
-							preview.getSupportedPictureSizes(),
+							filtered_picture_sizes,
 							Prefs.getResolutionPreferenceKey(),
-							preview.getCurrentPictureSizeIndex(),
+							current_picture_size,
 							new ArrayOptionsPopupListener() {
 								@Override
 								public void onChanged() {
@@ -513,10 +522,17 @@ public class PopupView extends LinearLayout {
 							// fall back to unfiltered list
 							video_sizes = preview.getVideoQualityHander().getSupportedVideoQuality();
 						}
+						String current_video_size = preview.getVideoQualityHander().getCurrentVideoQuality();
+						
+						List<String> filtered_video_sizes = new ArrayList<>();
+						for (String size : video_sizes) {
+							if (size.equals(current_video_size) || Prefs.getBoolean("show_quality_" + camera_id + "_" + size, true))
+								filtered_video_sizes.add(size);
+						}
 						this.addView(new ArrayOptions(
-							video_sizes,
+							filtered_video_sizes,
 							Prefs.getVideoQualityPreferenceKey(),
-							preview.getVideoQualityHander().getCurrentVideoQuality(),
+							current_video_size,
 							new ArrayOptionsPopupListener() {
 								@Override
 								public void onChanged() {
@@ -1053,7 +1069,7 @@ public class PopupView extends LinearLayout {
 					button_string = "M";
 				}
 				else if( is_iso ) {
-					button_string = prefix_string + "\n" + main_activity.getMainUI().fixISOString(supported_option);
+					button_string = prefix_string + "\n" + StringUtils.fixISOString(supported_option);
 				}
 				else {
 					button_string = prefix_string + "\n" + supported_option;
@@ -1096,7 +1112,7 @@ public class PopupView extends LinearLayout {
 					button.setText(button_string);
 					button.setTextSize(TypedValue.COMPLEX_UNIT_PX, text_size);
 					button.setTextColor(negative ? Color.BLACK : Color.WHITE);
-					button.setTypeface(null, Typeface.BOLD);
+					button.setTypeface(button.getTypeface(), Typeface.BOLD);
 					// need 0 padding so we have enough room to display text for ISO buttons, when there are 6 ISO settings
 					view.setPadding(0,-50,0,-50);
 				}
@@ -1261,7 +1277,7 @@ public class PopupView extends LinearLayout {
 		text_view.setText(title + ":");
 		text_view.setTextColor(negative ? Color.BLACK : Color.WHITE);
 		text_view.setGravity(Gravity.CENTER);
-		text_view.setTypeface(null, Typeface.BOLD);
+		text_view.setTypeface(text_view.getTypeface(), Typeface.BOLD);
 
 		text_view.setPadding(0, elements_gap, 0, 0);
 
@@ -1319,7 +1335,7 @@ public class PopupView extends LinearLayout {
 			button.setAllCaps(false);
 			button.setText(expand_lists ? title : title + "...");
 			button.setTextColor(negative ? Color.BLACK : Color.WHITE);
-			button.setTypeface(null, Typeface.BOLD);
+			button.setTypeface(button.getTypeface(), Typeface.BOLD);
 			button.setTextSize(TypedValue.COMPLEX_UNIT_PX, text_size_title);
 			this.addView(button);
 			if( MyDebug.LOG )
@@ -1423,7 +1439,7 @@ public class PopupView extends LinearLayout {
 			if (supported_option.equals("auto")) translated_text = getResources().getString(R.string.auto);
 			else if (prefix.equals("iso_")) {
 				if (supported_option.equals("manual")) translated_text = getResources().getString(R.string.iso_manual);
-				else translated_text = main_activity.getMainUI().fixISOString(supported_option);
+				else translated_text = StringUtils.fixISOString(supported_option);
 			} else translated_text = Utils.getStringResourceByName(prefix, supported_option);
 			button.setText(translated_text);
 			button.setTextSize(TypedValue.COMPLEX_UNIT_PX, text_size_main);
@@ -1550,14 +1566,14 @@ public class PopupView extends LinearLayout {
 		public ArrayOptions(
 			List<CameraController.Size> picture_sizes,
 			final String pref_key,
-			final int current_index,
+			final CameraController.Size value,
 			final ArrayOptionsPopupListener listener
 		) {
 			super(PopupView.this.getContext());
 
 			this.picture_sizes = picture_sizes;
 			this.pref_key = pref_key;
-			this.current_index = current_index;
+			this.current_index = picture_sizes.indexOf(value);
 			if( this.current_index == -1 ) {
 				this.current_index = 0;
 			}

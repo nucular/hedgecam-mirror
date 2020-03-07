@@ -1,45 +1,48 @@
 package com.caddish_hedgehog.hedgecam2;
 
 import com.caddish_hedgehog.hedgecam2.Donations;
+import com.caddish_hedgehog.hedgecam2.preferences.SeekBarArrayPreference;
+import com.caddish_hedgehog.hedgecam2.preferences.SeekBarCheckBoxPreference;
+import com.caddish_hedgehog.hedgecam2.preferences.SeekBarColorsPreference;
+import com.caddish_hedgehog.hedgecam2.preferences.SeekBarFloatPreference;
+import com.caddish_hedgehog.hedgecam2.preferences.SeekBarFocusPreference;
+import com.caddish_hedgehog.hedgecam2.preferences.SeekBarPreference;
 import com.caddish_hedgehog.hedgecam2.Prefs;
 import com.caddish_hedgehog.hedgecam2.Preview.Preview;
 import com.caddish_hedgehog.hedgecam2.UI.FileListDialog;
-import com.caddish_hedgehog.hedgecam2.preferences.SeekBarArrayPreference;
-import com.caddish_hedgehog.hedgecam2.preferences.SeekBarColorsPreference;
-import com.caddish_hedgehog.hedgecam2.preferences.SeekBarPreference;
-import com.caddish_hedgehog.hedgecam2.preferences.SeekBarCheckBoxPreference;
-import com.caddish_hedgehog.hedgecam2.preferences.SeekBarFloatPreference;
 
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.AlertDialog;
-import android.content.ClipData;
 import android.content.ClipboardManager;
+import android.content.ClipData;
 import android.content.ContentResolver;
-import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
+import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.res.Resources;
-import android.content.SharedPreferences;
-import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager.NameNotFoundException;
+import android.content.res.Resources;
 import android.content.res.TypedArray;
+import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.preference.TwoStatePreference;
+import android.os.Handler;
+import android.preference.CheckBoxPreference;
 import android.preference.EditTextPreference;
 import android.preference.ListPreference;
-import android.preference.Preference;
-import android.preference.PreferenceCategory;
 import android.preference.Preference.OnPreferenceChangeListener;
 import android.preference.Preference.OnPreferenceClickListener;
+import android.preference.Preference;
+import android.preference.PreferenceCategory;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceGroup;
 import android.preference.PreferenceManager;
+import android.preference.TwoStatePreference;
 import android.preference.TwoStatePreference;
 import android.util.Log;
 import android.view.Display;
@@ -70,6 +73,8 @@ import org.xmlpull.v1.XmlPullParserException;
 public class MyPreferenceFragment extends PreferenceFragment implements OnSharedPreferenceChangeListener {
 	private static final String TAG = "HedgeCam/MyPreferenceFragment";
 
+	private final Activity activity;
+
 	private static final String[] mode_groups = {
 		"preference_category_photo_modes",
 		"preference_category_flash_modes",
@@ -79,7 +84,11 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 	private final Donations donations;
 	private boolean was_donations;
 
+	private String category;
+	private String[] pref_keys;
+
 	MyPreferenceFragment(Activity activity) {
+		this.activity = activity;
 		donations = new Donations(activity);
 	}
 	
@@ -89,7 +98,7 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 			Log.d(TAG, "onCreate");
 		super.onCreate(savedInstanceState);
 		
-		final Resources resources = getActivity().getResources();
+		final Resources resources = activity.getResources();
 
 		final SharedPreferences sharedPreferences = Prefs.getSharedPreferences();
 		if (sharedPreferences == null) return;
@@ -204,9 +213,20 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 		if( widths != null && heights != null ) {
 			String [] entries = new String[widths.length];
 			String [] values = new String[widths.length];
+			
+			PreferenceGroup popup_group = (PreferenceGroup)this.findPreference("preference_group_photo_resolutions");
+
 			for(int i=0;i<widths.length;i++) {
 				entries[i] = widths[i] + " x " + heights[i] + " " + Preview.getAspectRatioMPString(widths[i], heights[i]);
 				values[i] = widths[i] + " " + heights[i];
+				
+				String popup_key = "show_resolution_" + cameraId + "_" + widths[i] + "_" + heights[i];
+				CheckBoxPreference cbp = new CheckBoxPreference(activity);
+				cbp.setTitle(entries[i]);
+				cbp.setKey(popup_key);
+				cbp.setChecked(sharedPreferences.getBoolean(popup_key, true));
+				
+				popup_group.addPreference(cbp);
 			}
 			SeekBarArrayPreference lp = (SeekBarArrayPreference)findPreference("preference_resolution");
 			lp.setEntries(entries);
@@ -289,7 +309,7 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 						// we check done_raw_info every time, so that this works if the user selects RAW again without leaving and returning to Settings
 						boolean done_raw_info = sharedPreferences.contains(Prefs.DONE_RAW_INFO);
 						if( !done_raw_info ) {
-							AlertDialog.Builder alertDialog = new AlertDialog.Builder(MyPreferenceFragment.this.getActivity());
+							AlertDialog.Builder alertDialog = new AlertDialog.Builder(activity);
 							alertDialog.setTitle("RAW");
 							alertDialog.setMessage(R.string.raw_info);
 							alertDialog.setPositiveButton(android.R.string.ok, null);
@@ -323,7 +343,7 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 							// we check done_raw_info every time, so that this works if the user selects RAW again without leaving and returning to Settings
 							boolean done_raw_info = sharedPreferences.contains(Prefs.DONE_RAW_INFO);
 							if( !done_raw_info ) {
-								AlertDialog.Builder alertDialog = new AlertDialog.Builder(MyPreferenceFragment.this.getActivity());
+								AlertDialog.Builder alertDialog = new AlertDialog.Builder(activity);
 								alertDialog.setTitle(R.string.preference_screen_histogram);
 								alertDialog.setMessage(R.string.histogram_surface_question);
 								alertDialog.setPositiveButton(R.string.answer_yes, new OnClickListener() {
@@ -535,9 +555,20 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 		if( video_quality != null && video_quality_string != null ) {
 			String [] entries = new String[video_quality.length];
 			String [] values = new String[video_quality.length];
+
+			PreferenceGroup popup_group = (PreferenceGroup)this.findPreference("preference_group_video_qualities");
+
 			for(int i=0;i<video_quality.length;i++) {
 				entries[i] = video_quality_string[i];
 				values[i] = video_quality[i];
+
+				String popup_key = "show_quality_" + cameraId + "_" + video_quality[i];
+				CheckBoxPreference cbp = new CheckBoxPreference(activity);
+				cbp.setTitle(video_quality_string[i]);
+				cbp.setKey(popup_key);
+				cbp.setChecked(sharedPreferences.getBoolean(popup_key, true));
+				
+				popup_group.addPreference(cbp);
 			}
 			SeekBarArrayPreference lp = (SeekBarArrayPreference)findPreference("preference_video_quality");
 			lp.setEntries(entries);
@@ -822,7 +853,7 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 			etp.setText(sharedPreferences.getString(preference_key, "0"));
 			etp.setKey(preference_key);*/
 			
-			SeekBarFloatPreference p = (SeekBarFloatPreference)findPreference(Prefs.FOCUS_DISTANCE_CALIBRATION);
+			SeekBarFocusPreference p = (SeekBarFocusPreference)findPreference(Prefs.FOCUS_DISTANCE_CALIBRATION);
 			p.setValue(Float.parseFloat(sharedPreferences.getString(preference_key, "0")));
 			p.setKey(preference_key);
 		} else {
@@ -861,7 +892,7 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 						if( MyDebug.LOG )
 							Log.d(TAG, "user clicked camera2 API - need to restart");
 
-						((MainActivity)getActivity()).restartActivity();
+						((MainActivity)activity).restartActivity();
 						return false;
 					}
 					return false;
@@ -879,7 +910,7 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 					if( MyDebug.LOG )
 						Log.d(TAG, "clicked ghost image: " + newValue);
 					if( newValue.equals("file") ) {
-						MainActivity main_activity = (MainActivity) MyPreferenceFragment.this.getActivity();
+						MainActivity main_activity = (MainActivity)activity;
 						if( main_activity.getStorageUtils().isUsingSAF() ) {
 							main_activity.openGhostImageChooserDialogSAF(true);
 							return true;
@@ -914,7 +945,7 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 					if( pref.getKey().equals("preference_online_help") ) {
 						if( MyDebug.LOG )
 							Log.d(TAG, "user clicked online help");
-						MainActivity main_activity = (MainActivity)MyPreferenceFragment.this.getActivity();
+						MainActivity main_activity = (MainActivity)activity;
 						main_activity.launchOnlineHelp();
 						return false;
 					}
@@ -930,16 +961,16 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 				public boolean onPreferenceClick(Preference arg0) {
 					if( MyDebug.LOG )
 						Log.d(TAG, "clicked save location");
-					MainActivity main_activity = (MainActivity)MyPreferenceFragment.this.getActivity();
+					MainActivity main_activity = (MainActivity)activity;
 					if( main_activity.getStorageUtils().isUsingSAF() ) {
 						main_activity.openFolderChooserDialogSAF(true, false);
 						return true;
 					}
 					else {
-						new FileListDialog(Prefs.SAVE_LOCATION, new FileListDialog.Listener(){
+						new FileListDialog(StorageUtils.getImageFolder(StorageUtils.getSaveLocationMain()).getAbsolutePath(), true, new FileListDialog.Listener(){
 							@Override
 							public void onSelected(String folder) {
-								MainActivity main_activity = (MainActivity)MyPreferenceFragment.this.getActivity();
+								MainActivity main_activity = (MainActivity)activity;
 								main_activity.updateSaveFolder(folder, false);
 							}
 						}).show(getFragmentManager(), "FOLDER_FRAGMENT");
@@ -953,16 +984,19 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 				@Override
 				public boolean onPreferenceChange(Preference arg0, Object newValue) {
 					if( newValue.equals("folder") ) {
-						MainActivity main_activity = (MainActivity) MyPreferenceFragment.this.getActivity();
+						MainActivity main_activity = (MainActivity) activity;
 						if( main_activity.getStorageUtils().isUsingSAF() ) {
 							main_activity.openFolderChooserDialogSAF(true, true);
 							return true;
 						}
 						else {
-							new FileListDialog(Prefs.SAVE_VIDEO_LOCATION, new FileListDialog.Listener(){
+							String current = Prefs.getString(Prefs.SAVE_VIDEO_LOCATION, "");
+							if (current.length() == 0)
+								current = StorageUtils.getSaveLocationMain();
+							new FileListDialog(StorageUtils.getImageFolder(current).getAbsolutePath(), true, new FileListDialog.Listener(){
 								@Override
 								public void onSelected(String folder) {
-									MainActivity main_activity = (MainActivity)MyPreferenceFragment.this.getActivity();
+									MainActivity main_activity = (MainActivity)activity;
 									main_activity.updateSaveFolder(folder, true);
 								}
 
@@ -999,7 +1033,7 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 							//String uri = sharedPreferences.getString(Prefs.SAVE_LOCATION_SAF, "");
 							//if( uri.length() == 0 )
 							{
-								MainActivity main_activity = (MainActivity)MyPreferenceFragment.this.getActivity();
+								MainActivity main_activity = (MainActivity)activity;
 								Toast.makeText(main_activity, R.string.saf_select_save_location, Toast.LENGTH_SHORT).show();
 								main_activity.openFolderChooserDialogSAF(true, false);
 							}
@@ -1029,13 +1063,13 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 					if( p.getKey().equals("preference_about") ) {
 						if( MyDebug.LOG )
 							Log.d(TAG, "user clicked about");
-						AlertDialog.Builder alertDialog = new AlertDialog.Builder(MyPreferenceFragment.this.getActivity());
+						AlertDialog.Builder alertDialog = new AlertDialog.Builder(activity);
 						alertDialog.setTitle(resources.getString(R.string.preference_about));
 						final StringBuilder about_string = new StringBuilder();
 						String version = "UNKNOWN_VERSION";
 						int version_code = -1;
 						try {
-							PackageInfo pInfo = MyPreferenceFragment.this.getActivity().getPackageManager().getPackageInfo(MyPreferenceFragment.this.getActivity().getPackageName(), 0);
+							PackageInfo pInfo = activity.getPackageManager().getPackageInfo(activity.getPackageName(), 0);
 							version = pInfo.versionName;
 							version_code = pInfo.versionCode;
 						}
@@ -1076,13 +1110,13 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 					if( pref.getKey().equals("preference_info") ) {
 						if( MyDebug.LOG )
 							Log.d(TAG, "user clicked info");
-						AlertDialog.Builder alertDialog = new AlertDialog.Builder(MyPreferenceFragment.this.getActivity());
+						AlertDialog.Builder alertDialog = new AlertDialog.Builder(activity);
 						alertDialog.setTitle(resources.getString(R.string.preference_info));
 						final StringBuilder about_string = new StringBuilder();
 						String version = "UNKNOWN_VERSION";
 						int version_code = -1;
 						try {
-							PackageInfo pInfo = MyPreferenceFragment.this.getActivity().getPackageManager().getPackageInfo(MyPreferenceFragment.this.getActivity().getPackageName(), 0);
+							PackageInfo pInfo = activity.getPackageManager().getPackageInfo(activity.getPackageName(), 0);
 							version = pInfo.versionName;
 							version_code = pInfo.versionCode;
 						}
@@ -1094,7 +1128,7 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 						about_string.append("HedgeCam v");
 						about_string.append(version);
 						about_string.append("\nPackage: ");
-						about_string.append(MyPreferenceFragment.this.getActivity().getPackageName());
+						about_string.append(activity.getPackageName());
 						about_string.append("\nVersion code: ");
 						about_string.append(version_code);
 						about_string.append("\nAndroid API version: ");
@@ -1112,7 +1146,7 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 						about_string.append("\nLanguage: ");
 						about_string.append(Locale.getDefault().getLanguage());
 						{
-							ActivityManager activityManager = (ActivityManager) getActivity().getSystemService(Activity.ACTIVITY_SERVICE);
+							ActivityManager activityManager = (ActivityManager) activity.getSystemService(Activity.ACTIVITY_SERVICE);
 							about_string.append("\nStandard max heap?: ");
 							about_string.append(activityManager.getMemoryClass());
 							about_string.append("\nLarge max heap?: ");
@@ -1120,7 +1154,7 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 						}
 						{
 							Point display_size = new Point();
-							Display display = MyPreferenceFragment.this.getActivity().getWindowManager().getDefaultDisplay();
+							Display display = activity.getWindowManager().getDefaultDisplay();
 							display.getSize(display_size);
 							about_string.append("\nDisplay size: ");
 							about_string.append(display_size.x);
@@ -1410,7 +1444,7 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 							public void onClick(DialogInterface dialog, int id) {
 								if( MyDebug.LOG )
 									Log.d(TAG, "user clicked copy to clipboard");
-								ClipboardManager clipboard = (ClipboardManager) getActivity().getSystemService(Activity.CLIPBOARD_SERVICE);
+								ClipboardManager clipboard = (ClipboardManager) activity.getSystemService(Activity.CLIPBOARD_SERVICE);
 								ClipData clip = ClipData.newPlainText("About", about_string);
 								clipboard.setPrimaryClip(clip);
 							}
@@ -1427,7 +1461,7 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 			PreferenceGroup cat_reset = (PreferenceGroup)findPreference("preference_screen_reset");
 			PreferenceGroup cat_export = (PreferenceGroup)findPreference("preference_screen_export");
 			for (Prefs.Category cat : Prefs.PREF_CATEGORIES) {
-				Preference pref = new Preference(getActivity());
+				Preference pref = new Preference(activity);
 				pref.setKey("preference_reset_" + cat.id);
 				if (cat.name_resource != 0)
 					pref.setTitle(cat.name_resource);
@@ -1436,7 +1470,7 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 				pref.setOnPreferenceClickListener(reset_listener);
 				cat_reset.addPreference(pref);
 
-				pref = new Preference(getActivity());
+				pref = new Preference(activity);
 				pref.setKey("preference_export_" + cat.id);
 				if (cat.name_resource != 0)
 					pref.setTitle(cat.name_resource);
@@ -1446,7 +1480,7 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 				cat_export.addPreference(pref);
 			}
 
-			Preference pref = new Preference(getActivity());
+			Preference pref = new Preference(activity);
 			pref.setKey("preference_reset");
 			pref.setTitle(R.string.preference_reset_all);
 			pref.setSummary(R.string.preference_reset_summary);
@@ -1468,28 +1502,28 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 
 			if (!MyDebug.GOOGLE_PLAY) {
 				
-				PreferenceGroup cat = (PreferenceGroup)(new PreferenceCategory(getActivity()));
+				PreferenceGroup cat = (PreferenceGroup)(new PreferenceCategory(activity));
 				cat.setKey("preference_category_webmoney_donations");
 				cat.setTitle("WebMoney");
 				((PreferenceGroup)findPreference("preference_screen_donate")).addPreference(cat);
 				OnPreferenceClickListener listener = new OnPreferenceClickListener() {
 					@Override
 					public boolean onPreferenceClick(Preference pref) {
-						ClipboardManager clipboard = (ClipboardManager) getActivity().getSystemService(Activity.CLIPBOARD_SERVICE);
+						ClipboardManager clipboard = (ClipboardManager) activity.getSystemService(Activity.CLIPBOARD_SERVICE);
 						ClipData clip = ClipData.newPlainText("WebMoney wallet", pref.getSummary());
 						clipboard.setPrimaryClip(clip);
 						Utils.showToast(null, R.string.wallet_was_copied);
 						return true;
 					}
 				};
-				Preference pref = new Preference(getActivity());
+				Preference pref = new Preference(activity);
 				pref.setKey("wmu");
 				pref.setTitle("WMU");
 				pref.setSummary("Z843102502936");
 				pref.setOnPreferenceClickListener(listener);
 				cat.addPreference(pref);
 				
-				pref = new Preference(getActivity());
+				pref = new Preference(activity);
 				pref.setKey("wmr");
 				pref.setTitle("WMR");
 				pref.setSummary("R420923406561");
@@ -1507,7 +1541,7 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 					
 					List<Donations.PlayDonation> list = donations.getPlayDonations();
 					if (list.size() > 0) {
-						PreferenceCategory cat = new PreferenceCategory(getActivity());
+						PreferenceCategory cat = new PreferenceCategory(activity);
 						cat.setKey("preference_category_play_donations");
 						cat.setTitle("Google Play");
 						((PreferenceGroup)findPreference("preference_screen_donate")).addPreference(cat);
@@ -1521,7 +1555,7 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 							}
 						};
 						for (Donations.PlayDonation item : list) {
-							Preference pref = new Preference(getActivity());
+							Preference pref = new Preference(activity);
 							pref.setKey(item.id);
 							pref.setTitle(donate + " " + item.amount);
 							pref.setOnPreferenceClickListener(listener);
@@ -1540,7 +1574,7 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 						Prefs.setBoolean("was_donations", true);
 					}
 
-					AlertDialog.Builder alertDialog = new AlertDialog.Builder(MyPreferenceFragment.this.getActivity());
+					AlertDialog.Builder alertDialog = new AlertDialog.Builder(activity);
 					alertDialog.setTitle(resources.getString(R.string.thank_you));
 					alertDialog.setMessage(resources.getString(R.string.thank_you_summary));
 					alertDialog.setPositiveButton(android.R.string.ok, null);
@@ -1557,7 +1591,7 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 		// note, setting color here only seems to affect the "main" preference fragment screen, and not sub-screens
 		// note, on Galaxy Nexus Android 4.3 this sets to black rather than the dark grey that the background theme should be (and what the sub-screens use); works okay on Nexus 7 Android 5
 		// we used to use a light theme for the PreferenceFragment, but mixing themes in same activity seems to cause problems (e.g., for EditTextPreference colors)
-		TypedArray array = getActivity().getTheme().obtainStyledAttributes(new int[] {
+		TypedArray array = activity.getTheme().obtainStyledAttributes(new int[] {
 				android.R.attr.colorBackground
 		});
 		int backgroundColor = array.getColor(0, Color.BLACK);
@@ -1614,21 +1648,52 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 				final int takeFlags = resultData.getFlags() & Intent.FLAG_GRANT_READ_URI_PERMISSION;
 				try {
 					// Check for the freshest data.
-					((MainActivity)getActivity()).getContentResolver().takePersistableUriPermission(fileUri, takeFlags);
+					((MainActivity)activity).getContentResolver().takePersistableUriPermission(fileUri, takeFlags);
 				}
 				catch(SecurityException e) {
 					Log.e(TAG, "SecurityException failed to take permission");
 					e.printStackTrace();
-					Utils.showToast(R.string.failed_to_read_file);
+					Utils.showToast(R.string.failed_to_read_file + ": " + e.getMessage());
 				}
 			}
 			
 			if (fileUri != null)
 				importSettings(null, fileUri, clear);
+		} else if ( requestCode == MainActivity.SAF_CODE_SAVE_XML_SETTINGS ) {
+			Uri fileUri = null;
+			if( resultCode == Activity.RESULT_OK && resultData != null ) {
+				fileUri = resultData.getData();
+				if( MyDebug.LOG )
+					Log.d(TAG, "returned single fileUri: " + fileUri);
+				// persist permission just in case?
+				final int takeFlags = resultData.getFlags() & Intent.FLAG_GRANT_WRITE_URI_PERMISSION;
+				try {
+					// Check for the freshest data.
+					((MainActivity)activity).getContentResolver().takePersistableUriPermission(fileUri, takeFlags);
+				}
+				catch(SecurityException e) {
+					Log.e(TAG, "SecurityException failed to take permission");
+					e.printStackTrace();
+					Utils.showToast(R.string.failed_to_read_file + ": " + e.getMessage());
+				}
+			}
+			
+			if (fileUri != null) {
+				exportSettings(null, fileUri);
+			}
 		} else if (donations != null)
 			donations.handleActivityResult(requestCode, resultCode, resultData);
 	}
-	
+
+	private void removePref(final String pref_name) {
+		Preference pref = findPreference(pref_name);
+		if (pref != null) {
+			PreferenceGroup pg = (PreferenceGroup)pref.getParent();
+			if (pg != null)
+				pg.removePreference(pref);
+		}
+	}
+
 	private void removePref(final String pref_group_name, final String pref_name) {
 		PreferenceGroup pg = (PreferenceGroup)this.findPreference(pref_group_name);
 		removePref(pg, pref_name);
@@ -1671,7 +1736,7 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 
 			final String[] pref_keys = keys;
 
-			new AlertDialog.Builder(MyPreferenceFragment.this.getActivity())
+			new AlertDialog.Builder(activity)
 			.setIcon(android.R.drawable.ic_dialog_alert)
 			.setTitle(R.string.preference_reset)
 			.setMessage(R.string.preference_reset_question)
@@ -1680,7 +1745,7 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 				public void onClick(DialogInterface dialog, int which) {
 					if( MyDebug.LOG )
 						Log.d(TAG, "user confirmed reset");
-					MainActivity main_activity = (MainActivity)MyPreferenceFragment.this.getActivity();
+					MainActivity main_activity = (MainActivity)activity;
 					if (pref_keys == null) {
 						Prefs.reset();
 						main_activity.setDeviceDefaults();
@@ -1690,7 +1755,7 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 					if( MyDebug.LOG )
 						Log.d(TAG, "user clicked reset - need to restart");
 					
-					((MainActivity)getActivity()).restartActivity();
+					((MainActivity)activity).restartActivity();
 				}
 			})
 			.setNegativeButton(R.string.answer_no, null)
@@ -1703,8 +1768,8 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 		@Override
 		public boolean onPreferenceClick(Preference pref) {
 			String prefix = null;
-			String category = null;
-			String[] pref_keys = null;
+			category = null;
+			pref_keys = null;
 	
 			String key = pref.getKey();
 			if( key.equals("preference_backup") ) {
@@ -1728,51 +1793,93 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 					return false;
 			}
 
-			OutputStream output = null;
-			File file = null;
-			StorageUtils storageUtils = ((MainActivity)getActivity()).getStorageUtils();
-			boolean result = false;
-			String error = null;
-			try {
-				if (!storageUtils.isUsingSAF()) {
-					file = storageUtils.createOutputMediaFile(prefix + "_", "", "xml", new Date());
-					output = new FileOutputStream(file);
-				} else {
-					Uri uri = storageUtils.createOutputMediaFileSAF(prefix + "_", "", "xml", new Date());
-					output = ((MainActivity)getActivity()).getContentResolver().openOutputStream(uri);
-					file = storageUtils.getFileFromDocumentUriSAF(uri, false);
-				}
-				if (output != null) {
-					Prefs.exportPrefs(output, category, pref_keys);
-					result = true;
-				}
-			} catch (IOException e) {
-				error = e.getMessage();
-			} catch (XmlPullParserException e) {
-				error = e.getMessage();
-			} finally {
-				try {
-					if (output != null) {
-						output.flush();
-						output.close();
+			StorageUtils storageUtils = ((MainActivity)activity).getStorageUtils();
+			if (!storageUtils.isUsingSAF()) {
+				new FileListDialog(storageUtils.createMediaFilename(prefix + "_", "", 0, "xml", new Date()), new FileListDialog.Listener(){
+					@Override
+					public void onSelected(String path) {
+						exportSettings(path, null);
 					}
-				} catch (Throwable ex) {
-					ex.printStackTrace();
-				}
+				}).show(getFragmentManager(), "EXPORT_FRAGMENT");
+			} else {
+//				try {
+					((MainActivity)activity).openSaveSettingsFileChooserDialogSAF(true, storageUtils.createMediaFilename(prefix + "_", "", 0, "xml", new Date()));
+//					Uri uri = storageUtils.createOutputMediaFileSAF(prefix + "_", "", "xml", new Date());
+//					exportSettings(null, uri, category, pref_keys);
+/*				} catch (IOException e) {
+					Utils.showToast(activity.getResources().getString(R.string.failed_to_save_file) + ": " + e.getMessage());
+				}*/
 			}
-
-			if (file != null)
-				storageUtils.broadcastFile(file, false, false, false);
-
-			if (result)
-				Utils.showToast(pref_keys == null ? R.string.backup_file_saved : R.string.settings_file_saved);
-			else
-				Utils.showToast(getActivity().getResources().getString(R.string.failed_to_save_file)
-						+ (error == null ? "" : ": " + error));
 
 			return false;
 		}
 	};
+	
+	private void exportSettings(final String path, final Uri uri) {
+		if( MyDebug.LOG )
+			Log.d(TAG, "exportSettings");
+		File file = null;
+		OutputStream output = null;
+		final StorageUtils storageUtils = ((MainActivity)activity).getStorageUtils();
+		boolean result = false;
+		String error = null;
+		try {
+			if (path != null) {
+				file = new File(path);
+				output = new FileOutputStream(file);
+			} else if (uri != null) {
+				output = ((MainActivity)activity).getContentResolver().openOutputStream(uri);
+				file = storageUtils.getFileFromDocumentUriSAF(uri, false);
+			}
+			if (output != null) {
+				Prefs.exportPrefs(output, category, pref_keys);
+				result = true;
+			}
+		} catch (IOException e) {
+			error = e.getMessage();
+		} catch (XmlPullParserException e) {
+			error = e.getMessage();
+		} finally {
+			try {
+				if (output != null) {
+					output.flush();
+					output.close();
+				}
+			} catch (Throwable ex) {
+				ex.printStackTrace();
+			}
+		}
+
+		if (file != null) {
+			if (storageUtils.isUsingSAF()) {
+				// Очередной костыль для криво высранного говнофреймворка, работающего поверх криво высранного говносервиса. Fuck you Google в очередной раз.
+				long size = file.length();
+				if (size == 0) {
+					final File f_file = file;
+					final Handler handler = new Handler();
+					handler.postDelayed(new Runnable(){
+						@Override
+						public void run(){
+							File f = storageUtils.getFileFromDocumentUriSAF(uri, false);
+							long s = f.length();
+							if( MyDebug.LOG )
+								Log.d(TAG, "file size: " + s);
+
+							if (s > 0)
+								storageUtils.broadcastFile(f, false, false, false, s);
+						}
+					}, 10000);
+				} else
+					storageUtils.broadcastFile(file, false, false, false, size);
+			} else
+				storageUtils.broadcastFile(file, false, false, false);
+		}
+
+		if (result)
+			Utils.showToast(pref_keys == null ? R.string.backup_file_saved : R.string.settings_file_saved);
+		else
+			Utils.showToast(activity.getResources().getString(R.string.failed_to_save_file) + (error == null ? "" : ": " + error));
+	}
 	
 	private OnPreferenceClickListener import_listener = new OnPreferenceClickListener() {
 		@Override
@@ -1788,9 +1895,9 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 				clear = false;
 			}
 
-			MainActivity main_activity = (MainActivity)MyPreferenceFragment.this.getActivity();
+			MainActivity main_activity = (MainActivity)activity;
 			if( main_activity.getStorageUtils().isUsingSAF() ) {
-				((MainActivity)getActivity()).openSettingsFileChooserDialogSAF(true, clear);
+				((MainActivity)activity).openSettingsFileChooserDialogSAF(true, clear);
 			}
 			else {
 				new FileListDialog(new String[] {"xml"}, new FileListDialog.Listener(){
@@ -1805,7 +1912,7 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 	};
 	
 	private void importSettings(final String file, final Uri uri, final boolean clear) {
-		new AlertDialog.Builder(MyPreferenceFragment.this.getActivity())
+		new AlertDialog.Builder(activity)
 		.setIcon(android.R.drawable.ic_dialog_alert)
 		.setTitle(clear ? R.string.preference_restore : R.string.preference_import)
 		.setMessage(clear ? R.string.preference_restore_question : R.string.preference_import_question)
@@ -1822,7 +1929,7 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 					if (file != null)
 						input = new FileInputStream(file);
 					else if (uri != null) {
-						final ContentResolver resolver = ((MainActivity)getActivity()).getContentResolver();
+						final ContentResolver resolver = ((MainActivity)activity).getContentResolver();
 						if (resolver != null)
 							input = resolver.openInputStream(uri);
 					}
@@ -1850,10 +1957,10 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 					if( MyDebug.LOG )
 						Log.d(TAG, "user clicked restore - need to restart");
 
-					((MainActivity)getActivity()).restartActivity();
+					((MainActivity)activity).restartActivity();
 				} else {
 					int msg_id = clear ? R.string.failed_to_restore_from_backup : R.string.failed_to_import_settings;
-					Utils.showToast(null, getActivity().getResources().getString(msg_id) + (error == null ? "" : ": " + error));
+					Utils.showToast(null, activity.getResources().getString(msg_id) + (error == null ? "" : ": " + error));
 				}
 			}
 		})

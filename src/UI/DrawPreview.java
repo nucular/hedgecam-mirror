@@ -16,6 +16,8 @@ import com.caddish_hedgehog.hedgecam2.CameraController.CameraController;
 import com.caddish_hedgehog.hedgecam2.Preview.Preview;
 import com.caddish_hedgehog.hedgecam2.Preview.VideoProfile;
 import com.caddish_hedgehog.hedgecam2.UI.IconView;
+import com.caddish_hedgehog.hedgecam2.StringUtils;
+import com.caddish_hedgehog.hedgecam2.Utils;
 
 import android.content.Context;
 import android.content.Intent;
@@ -74,6 +76,8 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 	private String pref_iso_value;
 	private boolean pref_iso_auto;
 	private boolean pref_iso_manual;
+	private boolean pref_focus_distance;
+	private boolean pref_focus_range;
 	private boolean pref_white_balance;
 	private boolean pref_white_balance_xy;
 	private boolean pref_white_balance_auto;
@@ -160,7 +164,7 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 	private float line_height_small = 1.2f;
 	private float half_line_div = 2.5f; /* WTF? F*ckin canvas, f*ckin android, f*ckin everything :'(  */
 	
-	private final Typeface default_font;
+	private Typeface default_font;
 	private final Typeface icon_font;
 
 	private boolean enable_gyro_target_spot;
@@ -233,7 +237,11 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 		histogram_color_border = resources.getColor(R.color.histogram_border);
 		histogram_border_width = resources.getDimension(R.dimen.histogram_border);
 
-		default_font = p.getTypeface();
+		default_font = Typeface.create("sans-serif", Typeface.NORMAL);
+		if (default_font == null)
+			default_font = p.getTypeface();
+		else
+			p.setTypeface(default_font);
 		icon_font = IconView.getTypeface(main_activity);
 		
 		system_ui_portrait = Prefs.getString(Prefs.SYSTEM_UI_ORIENTATION, "landscape").equals("portrait");
@@ -370,6 +378,9 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 		pref_iso_value = Prefs.getISOPref();
 		pref_iso_auto = pref_iso_value.equals("auto");
 		pref_iso_manual = pref_iso_value.equals("manual");
+
+		pref_focus_distance = Prefs.getBoolean(Prefs.SHOW_FOCUS_DISTANCE, false);
+		pref_focus_range = Prefs.getBoolean(Prefs.SHOW_FOCUS_RANGE, false);
 
 		pref_white_balance = Prefs.getBoolean(Prefs.SHOW_WHITE_BALANCE, false);
 		pref_white_balance_xy = Prefs.getBoolean(Prefs.SHOW_WHITE_BALANCE_XY, false);
@@ -1655,79 +1666,103 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 		}
 		
 		long exposure_time = 0;
-		if( camera_controller != null && pref_iso ) {
-			String string = "";
-			int iso = camera_controller.getIso();
-			if( iso > 0 ) {
-				if( string.length() > 0 )
-					string += " ";
-				string += preview.getISOString(iso);
-			} else if (!pref_iso_auto) {
-				string += resources.getString(R.string.iso) + ": " + pref_iso_value.replaceAll("ISO", "");
-			}
-			exposure_time = camera_controller.getExposureTime();
-			if( exposure_time > 0 ) {
-				if( string.length() > 0 )
-					string += " ";
-				string += preview.getExposureTimeString(exposure_time);
-			}
-			/*if( camera_controller.captureResultHasFrameDuration() ) {
-				long frame_duration = camera_controller.captureResultFrameDuration();
-				if( string.length() > 0 )
-					string += " ";
-				string += preview.getFrameDurationString(frame_duration);
-			}*/
-			if( string.length() > 0 ) {
-				// only show as scanning if in auto ISO mode (problem on Nexus 6 at least that if we're in manual ISO mode, after pausing and
-				// resuming, the camera driver continually reports CONTROL_AE_STATE_SEARCHING)
-				boolean is_scanning = camera_controller.captureResultIsAEScanning() && !pref_iso_manual;
+		if (camera_controller != null) {
+			if (pref_iso) {
+				String string = "";
+				int iso = camera_controller.getIso();
+				if( iso > 0 ) {
+					if( string.length() > 0 )
+						string += " ";
+					string += StringUtils.getISOString(iso);
+				} else if (!pref_iso_auto) {
+					string += resources.getString(R.string.iso) + ": " + pref_iso_value.replaceAll("ISO", "");
+				}
+				exposure_time = camera_controller.getExposureTime();
+				if( exposure_time > 0 ) {
+					if( string.length() > 0 )
+						string += " ";
+					string += StringUtils.getExposureTimeString(exposure_time);
+				}
+				/*if( camera_controller.captureResultHasFrameDuration() ) {
+					long frame_duration = camera_controller.captureResultFrameDuration();
+					if( string.length() > 0 )
+						string += " ";
+					string += preview.getFrameDurationString(frame_duration);
+				}*/
+				if( string.length() > 0 ) {
+					// only show as scanning if in auto ISO mode (problem on Nexus 6 at least that if we're in manual ISO mode, after pausing and
+					// resuming, the camera driver continually reports CONTROL_AE_STATE_SEARCHING)
+					boolean is_scanning = camera_controller.captureResultIsAEScanning() && !pref_iso_manual;
 
-				int text_color = text_color_yellow;
-				if( is_scanning ) {
-					// we only change the color if ae scanning is at least a certain time, otherwise we get a lot of flickering of the color
-					if( ae_started_scanning_ms == -1 ) {
-						ae_started_scanning_ms = time_ms;
+					int text_color = text_color_yellow;
+					if( is_scanning ) {
+						// we only change the color if ae scanning is at least a certain time, otherwise we get a lot of flickering of the color
+						if( ae_started_scanning_ms == -1 ) {
+							ae_started_scanning_ms = time_ms;
+						}
+						else if( time_ms - ae_started_scanning_ms > 500 ) {
+							text_color = text_color_red;
+						}
 					}
-					else if( time_ms - ae_started_scanning_ms > 500 ) {
+					else {
+						ae_started_scanning_ms = -1;
+					}
+					if (exposure_time > 0 && !pref_iso_auto && camera_controller.isExposureOverRange())
 						text_color = text_color_red;
-					}
-				}
-				else {
-					ae_started_scanning_ms = -1;
-				}
-				if (exposure_time > 0 && !pref_iso_auto && camera_controller.isExposureOverRange())
-					text_color = text_color_red;
 
-				drawText(canvas, p, string, text_color, location_x, location_y, true);
+					drawText(canvas, p, string, text_color, location_x, location_y, true);
 
-				// only move location_y if we actually print something (because on old camera API, even if the ISO option has
-				// been enabled, we'll never be able to display the on-screen ISO)
+					// only move location_y if we actually print something (because on old camera API, even if the ISO option has
+					// been enabled, we'll never be able to display the on-screen ISO)
+					location_y += diff_y*shift_direction_y;
+					line_count++;
+					if (line_count == 2 && pref_battery) location_x -= text_size_default*1.5f*shift_direction_x;
+				}
+			}
+
+			if (pref_focus_distance || pref_focus_range) {
+				boolean is_scanning = camera_controller.captureResultIsAFScanning();
+
+				String focus_range = null;
+				if (pref_focus_range && camera_controller.captureResultHasFocusRange()) {
+					float min = camera_controller.captureResultFocusDistanceMin();
+					float max = camera_controller.captureResultFocusDistanceMax();
+					if (max < 0.001) max = 0;
+					focus_range = StringUtils.getFocusDistanceString(min, true) + " - " + StringUtils.getFocusDistanceString(max, true);
+				}
+				if (pref_focus_distance && camera_controller.hasFocusDistance()) {
+					drawText(canvas, p, StringUtils.getFocusDistanceString(camera_controller.getFocusDistance(), true)
+							+ (focus_range == null ? "" : " (" + focus_range + ")"),
+							is_scanning ? text_color_red : text_color_yellow, location_x, location_y, true);
+				} else if (focus_range != null) {
+					drawText(canvas, p, focus_range, is_scanning ? text_color_red : text_color_yellow, location_x, location_y, true);
+				}
 				location_y += diff_y*shift_direction_y;
 				line_count++;
 				if (line_count == 2 && pref_battery) location_x -= text_size_default*1.5f*shift_direction_x;
 			}
-		}
 
-		if( camera_controller != null && pref_white_balance) {
-			if (pref_white_balance_manual || time_ms > white_balance_update_time) {
-				white_balance_update_time = time_ms + 250;
-				white_balance_temperature = camera_controller.getActualWhiteBalanceTemperature();
-			}
-			if (white_balance_temperature >= 0) {
-				boolean is_scanning = camera_controller.captureResultIsAEScanning() && pref_white_balance_auto && !pref_iso_manual;
-				drawText(canvas, p, white_balance_temperature + " K", is_scanning ? text_color_red : text_color_yellow, location_x, location_y, true);
-				location_y += diff_y*shift_direction_y;
-				line_count++;
-				if (line_count == 2 && pref_battery) location_x -= text_size_default*1.5f*shift_direction_x;
-				
-				if (pref_white_balance_xy) {
-					ColorTemperature.CIECoordinates xy = camera_controller.getActualWhiteBalanceXY();
-					if (xy != null) {
-						DecimalFormat df = new DecimalFormat("#0.000");
-						drawText(canvas, p, "x: " + df.format(xy.x) + " y: " + df.format(xy.y), text_color_yellow, location_x, location_y, true);
-						location_y += diff_y*shift_direction_y;
-						line_count++;
-						if (line_count == 2 && pref_battery) location_x -= text_size_default*1.5f*shift_direction_x;
+			if (pref_white_balance) {
+				if (pref_white_balance_manual || time_ms > white_balance_update_time) {
+					white_balance_update_time = time_ms + 250;
+					white_balance_temperature = camera_controller.getActualWhiteBalanceTemperature();
+				}
+				if (white_balance_temperature >= 0) {
+					boolean is_scanning = camera_controller.captureResultIsAWBScanning() && pref_white_balance_auto && !pref_iso_manual;
+					drawText(canvas, p, white_balance_temperature + " K", is_scanning ? text_color_red : text_color_yellow, location_x, location_y, true);
+					location_y += diff_y*shift_direction_y;
+					line_count++;
+					if (line_count == 2 && pref_battery) location_x -= text_size_default*1.5f*shift_direction_x;
+					
+					if (pref_white_balance_xy) {
+						ColorTemperature.CIECoordinates xy = camera_controller.getActualWhiteBalanceXY();
+						if (xy != null) {
+							DecimalFormat df = new DecimalFormat("#0.000");
+							drawText(canvas, p, "x: " + df.format(xy.x) + " y: " + df.format(xy.y), text_color_yellow, location_x, location_y, true);
+							location_y += diff_y*shift_direction_y;
+							line_count++;
+							if (line_count == 2 && pref_battery) location_x -= text_size_default*1.5f*shift_direction_x;
+						}
 					}
 				}
 			}

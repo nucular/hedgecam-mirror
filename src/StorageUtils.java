@@ -224,18 +224,21 @@ public class StorageUtils {
 							Log.d(TAG, "Scanned " + path + ":");
 							Log.d(TAG, "-> uri=" + uri);
 						}
-						if ((is_new_picture || is_new_video) && file_size != 0) {
+						if (file_size != 0) {
 							final ContentValues cv = new ContentValues();
 							cv.put("_size", file_size);
 
 							final int updated = context.getContentResolver().update(
-								is_new_picture ? MediaStore.Images.Media.EXTERNAL_CONTENT_URI : MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+								MediaStore.Files.getContentUri("external"),
 								cv, "_data=\""+file.getAbsolutePath()+"\"", null
 							);
+							
+//							if (updated > 0)
+//								context.getContentResolver().notifyChange(uri, null);
 
 							if( MyDebug.LOG ) {
 								Log.d(TAG, "Real file size: " + file_size);
-								Log.d(TAG, "Rows updated" + updated);
+								Log.d(TAG, "Rows updated: " + updated);
 							}
 						}
 
@@ -274,12 +277,12 @@ public class StorageUtils {
 		return false;
 	}
 	
-	String getSaveLocationMain() {
+	public static String getSaveLocationMain() {
 		return Prefs.getString(Prefs.SAVE_LOCATION, "HedgeCam");
 	}
 
 	// only valid if !isUsingSAF()
-	String getSaveLocation() {
+	public static String getSaveLocation() {
 		String result = "";
 		if (Prefs.isVideoFolder())
 			result = Prefs.getString(Prefs.SAVE_VIDEO_LOCATION, "");
@@ -455,7 +458,7 @@ public class StorageUtils {
 		return null;
 	}
 
-	private String createMediaFilename(String prefix, String suffix, int count, String extension, Date current_date) {
+	public String createMediaFilename(String prefix, String suffix, int count, String extension, Date current_date) {
 		String index = "";
 		if( count > 0 ) {
 			index = "_" + count; // try to find a unique filename
@@ -536,8 +539,6 @@ public class StorageUtils {
 			Uri fileUri = DocumentsContract.createDocument(context.getContentResolver(), docUri, mimeType, filename);
 			if( MyDebug.LOG )
 				Log.d(TAG, "returned fileUri: " + fileUri);
-			/*if( true )
-				throw new SecurityException(); // test*/
 			if( fileUri == null )
 				throw new IOException();
 			return fileUri;

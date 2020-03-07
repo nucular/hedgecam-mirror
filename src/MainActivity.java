@@ -18,6 +18,7 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import android.Manifest;
 import android.content.pm.PackageInfo;
@@ -97,6 +98,7 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 	private static final int SAF_CODE_GHOST_IMAGE = 43;
 	public static final int SAF_CODE_OPEN_BACKUP = 44;
 	public static final int SAF_CODE_OPEN_XML_SETTINGS = 45;
+	public static final int SAF_CODE_SAVE_XML_SETTINGS = 46;
 
 	private SensorManager mSensorManager;
 	private Sensor mSensorAccelerometer;
@@ -106,7 +108,6 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 	private SharedPreferences sharedPreferences;
 
 	private MainUI mainUI;
-	private TextFormatter textFormatter;
 	private MyApplicationInterface applicationInterface;
 	private Preview preview;
 	private OrientationEventListener orientationEventListener;
@@ -265,7 +266,7 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 		applicationInterface = new MyApplicationInterface(this, savedInstanceState);
 		if( MyDebug.LOG )
 			Log.d(TAG, "onCreate: time after creating application interface: " + (System.currentTimeMillis() - debug_time));
-		textFormatter = new TextFormatter(this);
+		StringUtils.init(this);
 
 		// determine whether we support Camera2 API
 		initCamera2Support();
@@ -354,7 +355,6 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 		galleryButton.setOnLongClickListener(new View.OnLongClickListener() {
 			@Override
 			public boolean onLongClick(View v) {
-				//Utils.showToast(null, "Long click");
 				longClickedGallery();
 				return true;
 			}
@@ -362,12 +362,25 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 		((View)findViewById(R.id.switch_video)).setOnLongClickListener(new View.OnLongClickListener() {
 			@Override
 			public boolean onLongClick(View v) {
-				//Utils.showToast(null, "Long click");
 				finish();
 				return true;
 			}
 		});
-		if( MyDebug.LOG ) Log.d(TAG, "onCreate: time after setting gallery long click listener: " + (System.currentTimeMillis() - debug_time));
+		((View)findViewById(R.id.popup)).setOnLongClickListener(new View.OnLongClickListener() {
+			@Override
+			public boolean onLongClick(View v) {
+				openSettings();
+				return true;
+			}
+		});
+		((View)findViewById(R.id.photo_mode)).setOnLongClickListener(new View.OnLongClickListener() {
+			@Override
+			public boolean onLongClick(View v) {
+				longClickedPhotoMode();
+				return true;
+			}
+		});
+		if( MyDebug.LOG ) Log.d(TAG, "onCreate: time after setting long click listeners: " + (System.currentTimeMillis() - debug_time));
 
 		// listen for gestures
 		gestureDetector = new GestureDetector(this, new MyGestureDetector());
@@ -1425,6 +1438,9 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 				case Prefs.VIDEO_FPS:
 				case Prefs.VIDEO_LOG_PROFILE:
 				case Prefs.LOCK_PREVIEW_FPS_TO_VIDEO_FPS:
+				case Prefs.PREVIEW_FPS_OVERRIDE_DEFAULT:
+				case Prefs.PREVIEW_FPS_MIN:
+				case Prefs.PREVIEW_FPS_MAX:
 				case "preview_resolution_0":
 				case "preview_resolution_1":
 				case "preview_resolution_2":
@@ -1463,7 +1479,7 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 			return need_reload_sound;
 		}
 	}
-	
+
 	public void openSettings() {
 		if( MyDebug.LOG )
 			Log.d(TAG, "openSettings");
@@ -2348,13 +2364,33 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 	@TargetApi(Build.VERSION_CODES.LOLLIPOP)
 	void openSettingsFileChooserDialogSAF(boolean from_preferences, boolean clear) {
 		if( MyDebug.LOG )
-			Log.d(TAG, "openBackupChooserDialogSAF: " + from_preferences);
+			Log.d(TAG, "openSettingsFileChooserDialogSAF: " + from_preferences);
 		this.saf_dialog_from_preferences = from_preferences;
 		Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
 		intent.addCategory(Intent.CATEGORY_OPENABLE);
 		intent.setType("text/xml");
 		try {
 			startActivityForResult(intent, clear ? SAF_CODE_OPEN_BACKUP : SAF_CODE_OPEN_XML_SETTINGS);
+		}
+		catch(ActivityNotFoundException e) {
+			// see https://stackoverflow.com/questions/34021039/action-open-document-not-working-on-miui/34045627
+			Utils.showToast(null, R.string.open_files_saf_exception_ghost);
+			Log.e(TAG, "ActivityNotFoundException from startActivityForResult");
+			e.printStackTrace();
+		}
+	}
+
+	@TargetApi(Build.VERSION_CODES.LOLLIPOP)
+	void openSaveSettingsFileChooserDialogSAF(boolean from_preferences, String file_name) {
+		if( MyDebug.LOG )
+			Log.d(TAG, "openSaveSettingsFileChooserDialogSAF: " + from_preferences);
+		this.saf_dialog_from_preferences = from_preferences;
+		Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+		intent.addCategory(Intent.CATEGORY_OPENABLE);
+		intent.setType("text/xml");
+		intent.putExtra(Intent.EXTRA_TITLE, file_name);
+		try {
+			startActivityForResult(intent, SAF_CODE_SAVE_XML_SETTINGS);
 		}
 		catch(ActivityNotFoundException e) {
 			// see https://stackoverflow.com/questions/34021039/action-open-document-not-working-on-miui/34045627
@@ -2493,6 +2529,14 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 		if( MyDebug.LOG )
 			Log.d(TAG, "updateSaveFolder: " + new_save_location);
 		if( new_save_location != null ) {
+			File base_folder = StorageUtils.getBaseFolder();
+			File new_folder = new File(new_save_location);
+			if( new_folder.getParentFile() != null && new_folder.getParentFile().equals(base_folder) ) {
+				if( MyDebug.LOG )
+					Log.d(TAG, "parent folder is base folder");
+				new_save_location = new_folder.getName();
+			}
+
 			String orig_save_location = this.applicationInterface.getStorageUtils().getSaveLocation();
 
 			if( !orig_save_location.equals(new_save_location) ) {
@@ -2511,11 +2555,13 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 	private void openFolderChooserDialog(final boolean is_video_folder) {
 		if( MyDebug.LOG )
 			Log.d(TAG, "openFolderChooserDialog");
-		new FileListDialog(is_video_folder ?  Prefs.SAVE_VIDEO_LOCATION : null, new FileListDialog.Listener() {
+
+		new FileListDialog(StorageUtils.getImageFolder(StorageUtils.getSaveLocation()).getAbsolutePath(), true, new FileListDialog.Listener() {
 			@Override
 			public void onSelected(String folder) {
 				setWindowFlagsForCamera();
 				showPreview(true);
+
 				updateSaveFolder(folder, is_video_folder);
 			}
 			
@@ -2695,6 +2741,72 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 				i++;
 			}
 			bundle.putStringArray(key, values_arr);
+		}
+	}
+	
+	private void longClickedPhotoMode() {
+		if( MyDebug.LOG )
+			Log.d(TAG, "longClickedPhotoMode");
+		
+		final Prefs.PhotoMode photo_mode = Prefs.getPhotoMode();
+		int min_files = 0;
+		int max_files = 0;
+		if (photo_mode == Prefs.PhotoMode.Standard || photo_mode == Prefs.PhotoMode.DRO) {
+			min_files = 1;
+		} else if (photo_mode == Prefs.PhotoMode.HDR) {
+			min_files = 3;
+			max_files = 3;
+		} else if (photo_mode == Prefs.PhotoMode.NoiseReduction) {
+			min_files = 2;
+			max_files = 100;
+		}
+		
+		if (min_files > 0) {
+			showPreview(false);
+			setWindowFlagsForSettings();
+			
+			String[] extensions = new String[] {"jpg", "jpeg", "jpe"};
+			FileListDialog dialog;
+			if (min_files > 1 || max_files >= min_files) {
+				dialog = new FileListDialog(extensions, min_files, max_files, new FileListDialog.Listener() {
+					@Override
+					public void onSelected(Set<String> files) {
+						setWindowFlagsForCamera();
+						showPreview(true);
+
+						StringBuilder sb = new StringBuilder();
+						for (String file : files) {
+							sb.append(file);
+							sb.append("\n");
+						}
+							
+						Utils.showToast(sb.toString());
+					}
+
+					@Override
+					public void onCancelled() {
+						setWindowFlagsForCamera();
+						showPreview(true);
+					}
+				});
+			} else {
+				dialog = new FileListDialog(extensions, new FileListDialog.Listener() {
+					@Override
+					public void onSelected(String file) {
+						setWindowFlagsForCamera();
+						showPreview(true);
+
+						Utils.showToast(file);
+					}
+
+					@Override
+					public void onCancelled() {
+						setWindowFlagsForCamera();
+						showPreview(true);
+					}
+				});
+			}
+			dialog.show(getFragmentManager(), "FILE_FRAGMENT");
 		}
 	}
 
@@ -3015,10 +3127,6 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 	public MyApplicationInterface getApplicationInterface() {
 		return this.applicationInterface;
 	}
-
-	public TextFormatter getTextFormatter() {
-		return this.textFormatter;
-	}
 	
 	public LocationSupplier getLocationSupplier() {
 		return this.applicationInterface.getLocationSupplier();
@@ -3147,12 +3255,12 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 		}
 		String iso_value = Prefs.getISOPref();
 		if( !iso_value.equals(camera_controller.getDefaultISO()) ) {
-			toast_string += "\n" + preview.getISOString(iso_value);
+			toast_string += "\n" + StringUtils.getISOString(iso_value);
 			simple = false;
 		}
 		int current_exposure = camera_controller.getExposureCompensation();
 		if( current_exposure != 0 ) {
-			toast_string += "\n" + resources.getString(R.string.exposure_compensation) + ": " + preview.getExposureCompensationString(current_exposure);
+			toast_string += "\n" + resources.getString(R.string.exposure_compensation) + ": " + StringUtils.getExposureCompensationString(current_exposure);
 			simple = false;
 		}
 		String scene_mode = camera_controller.getSceneMode();
@@ -3732,11 +3840,11 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 	public SaveLocationHistory getSaveLocationHistory() {
 		return this.save_location_history;
 	}
-	
+
 	public SaveLocationHistory getSaveLocationHistorySAF() {
 		return this.save_location_history_saf;
 	}
-	
+
 	public void usedFolderPicker() {
 		if( applicationInterface.getStorageUtils().isUsingSAF() ) {
 			save_location_history_saf.updateFolderHistory(getStorageUtils().getSaveLocationSAF(), true);
@@ -3745,11 +3853,11 @@ public class MainActivity extends Activity implements AudioListener.AudioListene
 			save_location_history.updateFolderHistory(getStorageUtils().getSaveLocation(), true);
 		}
 	}
-	
+
 	public boolean hasThumbnailAnimation() {
 		return this.applicationInterface.hasThumbnailAnimation();
 	}
-	
+
 	public RenderScript getRenderScript() {
 		if( rs == null ) {
 			// initialise renderscript

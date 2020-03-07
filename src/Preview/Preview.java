@@ -20,6 +20,7 @@ import com.caddish_hedgehog.hedgecam2.Preview.CameraSurface.CameraSurface;
 import com.caddish_hedgehog.hedgecam2.Preview.CameraSurface.MySurfaceView;
 import com.caddish_hedgehog.hedgecam2.Preview.CameraSurface.MyTextureView;
 import com.caddish_hedgehog.hedgecam2.ScriptC_preview_histogram;
+import com.caddish_hedgehog.hedgecam2.StringUtils;
 import com.caddish_hedgehog.hedgecam2.Utils;
 
 import java.io.File;
@@ -251,7 +252,6 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 	private List<String> exposures;
 	private int min_exposure;
 	private int max_exposure;
-	private float exposure_step;
 	private boolean supports_expo_bracketing;
 	private int max_expo_bracketing_n_images;
 	private boolean supports_raw;
@@ -317,9 +317,6 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 	private boolean has_geo_direction;
 	private final float [] geo_direction = new float[3];
 	private final float [] new_geo_direction = new float[3];
-
-	private final DecimalFormat decimal_format_1dp = new DecimalFormat("#.#");
-	private final DecimalFormat decimal_format_2dp = new DecimalFormat("#.##");
 
 	/* If the user touches to focus in continuous mode, we switch the camera_controller to autofocus mode.
 	 * autofocus_in_continuous_mode is set to true when this happens; the runnable reset_continuous_focus_runnable
@@ -1381,7 +1378,7 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 		exposures = null;
 		min_exposure = 0;
 		max_exposure = 0;
-		exposure_step = 0.0f;
+		StringUtils.setExposureStep(0.0f);
 		supports_expo_bracketing = false;
 		max_expo_bracketing_n_images = 0;
 		supports_raw = false;
@@ -1872,15 +1869,11 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 		
 		// must be done after setting parameters, as this function may set parameters
 		// also needs to be done after starting preview for some devices (e.g., Nexus 7)
-/*		if( this.has_zoom ) {
-			int zoom = Prefs.getZoomPref()
-			if {zoom != 0 ) {
-				zoomTo(zoom);
-				if( MyDebug.LOG ) {
-					Log.d(TAG, "setupCamera: total time after zoomTo: " + (System.currentTimeMillis() - debug_time));
-				}
-			}
-		}*/
+		if (this.has_zoom && Prefs.getBoolean(Prefs.SAVE_ZOOM, false)) {
+			int zoom = Prefs.getInt(Prefs.ZOOM + (this.using_camera_2 ? "_2_" : "_1_") + camera_controller.getCameraId(), 0);
+			if (zoom > 0)
+				camera_controller.setZoom(zoom);
+		}
 		
 		/*if( take_photo ) {
 			if( this.is_video ) {
@@ -2107,7 +2100,6 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 			this.max_exposure_time = camera_features.max_exposure_time;
 			this.min_exposure = camera_features.min_exposure;
 			this.max_exposure = camera_features.max_exposure;
-			this.exposure_step = camera_features.exposure_step;
 			this.supports_expo_bracketing = camera_features.supports_expo_bracketing;
 			this.max_expo_bracketing_n_images = camera_features.max_expo_bracketing_n_images;
 			this.supports_raw = camera_features.supports_raw;
@@ -2127,6 +2119,8 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 			this.video_quality_handler.setVideoSizes(camera_features.video_sizes);
 			this.video_quality_handler.setVideoSizesHighSpeed(camera_features.video_sizes_high_speed);
 			this.supported_preview_sizes = camera_features.preview_sizes;
+
+			StringUtils.setExposureStep(camera_features.exposure_step);
 		}
 		if( MyDebug.LOG ) {
 			Log.d(TAG, "setupCameraParameters: time after getting read only info: " + (System.currentTimeMillis() - debug_time));
@@ -3872,63 +3866,6 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 			camera_controller.setExposureTime(new_exposure_time);
 		}
 	}
-	
-	public String getExposureCompensationString(int exposure) {
-		float exposure_ev = exposure * exposure_step;
-		return  (exposure > 0 ? "+" : "") + decimal_format_2dp.format(exposure_ev) + " EV";
-	}
-
-	public String getISOString(int iso) {
-		return Utils.getResources().getString(R.string.iso) + " " + iso;
-	}
-	
-	public String getISOString(String iso) {
-		switch (iso) {
-			case "auto":
-				return Utils.getResources().getString(R.string.iso) + ": " + Utils.getResources().getString(R.string.auto);
-			case "manual":
-				return Utils.getResources().getString(R.string.iso_manual);
-			default:
-				return Utils.getResources().getString(R.string.iso) + ": " + ((MainActivity)this.getContext()).getMainUI().fixISOString(iso);
-		}
-	}
-
-	public String getExposureTimeString(long exposure_time) {
-		double exposure_time_s = exposure_time/1000000000.0;
-		String string;
-		if( exposure_time >= 500000000 ) {
-			// show exposure times of more than 0.5s directly
-			string = decimal_format_1dp.format(exposure_time_s) + Utils.getResources().getString(R.string.seconds_abbreviation);
-		}
-		else {
-			double exposure_time_r = 1.0/exposure_time_s;
-			string = " 1/" + decimal_format_1dp.format(exposure_time_r) + " " + Utils.getResources().getString(R.string.seconds_abbreviation);
-		}
-		return string;
-	}
-
-	public String getFocusDistanceString(float focus_distance) {
-		String focus_distance_s;
-		if( focus_distance > 0.0f ) {
-			float real_focus_distance = 1.0f / focus_distance;
-			if (real_focus_distance > 0.2f ) {
-				focus_distance_s = decimal_format_2dp.format(real_focus_distance) + " " + Utils.getResources().getString(R.string.metres_abbreviation);
-			} else {
-				focus_distance_s = decimal_format_2dp.format(real_focus_distance*100) + " " + Utils.getResources().getString(R.string.centimetres_abbreviation);
-			}
-		}
-		else {
-			focus_distance_s = Utils.getResources().getString(R.string.infinite);
-		}
-		
-		return focus_distance_s;
-	}
-
-	/*public String getFrameDurationString(long frame_duration) {
-		double frame_duration_s = frame_duration/1000000000.0;
-		double frame_duration_r = 1.0/frame_duration_s;
-		return Utils.getResources().getString(R.string.fps) + " " + decimal_format_1dp.format(frame_duration_r);
-	}*/
 
 	public boolean canSwitchCamera() {
 		if( this.phase == PHASE_TAKING_PHOTO || isVideoRecording() ) {
@@ -4093,14 +4030,30 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 		if( MyDebug.LOG )
 			Log.d(TAG, "setPreviewFps()");
 		VideoProfile profile = getVideoProfile();
+		boolean override_default_fps = Prefs.getBoolean(Prefs.PREVIEW_FPS_OVERRIDE_DEFAULT, false);
 		List<int []> fps_ranges = camera_controller.getSupportedPreviewFpsRange();
-		if( fps_ranges == null || fps_ranges.size() == 0 ) {
+		if( !override_default_fps || fps_ranges == null || fps_ranges.size() == 0 ) {
 			if( MyDebug.LOG )
 				Log.d(TAG, "fps_ranges not available");
 			return;
 		}
 		int [] selected_fps = null;
+		String fps_value = null;
 		if( this.is_video ) {
+			fps_value = Prefs.getVideoFPSPref();
+		}
+		
+		if (override_default_fps && (fps_value == null /* Photo mode */ || fps_value.equals("default") /* Video mode with default FPS */)) {
+			int fps_min = 15000;
+			int fps_max = 30000;
+			try {
+				fps_min = Integer.parseInt(Prefs.getString(Prefs.PREVIEW_FPS_MIN, "15"))*1000;
+				fps_max = Integer.parseInt(Prefs.getString(Prefs.PREVIEW_FPS_MAX, "30"))*1000;
+			} catch(NumberFormatException e) {}
+			
+			selected_fps = new int[] {fps_min, fps_max};
+		}
+		else if( this.is_video ) {
 			// For Nexus 5 and Nexus 6, we need to set the preview fps using matchPreviewFpsToVideo to avoid problem of dark preview in low light, as described above.
 			// When the video recording starts, the preview automatically adjusts, but still good to avoid too-dark preview before the user starts recording.
 			// However I'm wary of changing the behaviour for all devices at the moment, since some devices can be
@@ -4114,7 +4067,6 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 			// Update for v1.43.3: had reports of problems (e.g., setting manual mode with video on camera2) since 1.43. It's unclear
 			// if there is any benefit to setting the preview fps when we aren't requesting a specific fps value, so seems safest to
 			// revert to the old behaviour (where CameraController2.setPreviewFpsRange() did nothing).
-			String fps_value = Prefs.getVideoFPSPref();
 			
 			if (using_camera_2 && Prefs.getBoolean(Prefs.LOCK_PREVIEW_FPS_TO_VIDEO_FPS, false) && !fps_value.equals("default")) {
 				try {
@@ -5651,7 +5603,9 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 		if( MyDebug.LOG )
 			Log.d(TAG, "remaining_burst_photos: " + remaining_burst_photos);
 			
-		if (Prefs.getPhotoMode() == Prefs.PhotoMode.FocusBracketing && fb_date == null) {
+		
+		final Prefs.PhotoMode photo_mode = Prefs.getPhotoMode();
+		if (photo_mode == Prefs.PhotoMode.FocusBracketing && fb_date == null) {
 			fb_date = new Date();
 		}
 
@@ -5726,7 +5680,7 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 					camera_controller.cancelAutoFocus(); // needed to restart continuous focusing
 				}
 
-				if (!is_video && (remaining_burst_photos == 0 && Prefs.getPhotoMode() == Prefs.PhotoMode.FocusBracketing)) {
+				if (!is_video && (remaining_burst_photos == 0 && photo_mode == Prefs.PhotoMode.FocusBracketing)) {
 					focusBracketingStopped();
 				}
 
@@ -5744,7 +5698,7 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 							remaining_burst_photos--;
 
 						long timer_delay = 0;
-						if (!is_video && Prefs.getPhotoMode() == Prefs.PhotoMode.FocusBracketing) {
+						if (!is_video && photo_mode == Prefs.PhotoMode.FocusBracketing) {
 							timer_delay = Prefs.getStringAsLong(Prefs.FB_FOCUS_TIME, 1000);
 							setFocusDistance(fb_stack[fb_stack.length-remaining_burst_photos-1]);
 						} else timer_delay = Prefs.getRepeatIntervalPref();
@@ -5771,7 +5725,7 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 			private void initDate() {
 				if( !has_date ) {
 					has_date = true;
-					current_date = (!is_video && Prefs.getPhotoMode() == Prefs.PhotoMode.FocusBracketing) ? fb_date : new Date();
+					current_date = (!is_video && photo_mode == Prefs.PhotoMode.FocusBracketing) ? fb_date : new Date();
 					if( MyDebug.LOG )
 						Log.d(TAG, "picture taken on date: " + current_date);
 				}
@@ -5844,10 +5798,23 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 			Sound.enableShutterSound(enable_sound, camera_controller);
 
 			if( using_camera_2 ) {
-				boolean use_camera2_fast_burst = Prefs.getBoolean(Prefs.CAMERA2_FAST_BURST, true);
+				boolean use_camera2_fast_burst = true;
+				if (photo_mode == Prefs.PhotoMode.HDR || photo_mode == Prefs.PhotoMode.ExpoBracketing)
+					use_camera2_fast_burst = Prefs.getBoolean(Prefs.CAMERA2_FAST_BURST, true);
+				else if (photo_mode == Prefs.PhotoMode.NoiseReduction) {
+					use_camera2_fast_burst = !Prefs.getBoolean(Prefs.NR_SLOW_BURST, true);
+
+					if (!use_camera2_fast_burst) {
+						int delay;
+						try {delay = Integer.parseInt(Prefs.getString(Prefs.NR_BURST_DELAY, "300"));}
+						catch (NumberFormatException e) {delay = 300;}
+
+						camera_controller.setBurstDelay(delay);
+					}
+				}
 				if( MyDebug.LOG )
 					Log.d(TAG, "use_camera2_fast_burst? " + use_camera2_fast_burst);
-				camera_controller.setUseExpoFastBurst( use_camera2_fast_burst );
+				camera_controller.setUseFastBurst( use_camera2_fast_burst );
 			}
 			if( MyDebug.LOG )
 				Log.d(TAG, "about to call takePicture");
@@ -6632,12 +6599,6 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 		return this.sizes;
 	}
 	
-	public int getCurrentPictureSizeIndex() {
-		if( MyDebug.LOG )
-			Log.d(TAG, "getCurrentPictureSizeIndex");
-		return this.current_size_index;
-	}
-	
 	public CameraController.Size getCurrentPictureSize() {
 		if( current_size_index == -1 || sizes == null )
 			return null;
@@ -6804,8 +6765,8 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 				Log.e(TAG, "onPause: state is CAMERAOPENSTATE_OPENING, but open_camera_task is null");
 			}
 		}
-		//final boolean use_background_thread = false;
-		final boolean use_background_thread = true;
+		final boolean use_background_thread = false;
+//		final boolean use_background_thread = true;
 		this.closeCamera(use_background_thread, null);
 		cameraSurface.onPause();
 		if( canvasView != null )

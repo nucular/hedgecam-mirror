@@ -443,11 +443,11 @@ public class MyApplicationInterface implements ApplicationInterface {
 						Log.d(TAG, "offset_ms: " + offset_ms);
 						Log.d(TAG, "video_time: " + video_time);
 					}
-					String date_stamp = TextFormatter.getDateString(preference_stamp_dateformat, current_date);
-					String time_stamp = TextFormatter.getTimeString(preference_stamp_timeformat, current_date);
+					String date_stamp = StringUtils.getDateString(preference_stamp_dateformat, current_date);
+					String time_stamp = StringUtils.getTimeString(preference_stamp_timeformat, current_date);
 					Location location = store_location ? getLocation() : null;
 					double geo_direction = store_geo_direction && main_activity.getPreview().hasGeoDirection() ? main_activity.getPreview().getGeoDirection() : 0.0;
-					String gps_stamp = main_activity.getTextFormatter().getGPSString(preference_stamp_gpsformat, store_location && location!=null, location, stamp_store_address, stamp_store_altitude, store_geo_direction && main_activity.getPreview().hasGeoDirection(), geo_direction);
+					String gps_stamp = StringUtils.getGPSString(preference_stamp_gpsformat, store_location && location!=null, location, stamp_store_address, stamp_store_altitude, store_geo_direction && main_activity.getPreview().hasGeoDirection(), geo_direction);
 					if( MyDebug.LOG ) {
 						Log.d(TAG, "date_stamp: " + date_stamp);
 						Log.d(TAG, "time_stamp: " + time_stamp);
@@ -473,8 +473,8 @@ public class MyApplicationInterface implements ApplicationInterface {
 					long video_time_to = video_time_from + 999;
 					if( video_time_from < 0 )
 						video_time_from = 0;
-					String subtitle_time_from = TextFormatter.formatTimeMS(video_time_from);
-					String subtitle_time_to = TextFormatter.formatTimeMS(video_time_to);
+					String subtitle_time_from = StringUtils.formatTimeMS(video_time_from);
+					String subtitle_time_to = StringUtils.formatTimeMS(video_time_to);
 					try {
 						synchronized( this ) {
 							if( writer == null ) {
@@ -1291,11 +1291,11 @@ public class MyApplicationInterface implements ApplicationInterface {
 					}
 					String iso_value = Prefs.getISOPref();
 					if( !iso_value.equals(camera_controller.getDefaultISO()) ) {
-						info += "\n" + preview.getISOString(iso_value);
+						info += "\n" + StringUtils.getISOString(iso_value);
 					}
 					int current_exposure = camera_controller.getExposureCompensation();
 					if( current_exposure != 0 ) {
-						info += "\n" + resources.getString(R.string.exposure_compensation) + ": " + preview.getExposureCompensationString(current_exposure);
+						info += "\n" + resources.getString(R.string.exposure_compensation) + ": " + StringUtils.getExposureCompensationString(current_exposure);
 					}
 					String scene_mode = camera_controller.getSceneMode();
 					if( scene_mode != null && !scene_mode.equals(camera_controller.getDefaultSceneMode()) ) {

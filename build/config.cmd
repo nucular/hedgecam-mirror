@@ -3,7 +3,7 @@ set APP_NAME=HedgeCam
 set APP_PACKAGE=com.caddish_hedgehog.hedgecam2
 
 set MIN_SDK=15
-set TARGET_SDK=26
+set TARGET_SDK=28
 
 set JDK_HOME=C:\Program Files\Java\jdk1.7.0_79
 set BUILD_TOOLS_PATH=K:\android\sdk\build-tools\28.0.3

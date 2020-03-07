@@ -47,6 +47,7 @@ import android.os.HandlerThread;
 import android.os.Process;
 import android.support.annotation.NonNull;
 import android.util.Log;
+import android.util.Pair;
 import android.util.Range;
 import android.util.SizeF;
 import android.view.Display;
@@ -88,7 +89,6 @@ public class CameraController2 extends CameraController {
 	private int exposure_compensation_delay = 1000;
 	private double expo_bracketing_stops_up = 2.0;
 	private double expo_bracketing_stops_down = 2.0;
-	private boolean use_expo_fast_burst = true;
 	private boolean optimise_ae_for_dro = false;
 	private boolean want_burst;
 	private boolean want_raw;
@@ -105,7 +105,7 @@ public class CameraController2 extends CameraController {
 	private boolean burst_disable_filters;
 	private boolean burst_single_request; // if n_burst > 1: if true then the burst images are returned in a single call to onBurstPictureTaken(), if false, then multiple calls to onPictureTaken() are made as soon as the image is available
 	private final List<Photo> pending_burst_images = new ArrayList<>(); // burst images that have been captured so far, but not yet sent to the application
-	private List<CaptureRequest> slow_burst_capture_requests; // the set of burst capture requests - used when not using captureBurst() (i.e., when use_expo_fast_burst==false)
+	private List<CaptureRequest> slow_burst_capture_requests; // the set of burst capture requests - used when not using captureBurst() (i.e., when use_fast_burst==false)
 	private List<Integer> exposure_compensations;
 	private long expected_capture_time = 0;
 	private long capture_start_time = 0; // time when burst started (used for measuring performance of captures when not using fast burst)
@@ -166,9 +166,15 @@ public class CameraController2 extends CameraController {
 	private RggbChannelVector capture_result_white_balance_rggb;
 	private ColorTemperature.CIEColor capture_result_white_balance_xyz;
 	private int capture_result_white_balance = -1;
-	/*private boolean capture_result_has_focus_distance;
+	private boolean capture_result_is_af_scanning;
+	private boolean capture_result_has_focus_distance;
+	private float capture_result_focus_distance;
+	private boolean capture_result_has_focus_range;
 	private float capture_result_focus_distance_min;
-	private float capture_result_focus_distance_max;*/
+	private float capture_result_focus_distance_max;
+	
+	private boolean use_fast_burst = true;
+	private int burst_delay = 100;
 	
 	private int preview_max_exposure = 12;
 	private boolean use_iso_for_expo_bracketing = true;
@@ -226,7 +232,7 @@ public class CameraController2 extends CameraController {
 		private boolean focus_mode_manual = false;
 		private float focus_distance; // actual value passed to camera device (set to 0.0 if in infinity mode)
 		private float focus_distance_manual; // saved setting when in manual mode
-		private float focus_distance_calibration;
+		private float focus_distance_calibration = 0;
 		private boolean auto_adjustment_lock;
 		private MeteringRectangle [] af_regions; // no need for has_scalar_crop_region, as we can set to null instead
 		private MeteringRectangle [] ae_regions; // no need for has_scalar_crop_region, as we can set to null instead
@@ -557,7 +563,7 @@ public class CameraController2 extends CameraController {
 		private void setFocusDistance(CaptureRequest.Builder builder) {
 			if( MyDebug.LOG )
 				Log.d(TAG, "change focus distance to " + focus_distance);
-			builder.set(CaptureRequest.LENS_FOCUS_DISTANCE, focus_distance);
+			builder.set(CaptureRequest.LENS_FOCUS_DISTANCE, focus_distance+focus_distance_calibration);
 		}
 
 		private void setAutoExposureLock(CaptureRequest.Builder builder) {
@@ -1254,7 +1260,7 @@ public class CameraController2 extends CameraController {
 			Log.d(TAG, "max_zoom: " + max_zoom);
 		if( camera_features.is_zoom_supported ) {
 			// set 20 steps per 2x factor
-			final int steps_per_2x_factor = 20;
+			final int steps_per_2x_factor = 50;
 			//final double scale_factor = Math.pow(2.0, 1.0/(double)steps_per_2x_factor);
 			int n_steps =(int)( (steps_per_2x_factor * Math.log(max_zoom + 1.0e-11)) / Math.log(2.0));
 			final double scale_factor = Math.pow(max_zoom, 1.0/(double)n_steps);
@@ -2423,13 +2429,6 @@ public class CameraController2 extends CameraController {
 	}
 
 	@Override
-	public void setUseExpoFastBurst(boolean use_expo_fast_burst) {
-		if( MyDebug.LOG )
-			Log.d(TAG, "setUseExpoFastBurst: " + use_expo_fast_burst);
-		this.use_expo_fast_burst = use_expo_fast_burst;
-	}
-
-	@Override
 	public void setOptimiseAEForDRO(boolean optimise_ae_for_dro) {
 		if( MyDebug.LOG )
 			Log.d(TAG, "setOptimiseAEForDRO: " + optimise_ae_for_dro);
@@ -3429,10 +3428,10 @@ public class CameraController2 extends CameraController {
 				Log.d(TAG, "zoom not supported");
 			return;
 		}
-		if( value < 0 || value > zoom_ratios.size() ) {
-			if( MyDebug.LOG )
-				Log.e(TAG, "invalid zoom value" + value);
-			throw new RuntimeException(); // throw as RuntimeException, as this is a programming error
+		if( value < 0) {
+			value = 0;
+		} else if(value >= zoom_ratios.size() ) {
+			value = zoom_ratios.size() - 1;
 		}
 		float zoom = zoom_ratios.get(value)/100.0f;
 		Rect sensor_rect = characteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
@@ -3601,11 +3600,11 @@ public class CameraController2 extends CameraController {
 				break;
 			case "focus_mode_infinity":
 				focus_mode = CaptureRequest.CONTROL_AF_MODE_OFF;
-				camera_settings.focus_distance = camera_settings.focus_distance_calibration;
+				camera_settings.focus_distance = 0;
 				break;
 			case "focus_mode_manual2":
 				focus_mode = CaptureRequest.CONTROL_AF_MODE_OFF;
-				camera_settings.focus_distance = camera_settings.focus_distance_manual+camera_settings.focus_distance_calibration;
+				camera_settings.focus_distance = camera_settings.focus_distance_manual;
 				camera_settings.focus_mode_manual = true;
 				break;
 			case "focus_mode_macro":
@@ -3677,11 +3676,6 @@ public class CameraController2 extends CameraController {
 	}
 
 	@Override
-	public float getFocusDistance() {
-		return camera_settings.focus_distance;
-	}
-
-	@Override
 	public boolean setFocusDistance(float focus_distance) {
 		if( MyDebug.LOG )
 			Log.d(TAG, "setFocusDistance: " + focus_distance);
@@ -3690,7 +3684,7 @@ public class CameraController2 extends CameraController {
 				Log.d(TAG, "already set");
 			return false;
 		}
-		camera_settings.focus_distance = focus_distance+camera_settings.focus_distance_calibration;
+		camera_settings.focus_distance = focus_distance;
 		camera_settings.focus_distance_manual = focus_distance;
 		camera_settings.setFocusDistance(previewBuilder);
 		try {
@@ -3711,11 +3705,6 @@ public class CameraController2 extends CameraController {
 	public void setFocusDistanceCalibration(float value) {
 		camera_settings.focus_distance_calibration = value;
 		if (previewBuilder.get(CaptureRequest.CONTROL_AF_MODE) != null && previewBuilder.get(CaptureRequest.CONTROL_AF_MODE) == CaptureRequest.CONTROL_AF_MODE_OFF) {
-			if (camera_settings.focus_mode_manual)
-				camera_settings.focus_distance = camera_settings.focus_distance_manual+camera_settings.focus_distance_calibration;
-			else
-				camera_settings.focus_distance = camera_settings.focus_distance_calibration;
-			
 			camera_settings.setFocusDistance(previewBuilder);
 		}
 	}
@@ -3788,11 +3777,6 @@ public class CameraController2 extends CameraController {
 	}
 
 	@Override
-	public void setRecordingHint(boolean hint) {
-		// not relevant for CameraController2
-	}
-
-	@Override
 	public void setAutoAdjustmentLock(boolean enabled) {
 		camera_settings.auto_adjustment_lock = enabled;
 		camera_settings.setAutoExposureLock(previewBuilder);
@@ -3827,6 +3811,16 @@ public class CameraController2 extends CameraController {
 	@Override
 	public void removeLocationInfo() {
 		this.camera_settings.location = null;
+	}
+
+	@Override
+	public void setUseFastBurst(boolean value) {
+		use_fast_burst = value;
+	}
+
+	@Override
+	public void setBurstDelay(int value) {
+		burst_delay = value;
 	}
 
 	@Override
@@ -5252,7 +5246,7 @@ public class CameraController2 extends CameraController {
 				if( MyDebug.LOG )
 					Log.d(TAG, "using exposure compensation");
 				captureSession.capture(stillBuilder.build(), previewCaptureCallback, handler);
-			} else if( use_expo_fast_burst ) {
+			} else if( use_fast_burst ) {
 				if( MyDebug.LOG )
 					Log.d(TAG, "using fast burst");
 				int sequenceId = captureSession.captureBurst(requests, previewCaptureCallback, handler);
@@ -5351,7 +5345,7 @@ public class CameraController2 extends CameraController {
 				
 			expected_capture_time = getExposureTime();
 			if (expected_capture_time > 0) {
-				expected_capture_time = expected_capture_time/1000000L*n_burst+10L*(n_burst-1);
+				expected_capture_time = expected_capture_time/1000000L*n_burst+(use_fast_burst ? 10L : burst_delay)*(n_burst-1);
 			}
 
 			if (!previewIsVideoMode && optical_stabilization_if_necessary && expected_capture_time > 1000L/30) {
@@ -5383,10 +5377,7 @@ public class CameraController2 extends CameraController {
 				jpeg_cb.onStarted();
 			}
 
-			final boolean use_burst = true;
-			//final boolean use_burst = false;
-
-			if( use_burst ) {
+			if( use_fast_burst ) {
 				List<CaptureRequest> requests = new ArrayList<>();
 				for(int i=0;i<n_burst-1;i++)
 					requests.add(request);
@@ -5398,7 +5389,7 @@ public class CameraController2 extends CameraController {
 					Log.d(TAG, "sequenceId: " + sequenceId);
 			}
 			else {
-				final int burst_delay = 100;
+				final int delay = burst_delay;
 				new Runnable() {
 					int n_remaining = n_burst;
 
@@ -5416,7 +5407,7 @@ public class CameraController2 extends CameraController {
 							if( MyDebug.LOG )
 								Log.d(TAG, "takePictureBurst n_remaining: " + n_remaining);
 							if( n_remaining > 0 ) {
-								handler.postDelayed(this, burst_delay);
+								handler.postDelayed(this, delay);
 							}
 						}
 						catch(CameraAccessException e) {
@@ -5957,10 +5948,26 @@ public class CameraController2 extends CameraController {
 	public long captureResultFrameDuration() {
 		return capture_result_frame_duration;
 	}
-	
+	*/
+
 	@Override
-	public boolean captureResultHasFocusDistance() {
-		return capture_result_has_focus_distance;
+	public boolean captureResultIsAFScanning() {
+		return capture_result_is_af_scanning;
+	}
+
+	@Override
+	public boolean hasFocusDistance() {
+		return camera_settings.af_mode == CaptureRequest.CONTROL_AF_MODE_OFF || capture_result_has_focus_distance;
+	}
+
+	@Override
+	public float getFocusDistance() {
+		return camera_settings.af_mode == CaptureRequest.CONTROL_AF_MODE_OFF ? camera_settings.focus_distance : capture_result_focus_distance;
+	}
+
+	@Override
+	public boolean captureResultHasFocusRange() {
+		return capture_result_has_focus_range;
 	}
 
 	@Override
@@ -5972,7 +5979,6 @@ public class CameraController2 extends CameraController {
 	public float captureResultFocusDistanceMax() {
 		return capture_result_focus_distance_max;
 	}
-	*/
 
 	private final CameraCaptureSession.CaptureCallback previewCaptureCallback = new CameraCaptureSession.CaptureCallback() {
 		private long last_process_frame_number = 0;
@@ -6453,25 +6459,31 @@ public class CameraController2 extends CameraController {
 				}
 			}
 
-			if( af_state != null && af_state == CaptureResult.CONTROL_AF_STATE_PASSIVE_SCAN && af_state != last_af_state ) {
-				if( MyDebug.LOG )
-					Log.d(TAG, "continuous focusing started");
-				if( continuous_focus_move_callback != null ) {
-					continuous_focus_move_callback.onContinuousFocusMove(true);
+			capture_result_is_af_scanning = false;
+			if (af_state != null) {
+				if (af_state == CaptureResult.CONTROL_AF_STATE_PASSIVE_SCAN && af_state != last_af_state) {
+					if( MyDebug.LOG )
+						Log.d(TAG, "continuous focusing started");
+					if( continuous_focus_move_callback != null ) {
+						continuous_focus_move_callback.onContinuousFocusMove(true);
+					}
 				}
-			}
-			else if( af_state != null && last_af_state == CaptureResult.CONTROL_AF_STATE_PASSIVE_SCAN && af_state != last_af_state ) {
-				if( MyDebug.LOG )
-					Log.d(TAG, "continuous focusing stopped");
-				if( continuous_focus_move_callback != null ) {
-					continuous_focus_move_callback.onContinuousFocusMove(false);
+				else if (last_af_state == CaptureResult.CONTROL_AF_STATE_PASSIVE_SCAN && af_state != last_af_state) {
+					if( MyDebug.LOG )
+						Log.d(TAG, "continuous focusing stopped");
+					if( continuous_focus_move_callback != null ) {
+						continuous_focus_move_callback.onContinuousFocusMove(false);
+					}
 				}
-			}
 
-			if( af_state != null && af_state != last_af_state ) {
-				if( MyDebug.LOG )
-					Log.d(TAG, "CONTROL_AF_STATE changed from " + last_af_state + " to " + af_state);
-				last_af_state = af_state;
+				if (af_state != last_af_state) {
+					if( MyDebug.LOG )
+						Log.d(TAG, "CONTROL_AF_STATE changed from " + last_af_state + " to " + af_state);
+					last_af_state = af_state;
+				}
+				
+				if (af_state == CaptureResult.CONTROL_AF_STATE_PASSIVE_SCAN || af_state == CaptureResult.CONTROL_AF_STATE_ACTIVE_SCAN)
+					capture_result_is_af_scanning = true;
 			}
 			
 			Integer awb_state = result.get(CaptureResult.CONTROL_AWB_STATE);
@@ -6555,15 +6567,22 @@ public class CameraController2 extends CameraController {
 					Log.d(TAG, "capture_result_frame_duration: " + capture_result_frame_duration);
 				}
 			}*/
-			/*if( result.get(CaptureResult.LENS_FOCUS_RANGE) != null ) {
+			if (!camera_settings.focus_mode_manual) {
+				if( result.get(CaptureResult.LENS_FOCUS_DISTANCE) != null ) {
+					capture_result_has_focus_distance = true;
+					capture_result_focus_distance = result.get(CaptureResult.LENS_FOCUS_DISTANCE)-camera_settings.focus_distance_calibration;
+				} else capture_result_has_focus_distance = false;
+			} else capture_result_has_focus_distance = false;
+
+			if( result.get(CaptureResult.LENS_FOCUS_RANGE) != null ) {
 				Pair<Float, Float> focus_range = result.get(CaptureResult.LENS_FOCUS_RANGE);
-				capture_result_has_focus_distance = true;
-				capture_result_focus_distance_min = focus_range.first;
-				capture_result_focus_distance_max = focus_range.second;
+				capture_result_has_focus_range = true;
+				capture_result_focus_distance_min = focus_range.first-camera_settings.focus_distance_calibration;
+				capture_result_focus_distance_max = focus_range.second-camera_settings.focus_distance_calibration;
 			}
 			else {
-				capture_result_has_focus_distance = false;
-			}*/
+				capture_result_has_focus_range = false;
+			}
 			{
 				RggbChannelVector vector = result.get(CaptureResult.COLOR_CORRECTION_GAINS);
 				if( vector != null ) {

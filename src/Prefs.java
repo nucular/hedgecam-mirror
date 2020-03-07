@@ -24,6 +24,7 @@ public class Prefs {
 	private static MainActivity main_activity;
 	private static SharedPreferences.Editor prefEditor;
 
+	public static final String LAST_FOLDER = "last_folder";
 	public static final String DONE_FIRST_TIME = "done_first_time";
 	public static final String DONE_AUTO_STABILISE_INFO = "done_auto_stabilise_info";
 	public static final String DONE_VIDEO_STABILIZATION_INFO = "done_video_stabilization_info";
@@ -34,6 +35,8 @@ public class Prefs {
 	public static final String PREVIEW_SURFACE = "preference_preview_surface";
 	public static final String IS_VIDEO = "is_video";
 	public static final String SHOW_SEEKBARS = "show_seekbars";
+	public static final String SAVE_ZOOM = "preference_save_zoom";
+	public static final String ZOOM = "zoom";
 	public static final String EXPOSURE = "preference_exposure";
 	public static final String COLOR_EFFECT = "preference_color_effect";
 	public static final String SCENE_MODE = "preference_scene_mode";
@@ -101,6 +104,8 @@ public class Prefs {
 	public static final String SHOW_TAKE_PHOTO = "preference_show_take_photo";
 	public static final String SHOW_ZOOM = "preference_show_zoom";
 	public static final String SHOW_ISO = "preference_show_iso";
+	public static final String SHOW_FOCUS_DISTANCE = "preference_show_focus_distance";
+	public static final String SHOW_FOCUS_RANGE = "preference_show_focus_range";
 	public static final String SHOW_WHITE_BALANCE = "preference_show_white_balance";
 	public static final String SHOW_WHITE_BALANCE_XY = "preference_show_white_balance_xy";
 	public static final String SHOW_ANGLE = "preference_show_angle";
@@ -307,6 +312,8 @@ public class Prefs {
 	public static final String NR_HISTOGRAM_LEVEL = "preference_nr_histogram_level";
 	public static final String NR_SAVE_BASE = "preference_nr_save_base";
 	public static final String NR_DISABLE_FILTERS = "preference_nr_disable_filters";
+	public static final String NR_SLOW_BURST = "preference_nr_slow_burst";
+	public static final String NR_BURST_DELAY = "preference_nr_burst_delay";
 
 	public static final String UNCOMPRESSED_PHOTO = "preference_uncompressed_photo";
 	public static final String YUV_CONVERSION = "preference_yuv_conversion";
@@ -328,7 +335,13 @@ public class Prefs {
 	public static final String ZOOM_WHEN_FOCUSING = "preference_zoom_when_focusing";
 	
 	public static final String RESET_MANUAL_MODE = "preference_reset_manual_mode";
+
 	public static final String LOCK_PREVIEW_FPS_TO_VIDEO_FPS = "preference_lock_preview_fps";
+	public static final String PREVIEW_FPS_OVERRIDE_DEFAULT = "preference_preview_fps_override";
+	public static final String PREVIEW_FPS_MIN = "preference_preview_fps_min";
+	public static final String PREVIEW_FPS_MAX = "preference_preview_fps_max";
+
+	
 	public static final String DEFAULT_COLOR_CORRECTION = "preference_default_color_correction";
 	
 	public static final String DONT_ROTATE = "preference_dont_rotate";

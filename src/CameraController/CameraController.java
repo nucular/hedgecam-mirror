@@ -415,7 +415,6 @@ public abstract class CameraController {
 	public abstract void setExpoBracketingNImages(int n_images);
 	public abstract void setExpoBracketingStops(double stops_up, double stops_down);
 	public abstract void setExposureCompensationDelay(int delay);
-	public abstract void setUseExpoFastBurst(boolean use_expo_fast_burst);
 	/** If optimise_ae_for_dro is true, then this is a hint that if in auto-exposure mode and flash/torch
 	 *  is not on, the CameraController should try to optimise for a DRO (dynamic range optimisation) mode.
 	 */
@@ -488,17 +487,18 @@ public abstract class CameraController {
 
 	public abstract void setFocusValue(String focus_value);
 	public abstract String getFocusValue();
-	public float getFocusDistance() {return 0.0f;};
 	public boolean setFocusDistance(float focus_distance) {return false;};
 	public void setFocusDistanceCalibration(float value) {};
 	public abstract void setFlashValue(String flash_value);
 	public abstract String getFlashValue();
-	public abstract void setRecordingHint(boolean hint);
+	public void setRecordingHint(boolean hint) {};
 	public abstract void setAutoAdjustmentLock(boolean enabled);
 	public abstract void setRotation(int rotation);
 	public abstract void setLocationInfo(Location location);
 	public abstract void removeLocationInfo();
 	public void enableShutterSound(boolean enabled) {};
+	public void setUseFastBurst(boolean value) {};
+	public void setBurstDelay(int value) {};
 	public void setPreviewMaxExposure(int value) {};
 	public void useIsoForExpoBracketing(boolean value) {};
 	public abstract boolean setFocusAndMeteringArea(List<CameraController.Area> areas);
@@ -567,9 +567,12 @@ public abstract class CameraController {
 	public boolean isFilteringBlocked() {return false;}
 	/*public boolean captureResultHasFrameDuration() {return false;}*/
 	/*public long captureResultFrameDuration() {return 0;}*/
-	/*public boolean captureResultHasFocusDistance() {return false;}*/
-	/*public float captureResultFocusDistanceMin() {return 0.0f;}*/
-	/*public float captureResultFocusDistanceMax() {return 0.0f;}*/
+	public boolean captureResultIsAFScanning() {return false;}
+	public boolean hasFocusDistance() {return false;}
+	public float getFocusDistance() {return 0.0f;};
+	public boolean captureResultHasFocusRange() {return false;}
+	public float captureResultFocusDistanceMin() {return 0.0f;}
+	public float captureResultFocusDistanceMax() {return 0.0f;}
 
 	// gets the available values of a generic mode, e.g., scene, color etc, and makes sure the requested mode is available
 	SupportedValues checkModeIsSupported(List<String> values, String value, String default_value) {

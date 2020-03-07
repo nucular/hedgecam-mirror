@@ -706,11 +706,6 @@ public class CameraController1 extends CameraController {
 	}
 
 	@Override
-	public void setUseExpoFastBurst(boolean use_expo_fast_burst) {
-		// not supported for CameraController1
-	}
-
-	@Override
 	public void setOptimiseAEForDRO(boolean optimise_ae_for_dro) {
 		// not supported for CameraController1
 	}
@@ -1209,7 +1204,9 @@ public class CameraController1 extends CameraController {
 		if( MyDebug.LOG )
 			Log.d(TAG, "reconnect");
 		try {
+			camera.stopPreview();
 			camera.reconnect();
+			camera.startPreview();
 		}
 		catch(IOException e) {
 			if( MyDebug.LOG )

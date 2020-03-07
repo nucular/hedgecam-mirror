@@ -8,6 +8,7 @@ import com.caddish_hedgehog.hedgecam2.Preview.Preview;
 import com.caddish_hedgehog.hedgecam2.R;
 import com.caddish_hedgehog.hedgecam2.StorageUtils;
 import com.caddish_hedgehog.hedgecam2.UI.IconView;
+import com.caddish_hedgehog.hedgecam2.StringUtils;
 import com.caddish_hedgehog.hedgecam2.Utils;
 
 import android.content.ContentResolver;
@@ -1856,7 +1857,7 @@ public class MainUI {
 		else if (value.equals("manual"))
 			text = "M";
 		else
-			text = resources.getString(R.string.iso) + "\n" + fixISOString(value);
+			text = resources.getString(R.string.iso) + "\n" + StringUtils.fixISOString(value);
 		
 		int text_size = resources.getDimensionPixelSize(text.length() == 1 ? R.dimen.ctrl_button_text_large : R.dimen.ctrl_button_text);
 
@@ -1867,17 +1868,8 @@ public class MainUI {
 		button.setText(text);
 		button.setTextSize(TypedValue.COMPLEX_UNIT_PX, text_size);
 		button.setTextColor(Color.WHITE);
-		button.setTypeface(null, Typeface.BOLD);
+		button.setTypeface(button.getTypeface(), Typeface.BOLD);
 		button.setShadowLayer(resources.getDimension(R.dimen.ctrl_button_shadow), 0, 0, resources.getColor(R.color.ctrl_button_shadow));
-	}
-	
-	public String fixISOString(String value) {
-		if (value.length() >= 4 && value.substring(0, 4).equalsIgnoreCase("ISO_"))
-			return value.substring(4);
-		else if (value.length() >= 3 && value.substring(0, 3).equalsIgnoreCase("ISO"))
-			return value.substring(3);
-		else
-			return value;
 	}
 
 	public void setPopupIcons() {
@@ -1956,7 +1948,7 @@ public class MainUI {
 			updateSeekbars();
 			setExposureIcon();
 
-			main_activity.updateForSettings(preview.getISOString(new_iso));
+			main_activity.updateForSettings(StringUtils.getISOString(new_iso));
 			setISOIcon();
 
 			return;
@@ -2165,6 +2157,7 @@ public class MainUI {
 			main_activity.findViewById(R.id.seekbars_container).setVisibility(View.VISIBLE);
 			seekbars_was_visible = false;
 		}
+		saveZoom();
 	}
 
 	public void changeSeekbar(int seekBarId, int change) {
@@ -2238,6 +2231,7 @@ public class MainUI {
 
 				@Override
 				public void onStopTrackingTouch(SeekBar seekBar) {
+					saveZoom();
 				}
 			});
 
@@ -2269,10 +2263,26 @@ public class MainUI {
 
 	public void zoomIn() {
 		changeSeekbar(R.id.zoom_seekbar, 1);
+		saveZoom();
 	}
 
 	public void zoomOut() {
 		changeSeekbar(R.id.zoom_seekbar, -1);
+		saveZoom();
+	}
+	
+	private void saveZoom() {
+		if (preview.supportsZoom() && Prefs.getBoolean(Prefs.SAVE_ZOOM, false)) {
+			final CameraController camera_controller = main_activity.getPreview().getCameraController();
+			if (camera_controller != null) {
+				String pref_key = Prefs.ZOOM + (main_activity.getPreview().usingCamera2API() ? "_2_" : "_1_") + camera_controller.getCameraId();
+				int value = camera_controller.getZoom();
+				if (value == 0)
+					Prefs.clearPref(pref_key);
+				else
+					Prefs.setInt(pref_key, value);
+			}
+		}
 	}
 
 	public void setExposureSeekbar() {
@@ -2292,16 +2302,16 @@ public class MainUI {
 					preview.setExposure(min_exposure + progress);
 					setExposureIcon();
 					if (fromUser)
-						setSeekbarHint(seekBar, preview.getExposureCompensationString(min_exposure + progress));
+						setSeekbarHint(seekBar, StringUtils.getExposureCompensationString(min_exposure + progress));
 					else if (((View)seekBar).getVisibility() == View.VISIBLE)
-						showSeekbarHint(seekBar, preview.getExposureCompensationString(min_exposure + progress), false);
+						showSeekbarHint(seekBar, StringUtils.getExposureCompensationString(min_exposure + progress), false);
 					else
-						Utils.showToast(resources.getString(R.string.exposure_compensation) + " " + preview.getExposureCompensationString(min_exposure + progress));
+						Utils.showToast(resources.getString(R.string.exposure_compensation) + " " + StringUtils.getExposureCompensationString(min_exposure + progress));
 				}
 
 				@Override
 				public void onStartTrackingTouch(SeekBar seekBar) {
-					showSeekbarHint(seekBar, preview.getExposureCompensationString(min_exposure + seekBar.getProgress()), true);
+					showSeekbarHint(seekBar, StringUtils.getExposureCompensationString(min_exposure + seekBar.getProgress()), true);
 				}
 
 				@Override
@@ -2413,7 +2423,7 @@ public class MainUI {
 					exposure_steps = Prefs.getBoolean(Prefs.EXPOSURE_STEPS, false);
 					exposures.clear();
 					if (exposure_steps) {
-						exposures.add(new Exposure(preview.getExposureTimeString(expo_min), expo_min));
+						exposures.add(new Exposure(StringUtils.getExposureTimeString(expo_min), expo_min));
 						int progress = 0;
 						for(int i = 0; i < std_exposures.length; i++) {
 							final boolean is_second = i > 0 && std_exposures[i-1] < std_exposures[i];
@@ -2427,7 +2437,7 @@ public class MainUI {
 									progress = exposures.size()-1;
 							}
 						}
-						exposures.add(new Exposure(preview.getExposureTimeString(expo_max), expo_max));
+						exposures.add(new Exposure(StringUtils.getExposureTimeString(expo_max), expo_max));
 						if (expo_max == expo_value)
 							progress = exposures.size()-1;
 
@@ -2455,7 +2465,7 @@ public class MainUI {
 								text = exposure.text;
 							} else {
 								exposure_time = (long)(MainActivity.exponentialScaling(frac, expo_min, expo_max) + 0.5d);
-								text = preview.getExposureTimeString(exposure_time);
+								text = StringUtils.getExposureTimeString(exposure_time);
 							}
 
 							preview.setExposureTime(exposure_time);
@@ -2470,7 +2480,7 @@ public class MainUI {
 
 						@Override
 						public void onStartTrackingTouch(SeekBar seekBar) {
-							showSeekbarHint(seekBar, exposure_steps ? exposures.get(seekBar.getProgress()).text : preview.getExposureTimeString(exposure_time), true);
+							showSeekbarHint(seekBar, exposure_steps ? exposures.get(seekBar.getProgress()).text : StringUtils.getExposureTimeString(exposure_time), true);
 						}
 
 						@Override
@@ -2580,11 +2590,11 @@ public class MainUI {
 					focus_distance = (float)MainActivity.exponentialScaling(frac, current_min_value, current_max_value);
 					preview.setFocusDistance(focus_distance);
 					if (fromUser)
-						setSeekbarHint(seekBar, preview.getFocusDistanceString(focus_distance));
+						setSeekbarHint(seekBar, StringUtils.getFocusDistanceString(focus_distance));
 					else if (((View)seekBar).getVisibility() == View.VISIBLE)
-						showSeekbarHint(seekBar, preview.getFocusDistanceString(focus_distance), false);
+						showSeekbarHint(seekBar, StringUtils.getFocusDistanceString(focus_distance), false);
 					else
-						Utils.showToast(resources.getString(R.string.focus_distance) + " " + preview.getFocusDistanceString(focus_distance));
+						Utils.showToast(resources.getString(R.string.focus_distance) + " " + StringUtils.getFocusDistanceString(focus_distance));
 				}
 
 				@Override
@@ -2592,7 +2602,7 @@ public class MainUI {
 					if (Prefs.getBoolean(Prefs.ZOOM_WHEN_FOCUSING, false))
 						preview.focusZoom();
 
-					showSeekbarHint(seekBar, preview.getFocusDistanceString(focus_distance), true);
+					showSeekbarHint(seekBar, StringUtils.getFocusDistanceString(focus_distance), true);
 				}
 
 				@Override
@@ -2643,11 +2653,11 @@ public class MainUI {
 						focus_distance = (float)MainActivity.exponentialScaling(frac, min_value, max_value);
 						preview.setFocusDistance(focus_distance);
 						if (fromUser)
-							setSeekbarHint(seekBar, preview.getFocusDistanceString(focus_distance));
+							setSeekbarHint(seekBar, StringUtils.getFocusDistanceString(focus_distance));
 						else if (((View)seekBar).getVisibility() == View.VISIBLE)
-							showSeekbarHint(seekBar, preview.getFocusDistanceString(focus_distance), false);
+							showSeekbarHint(seekBar, StringUtils.getFocusDistanceString(focus_distance), false);
 						else
-							Utils.showToast(resources.getString(R.string.focus_distance) + " " + preview.getFocusDistanceString(focus_distance));
+							Utils.showToast(resources.getString(R.string.focus_distance) + " " + StringUtils.getFocusDistanceString(focus_distance));
 					}
 
 					@Override
@@ -2655,7 +2665,7 @@ public class MainUI {
 						if (Prefs.getBoolean(Prefs.ZOOM_WHEN_FOCUSING, false))
 							preview.focusZoom();
 
-						showSeekbarHint(seekBar, preview.getFocusDistanceString(focus_distance), true);
+						showSeekbarHint(seekBar, StringUtils.getFocusDistanceString(focus_distance), true);
 					}
 
 					@Override

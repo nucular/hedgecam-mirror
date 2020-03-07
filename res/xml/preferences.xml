@@ -966,6 +966,22 @@
 					</PreferenceCategory>
 				</PreferenceScreen>
 
+				<PreferenceScreen
+					android:key="preference_group_photo_resolutions"
+					android:title="@string/preference_photo_resolutions"
+					android:summary="@string/preference_photo_resolutions_summary"
+					android:persistent="false">
+
+				</PreferenceScreen>
+
+				<PreferenceScreen
+					android:key="preference_group_video_qualities"
+					android:title="@string/preference_video_qualities"
+					android:summary="@string/preference_video_qualities_summary"
+					android:persistent="false">
+
+				</PreferenceScreen>
+
 			</PreferenceScreen>
 
 			<PreferenceScreen
@@ -1220,6 +1236,22 @@
 					android:title="@string/preference_show_iso"
 					android:summary="@string/preference_show_iso_summary"
 					android:defaultValue="true"
+					/>
+
+				<!--  if we move this to another PreferenceGroup, we should update code to remove this Preference -->
+				<CheckBoxPreference
+					android:key="preference_show_focus_distance"
+					android:title="@string/preference_show_focus_distance"
+					android:summary="@string/preference_show_focus_distance_summary"
+					android:defaultValue="false"
+					/>
+
+				<!--  if we move this to another PreferenceGroup, we should update code to remove this Preference -->
+				<CheckBoxPreference
+					android:key="preference_show_focus_range"
+					android:title="@string/preference_show_focus_range"
+					android:summary="@string/preference_show_focus_range_summary"
+					android:defaultValue="false"
 					/>
 
 				<!--  if we move this to another PreferenceGroup, we should update code to remove this Preference -->
@@ -1579,6 +1611,13 @@
 				/>
 
 			<CheckBoxPreference
+				android:key="preference_save_zoom"
+				android:title="@string/preference_save_zoom"
+				android:summary="@string/preference_save_zoom_summary"
+				android:defaultValue="false"
+				/>
+
+			<CheckBoxPreference
 				android:key="preference_multitouch_zoom"
 				android:title="@string/preference_multitouch_zoom"
 				android:summary="@string/preference_multitouch_zoom_summary"
@@ -1623,7 +1662,7 @@
 				android:defaultValue="default"
 				/>
 
-			<com.caddish_hedgehog.hedgecam2.preferences.SeekBarFloatPreference
+			<com.caddish_hedgehog.hedgecam2.preferences.SeekBarFocusPreference
 				android:key="preference_focus_distance_calibration"
 				android:title="@string/preference_focus_distance_calibration"
 				android:summary="@string/preference_focus_distance_calibration_summary"
@@ -1762,6 +1801,33 @@
 				android:title="@string/preference_lock_preview_fps"
 				android:summary="@string/preference_lock_preview_fps_summary"
 				android:defaultValue="false"
+				/>
+
+			<CheckBoxPreference
+				android:key="preference_preview_fps_override"
+				android:title="@string/preference_preview_fps_override"
+				android:summary="@string/preference_preview_fps_override_summary"
+				android:defaultValue="false"
+				/>
+
+			<com.caddish_hedgehog.hedgecam2.preferences.SeekBarArrayPreference
+				android:key="preference_preview_fps_min"
+				android:title="@string/preference_preview_fps_min"
+				android:summary="%s"
+				android:entries="@array/preference_preview_fps_values"
+				android:entryValues="@array/preference_preview_fps_values"
+				android:defaultValue="15"
+				android:dependency="preference_preview_fps_override"
+				/>
+
+			<com.caddish_hedgehog.hedgecam2.preferences.SeekBarArrayPreference
+				android:key="preference_preview_fps_max"
+				android:title="@string/preference_preview_fps_max"
+				android:summary="%s"
+				android:entries="@array/preference_preview_fps_values"
+				android:entryValues="@array/preference_preview_fps_values"
+				android:defaultValue="30"
+				android:dependency="preference_preview_fps_override"
 				/>
 
 			<CheckBoxPreference
@@ -2295,6 +2361,23 @@
 					android:title="@string/preference_fast_burst_disable_filters"
 					android:summary="@string/preference_fast_burst_disable_filters_summary"
 					android:defaultValue="true"
+					/>
+
+				<CheckBoxPreference
+					android:key="preference_nr_slow_burst"
+					android:title="@string/preference_nr_slow_burst"
+					android:summary="@string/preference_nr_slow_burst_summary"
+					android:defaultValue="false"
+					/>
+
+				<com.caddish_hedgehog.hedgecam2.preferences.SeekBarArrayPreference
+					android:key="preference_nr_burst_delay"
+					android:title="@string/preference_nr_burst_delay"
+					android:summary="@string/preference_nr_burst_delay_summary"
+					android:entries="@array/preference_fb_focus_time_entries"
+					android:entryValues="@array/preference_fb_focus_time_values"
+					android:defaultValue="300"
+					android:dependency="preference_nr_slow_burst"
 					/>
 			</PreferenceScreen>
 
