@@ -60,6 +60,23 @@
 		style="?android:attr/borderlessButtonStyle"
 		/>
 
+	<TextView
+	    android:id="@+id/queue_count"
+	    android:layout_width="match_parent"
+	    android:layout_height="match_parent"
+		android:layout_alignLeft="@+id/gallery"
+		android:layout_alignTop="@+id/gallery"
+		android:layout_alignRight="@+id/gallery"
+		android:layout_alignBottom="@+id/gallery"
+		android:singleLine="true"
+		android:textColor="@color/main_white"
+		android:textSize="@dimen/queue_count"
+		android:textStyle="bold"
+		android:paddingBottom="@dimen/queue_count_padding_bottom"
+	    android:gravity="center"
+		android:visibility="gone"
+		/>
+
 	<ImageButton
 		android:id="@+id/switch_video"
 		android:layout_width="@dimen/button_gallery_size"

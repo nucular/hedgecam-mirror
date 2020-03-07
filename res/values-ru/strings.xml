@@ -108,7 +108,8 @@
 	<string name="video_max_filesize">Видео достигло максимального размера</string>
 	<string name="video_pause">Запись видео приостановлена</string>
 	<string name="video_resume">Запись видео продолжена</string>
-	<string name="backup_saved">Резервная копия создана</string>
+	<string name="backup_file_saved">Резервная копия сохранена</string>
+	<string name="settings_file_saved">Файл настроек сохранен</string>
 
 	<string name="failed_to_open_camera_1">Не удалось открыть камеру.</string>
 	<string name="failed_to_open_camera_2">Камера может быть использована</string>
@@ -135,9 +136,10 @@
 	<string name="speech_recognizer_unavailable">Распознавание речи недоступно</string>
 	<string name="open_files_saf_exception_ghost">Диалог открытия файлов не найден, наложение изображения из файла недоступно</string>
 	<string name="saf_permission_failed_open_image">Невозможно открыть изображение</string>
-	<string name="failed_to_save_backup">Невозможно сохранить резервную копию</string>
-	<string name="failed_to_read_backup">Невозможно прочитать резервную копию</string>
+	<string name="failed_to_save_file">Ошибка при сохранении файла</string>
+	<string name="failed_to_read_file">Невозможно прочитать файл</string>
 	<string name="failed_to_restore_from_backup">Невозможно восстановить настройки из выбранной резервной копии</string>
+	<string name="failed_to_import_settings">Невозможно импортировать настройки из выбранного файла</string>
 
 	<string name="no_permission">В ДОСТУПЕ ОТКАЗАНО</string>
 	<!-- the permission names such as Microphone should match what Android calls them in the App permission settings -->
@@ -154,7 +156,9 @@
 	<string name="hdr_info">Режим HDR позволяет делать снимки объектов с большими перепадами яркости. При создании HDR-снимка, камера делает несколько снимков с разными значениями экспозиции, после чего полученные изображения склеиваются в одно.\n\nДанный режим не подходит для съемки динамичных сцен.\n\nСохранение снимков, сделанных в этом режиме происходит значительно дольше, чем в обычном.</string>
 	<string name="preference_reset_question">Вы действительно хотите сбросить все настройки приложения на стандартные значения?</string>
 	<string name="preference_restore_question">Вы действительно хотите восстановить настройки из резервной копии? Все текущие настройки будут перезаписаны!</string>
+	<string name="preference_import_question">Вы действительно хотите импортировать настройки из выбранного файла? Некоторые настройки будут перезаписаны!\n\nЕсли данный файл настроек был создан на другом устройстве, настоятельно рекомендуется перед импортом сделать резервную копию всех настроек.</string>
 	<string name="dont_show_again">Не показывать снова</string>
+	<string name="histogram_surface_question">Отображение гистограммы не работает при использовании SurfaceView. Вы хотите сменить поверхность предпросмотра на TextureView?</string>
 
 	<string name="mb_abbreviation">Мб</string> <!-- symbol short for megabytes -->
 	<string name="gb_abbreviation">Гб</string> <!-- symbol short for gigabytes -->
@@ -400,7 +404,7 @@
 	<string name="preference_preview_max_size">Mакс. размер предпросмотра</string>
 	<string name="preference_preview_max_size_summary">Изображение заполняет окно предпросмотра</string>
 	<string name="preference_preview_resolution">Разрешение предпросмотра</string>
-	<string name="preference_preview_resolution_summary">Разрешение окна предпросмотра. При изменении данной опции, предыдущая опция будет проигнрирована. Сохраняется раздельно для каждой камеры и для режимов фото/видео.</string>
+	<string name="preference_preview_resolution_summary">%s\n\nРазрешение окна предпросмотра. При изменении данной опции, предыдущая опция будет проигнорирована. Сохраняется раздельно для каждой камеры и для режимов фото/видео.</string>
 	<string name="match_target_resolution">Совпадает с фото/видео</string>
 	<string name="preference_preview_location">Расположение предпросмотра</string>
 	<string name="preference_preview_location_summary">%s</string>
@@ -410,7 +414,7 @@
 	<string name="dont_rotate">Не поворачивать</string>
 	<string name="rotate_180_degrees">Повернуть на 180 градусов</string>
 	<string name="preference_preview_max_expo">Максимальная выдержка</string>
-	<string name="preference_preview_max_expo_summary">Максимальная выдержка предпросмотра в ручном режиме (не повлияет на фото/видео)</string>
+	<string name="preference_preview_max_expo_summary">%s\n\nМаксимальная выдержка предпросмотра в ручном режиме (не повлияет на фото/видео)</string>
 	<string name="preference_zoom_when_focusing">Приближать при фокусировке</string>
 	<string name="preference_zoom_when_focusing_summary">Увеличивать центральную зону предпросмотра при выполнении ручной фокусировки</string>
 	<string name="preference_ghost_image">Наложение изображения</string>
@@ -422,12 +426,16 @@
 	<string name="preference_preview_surface_summary">%s\n\nПоверхность, используемая для отображения предпросмотра. Меняйте значение этой опции лишь в том случае, если вы знаете, что делаете</string>
 
 	<string name="preference_screen_osd">Индикация</string>
+	<string name="preference_screen_main_indication">Основная индикация</string>
+	<string name="preference_screen_lines">Линии</string>
 	<string name="preference_show_zoom">Показать масштаб</string>
 	<string name="preference_show_zoom_summary">Отображение текущего уровня масштабирования камеры на экране (при увеличении масштаба)</string>
 	<string name="preference_show_iso">Показать ISO</string>
 	<string name="preference_show_iso_summary">Отображение текущего уровня ISO</string>
 	<string name="preference_show_white_balance">Показать баланс белого</string>
 	<string name="preference_show_white_balance_summary">Отображение текущей температуры баланса белого</string>
+	<string name="preference_show_white_balance_xy">Точка белого</string>
+	<string name="preference_show_white_balance_xy_summary">Отображение координат точки белого</string>
 	<string name="preference_free_memory">Показать свободную память</string>
 	<string name="preference_free_memory_summary">Отображение количества свободной памяти</string>
 	<string name="preference_show_angle">Показать наклон</string>
@@ -463,6 +471,19 @@
 	<string name="preference_grid_alpha">Прозрачность сетки</string>
 	<string name="preference_crop_guide">Рамка обрезки</string>
 	<string name="preference_crop_guide_summary">%s\n\nОтображение прямоугольника, показывающего соотношение сторон. Полезно, если вы планируете обрезать видео</string>
+	<string name="preference_screen_histogram">Гистограмма</string>
+	<string name="preference_show_histogram">Отображать гистограмму</string>
+	<string name="preference_histogram_mode">Режим гистограммы</string>
+	<string name="ht_brightness">Яркость</string>
+	<string name="ht_maximum">Максимум</string>
+	<string name="ht_colors">Цвета</string>
+	<string name="preference_histogram_size">Размер гистограммы</string>
+	<string name="preference_histogram_frequency">Частота обновления</string>
+	<string name="preference_histogram_frequency_summary">%s\n\nЧастота обновления гистограммы. Чем больше значение, тем выше нагрузка на процессор.</string>
+	<string name="preference_histogram_accuracy">Точность</string>
+	<string name="preference_histogram_accuracy_summary">%s\n\nТочность построения графика. Чем больше значение, тем выше нагрузка на процессор.</string>
+	<string name="preference_color_probe">Цветовая проба</string>
+	<string name="preference_color_probe_size">Размер цветовой пробы</string>
 	<string name="preference_osd_frequency">Частота обновления</string>
 	<string name="preference_osd_frequency_summary">Частота обновления индикации. Увеличение значения приведет к повышению плавности отображения индикации, но может повысить расход заряда батареи</string>
 	<string name="freq_low">Низкая</string>
@@ -503,15 +524,18 @@
 	<string name="preference_screen_camera_controls_more">Дополнительные настройки</string>
 	<string name="preference_pause_preview">Пауза после съёмки</string>
 	<string name="preference_pause_preview_summary">Пауза после снятия фото, с возможностью поделиться или удалить фотографию</string>
-	<string name="preference_lock_orientation">Блокировка ориентации фото/видео</string>
+	<string name="preference_lock_orientation">Блокировка ориентации</string>
 	<string name="no_lock">Нет</string>
 	<string name="lock_landscape">Альбомная</string>
+	<string name="lock_reverse_landscape">Альбомная перевернутая</string>
 	<string name="lock_portrait">Портретная</string>
-	<string name="preference_lock_orientation_summary">Игнорирование системной ориентации экрана устройства</string>
+	<string name="preference_lock_orientation_summary">%s\n\nИгнорирование системной ориентации экрана устройства</string>
 	<string name="preference_show_when_locked">Камера на экране блокировки</string>
 	<string name="preference_show_when_locked_summary">Если включено, то приложение будет отображаться поверх экрана блокировки (вы можете получить доступ к настройкам, галерее и т.д.)</string>
 	<string name="preference_multitouch_zoom">Увеличение касанием</string>
 	<string name="preference_multitouch_zoom_summary">Регулировка зума при помощи жестов мультитача</string>
+	<string name="preference_touch_focus">Касание для фокусировки</string>
+	<string name="preference_touch_focus_summary">При касании экрана запустить автофокус, не меняя зоны фокусировки и экспозамера.</string>
 	<string name="preference_focus_range">Диапазон фокусировки</string>
 	<string name="preference_focus_range_summary">%s\n\nОграничение диапазона ручной фокусировки для более точного наведения.</string>
 	<string name="fr_landscape_macro">Пейзаж/Макро</string>
@@ -524,12 +548,16 @@
 	<string name="preference_min_focus_distance">Минимальное фокусное расстояние</string>
 	<string name="preference_focus_distance_calibration">Калибровка фокусного расстояния</string>
 	<string name="preference_focus_distance_calibration_summary">%s\n\nПоложительные значения соответствуют ближнему расстоянию, отрицательные - дальнему.</string>
+	<string name="preference_white_balance_calibration">Калибровка баланса белого</string>
+	<string name="preference_white_balance_calibration_summary">%s\n\nКалибровка нейтрального значения ручного баланса белого. Параметр сохраняется раздельно для каждой камеры.</string>
 	<string name="preference_row_space_y">Промежуток строк яркости</string>
 	<string name="preference_row_space_y_summary">%s\n\nПромежуток между строками яркостного канала. Используется при включении опции \"Несжатый вывод\". Параметр сохраняется раздельно для каждой камеры.</string>
 	<string name="preference_row_space_uv">Промежуток строк цветности</string>
 	<string name="preference_row_space_uv_summary">%s\n\nПромежуток между строками цветоразностных каналов. Используется при включении опции \"Несжатый вывод\". Параметр сохраняется раздельно для каждой камеры.</string>
 
 	<string name="preference_screen_bug_fix">Решение проблем</string>
+	<string name="preference_dont_rotate">Не поворачивать фото</string>
+	<string name="preference_dont_rotate_summary">Не поворачивать фото согласно ориентации устройства. Вместо этого сохранять поворот в тег EXIF. Используйте эту опцию, чтобы ускорить сохранение фото при использовании опции "Несжатый вывод"</string>
 	<string name="preference_startup_focus">Автофокус при запуске</string>
 	<string name="preference_startup_focus_summary">Включить автофокус при запуске. Если у вас проблемы со включением вспышки при запуске, отключите эту опцию</string>
 	<string name="preference_force_face_focus">Принудительная фокусировка на лице</string>
@@ -550,6 +578,10 @@
 	<string name="preference_reset_manual_mode_summary">Сбрасывать ручной режим ISO при подключении к камере. Используйте эту опцию если автофокус работает неправильно после подключения к камере при включенном ручном режиме ISO</string>
 	<string name="preference_lock_preview_fps">Привязка FPS предпросмотра</string>
 	<string name="preference_lock_preview_fps_summary">Привязать частоту кадров предпросмотра к частоте кадров видео. Используйте эту опцию, если на вашем устройстве не работает регулировка частоты кадров видео.</string>
+	<string name="preference_default_color_correction">Цветокоррекция по умолчанию</string>
+	<string name="preference_default_color_correction_summary">Принудительно установить цветокоррекцию по умолчанию. Исправляет некоторые проблемы на устройствах Sony.</string>
+	<string name="preference_force_iso_exposure">Принудительные параметры ручного режима</string>
+	<string name="preference_force_iso_exposure_summary">При использовании ручного режима устанавливать ISO и выдержку после захвата каждого кадра. Опция предназначена для борьбы с самопроизвольным изменением этих параметров на устройствах Qualcomm. Может отрицательно сказаться на плавности видео. Сохраняется раздельно для режимов фото и видео.</string>
 
 	<string name="preference_category_camera_quality">Настройки фото и видео</string>
 
@@ -620,9 +652,15 @@
 	<string name="preference_fast_burst_disable_filters">Отключать фильтрацию</string>
 	<string name="preference_fast_burst_disable_filters_summary">При съемке серии отключать шумоподавление и повышение четкости</string>
 	<string name="preference_category_nr_summary">Настройки режима фото \"Шумоподавление\"</string>
+	<string name="preference_save_base_image">Базовое изображение</string>
+	<string name="preference_save_base_image_summary">Сохранять в отдельный файл первое изображение из серии, используемое в качестве базового</string>
 	<string name="preference_adjust_levels">Коррекция уровней</string>
+	<string name="preference_adjust_levels_summary">%s\n\nАвтоматическая коррекция уровней</string>
 	<string name="al_highlights">Света&#x301;</string>
 	<string name="al_highlights_and_shadows">Света&#x301; и тени</string>
+	<string name="al_boost">Усиление</string>
+	<string name="preference_histogram_level">Обрезка гистограммы</string>
+	<string name="preference_histogram_level_summary">%s\n\nСтепень обрезки гистограммы при автокоррекции уровней. Влияет на агрессивность автокоррекции.</string>
 	<string name="preference_category_stamp">Отметки</string>
 	<string name="preference_category_stamp_summary">Добавление отметок на фото</string>
 	<string name="preference_stamp">Отметки</string>
@@ -643,6 +681,10 @@
 	<string name="tf_24_hour">24 часа</string>
 	<string name="preference_stamp_gpsformat">Формат GPS</string>
 	<string name="degrees_minutes_seconds">Градусы/минуты/секунды</string>
+	<string name="preference_stamp_store_address">Адрес</string>
+	<string name="preference_stamp_store_address_summary">По возможности использовать адрес вместо координат. Данная опция требует соединения с интернетом.</string>
+	<string name="preference_stamp_store_altitude">Высота</string>
+	<string name="preference_stamp_store_altitude_summary">По возможности добавлять после координат высоту над уровнем моря.</string>
 	<string name="preference_textstamp">Подписывание фото</string>
 	<string name="preference_textstamp_summary">Добавление текста на фотографию</string>
 	<string name="preference_stamp_font_color">Цвет текста</string>
@@ -669,10 +711,6 @@
 	<string name="preference_video_fps">Частота кадров видео</string>
 	<string name="preference_video_fps_summary">%s\n\nКол-во кадров в секунду (FPS) в видео (примерное). Может привести к записи с ошибкой, если частота кадров не поддерживается</string>
 	<string name="preference_video_log">Логарифмическое тональное отображение</string>
-	<string name="vl_low">Низко</string>
-	<string name="vl_medium">Средне</string>
-	<string name="vl_strong">Сильно</string>
-	<string name="vl_extra_strong">Очень сильно</string>
 	<string name="preference_video_log_summary">%s\n\nИспользовать логарифмическое тональное отображение (Flat profile) при записи видео</string>
 	<string name="video_log">Логарифмическое отображение</string>
 	<string name="preference_video_max_duration">Максимальная длительность видео</string>
@@ -704,7 +742,8 @@
 	<string name="as_camcorder">Микрофон видеокамеры</string>
 	<string name="as_external_mic">Внешний микрофон (если есть)</string>
 	<string name="as_default_source">По умолчанию</string>
-	<string name="as_voice_optimized">Оптимизировано для голоса</string>
+	<string name="as_voice_optimized">Голосовая связь</string>
+	<string name="as_unprocessed">Необработанный</string>
 	<string name="preference_record_audio_channels">Число каналов</string>
 	<string name="preference_record_audio_channels_summary">%s\n\nНастройка моно или стереозвука (стерео доступно не на всех устройствах)</string>
 	<string name="am_mono">Моно</string>
@@ -786,12 +825,25 @@
 	<string name="about_copy_to_clipboard">Копировать в буфер</string>
 
 	<string name="preference_screen_preferences_control">Управление настройками</string>
+	<string name="preference_category_backup_restore">Резервное копирование</string>
 	<string name="preference_backup">Резервная копия</string>
 	<string name="preference_backup_summary">Создать резервную копию настроек. Файл будет сохранен в папке для сохранения фото/видео.</string>
 	<string name="preference_restore">Восстановить</string>
 	<string name="preference_restore_summary">Восстановить настройки из резервной копии.</string>
 	<string name="preference_reset">Сброс настроек</string>
+	<string name="preference_reset_all">Все настройки</string>
 	<string name="preference_reset_summary">Сброс всех настроек приложения на стандартные значения</string>
+	<string name="preference_category_export_import">Экспорт и импорт</string>
+	<string name="preference_export">Экспорт</string>
+	<string name="preference_export_summary">Экспортировать настройки в файл. Файл будет сохранен в папке для сохранения фото/видео.</string>
+	<string name="preference_import">Импорт</string>
+	<string name="preference_import_summary">Импортировать настройки из файла.</string>
+	<string name="preference_category_modes">Режимы</string>
+	<string name="preference_category_modes_summary">Режимы съемки (вспышка, ISO, сцена, и т.д.) для всех камер.</string>
+	<string name="preference_category_model">Модель</string>
+	<string name="preference_category_model_summary">Настройки из раздела \"Решение проблем\", некоторые калибровки, и прочие настройки, характерные для данной модели устройства.</string>
+	<string name="preference_category_device">Устройство</string>
+	<string name="preference_category_device_summary">Настройки из раздела \"Решение проблем\", все калибровки, и прочие настройки, характерные для данного экземпляра устройства.</string>
 
 	<string name="preference_advanced">Для экспертов</string>
 

@@ -3,7 +3,6 @@ package com.caddish_hedgehog.hedgecam2;
 import com.caddish_hedgehog.hedgecam2.CameraController.CameraController;
 
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.media.AudioAttributes;
 import android.media.AudioManager;
 import android.media.MediaActionSound;
@@ -24,7 +23,6 @@ public class Sound {
 		FORCE_OFF
 	}
 
-	private static SharedPreferences sharedPreferences;
 	private static Context context;
 	private static boolean using_camera_2;
 
@@ -47,13 +45,6 @@ public class Sound {
 	
 	private static boolean shutterSoundAllowed;
 
-	public static void setSharedPreferences(SharedPreferences prefs) {
-		if( MyDebug.LOG )
-			Log.d(TAG, "setSharedPreferences()");
-
-		sharedPreferences = prefs;
-	}
-
 	@SuppressWarnings("deprecation")
 	public static void init(Context c, boolean camera_2) {
 		if( MyDebug.LOG )
@@ -62,7 +53,7 @@ public class Sound {
 		context = c;
 		using_camera_2 = camera_2;
 
-		String shutter_sound = sharedPreferences.getString(Prefs.SHUTTER_SOUND, "default");
+		String shutter_sound = Prefs.getString(Prefs.SHUTTER_SOUND, "default");
 		switch (shutter_sound) {
 			case "default":
 				soundShutter = ShutterSound.DEFAULT;
@@ -80,15 +71,15 @@ public class Sound {
 				soundShutter = ShutterSound.CUSTOM;
 		}
 		
-		soundVideo = sharedPreferences.getBoolean(Prefs.VIDEO_SOUND, true);
-		soundTimer = sharedPreferences.getBoolean(Prefs.TIMER_BEEP, true);
-		soundTimerStart = sharedPreferences.getBoolean(Prefs.TIMER_START_SOUND, true);
-		soundTimerSpeak = sharedPreferences.getBoolean(Prefs.TIMER_SPEAK, false);
-		soundFaceDetection = sharedPreferences.getBoolean(Prefs.FACE_DETECTION_SOUND, false);
+		soundVideo = Prefs.getBoolean(Prefs.VIDEO_SOUND, true);
+		soundTimer = Prefs.getBoolean(Prefs.TIMER_BEEP, true);
+		soundTimerStart = Prefs.getBoolean(Prefs.TIMER_START_SOUND, true);
+		soundTimerSpeak = Prefs.getBoolean(Prefs.TIMER_SPEAK, false);
+		soundFaceDetection = Prefs.getBoolean(Prefs.FACE_DETECTION_SOUND, false);
 		
 		if( sound_pool == null ) {
 			int audio_stream = AudioManager.STREAM_SYSTEM;
-			String stream = sharedPreferences.getString(Prefs.AUDIO_STREAM, "system");
+			String stream = Prefs.getString(Prefs.AUDIO_STREAM, "system");
 			if (stream.equals("notification"))
 				audio_stream = AudioManager.STREAM_NOTIFICATION;
 			else if (stream.equals("music"))
@@ -126,7 +117,7 @@ public class Sound {
 					sound_shutter = sound_pool.load(context, resource_id, 1);
 			}
 
-			switch(sharedPreferences.getString(Prefs.SOUND_VOLUME, "max")) {
+			switch(Prefs.getString(Prefs.SOUND_VOLUME, "max")) {
 				case "high":
 					sound_volume = 0.5f;
 					break;

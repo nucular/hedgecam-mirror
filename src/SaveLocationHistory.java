@@ -2,7 +2,6 @@ package com.caddish_hedgehog.hedgecam2;
 
 import java.util.ArrayList;
 
-import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
@@ -24,15 +23,14 @@ public class SaveLocationHistory {
 			Log.d(TAG, "pref_base: " + pref_base);
 		this.main_activity = main_activity;
 		this.pref_base = pref_base;
-		SharedPreferences sharedPreferences = main_activity.getSharedPrefs();
 
 		// read save locations
 		save_location_history.clear();
-		int save_location_history_size = sharedPreferences.getInt(pref_base + "_size", 0);
+		int save_location_history_size = Prefs.getInt(pref_base + "_size", 0);
 		if( MyDebug.LOG )
 			Log.d(TAG, "save_location_history_size: " + save_location_history_size);
 		for(int i=0;i<save_location_history_size;i++) {
-			String string = sharedPreferences.getString(pref_base + "_" + i, null);
+			String string = Prefs.getString(pref_base + "_" + i, null);
 			if( string != null ) {
 				if( MyDebug.LOG )
 					Log.d(TAG, "save_location_history " + i + ": " + string);
@@ -98,16 +96,14 @@ public class SaveLocationHistory {
 	private void writeSaveLocations() {
 		if( MyDebug.LOG )
 			Log.d(TAG, "writeSaveLocations");
-		SharedPreferences sharedPreferences = main_activity.getSharedPrefs();
-		SharedPreferences.Editor editor = sharedPreferences.edit();
-		editor.putInt(pref_base + "_size", save_location_history.size());
+		Prefs.putInt(pref_base + "_size", save_location_history.size());
 		if( MyDebug.LOG )
 			Log.d(TAG, "save_location_history_size = " + save_location_history.size());
 		for(int i=0;i<save_location_history.size();i++) {
 			String string = save_location_history.get(i);
-			editor.putString(pref_base + "_" + i, string);
+			Prefs.putString(pref_base + "_" + i, string);
 		}
-		editor.apply();
+		Prefs.commit();
 	}
 
 	/** Return the size of the history.

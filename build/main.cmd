@@ -34,7 +34,7 @@ FOR /R %CD%\aidl %%i IN (*.aidl) DO  "%BUILD_TOOLS_PATH%\aidl" -o"%GEN_DIR%\java
 echo:
 echo:
 echo Creating R.java...
-call "%BUILD_TOOLS_PATH%\aapt.exe" package -f -m --auto-add-overlay --min-sdk-version %MIN_SDK% --target-sdk-version %TARGET_SDK% %RES% -J "%CD%\src" -M "%CD%\AndroidManifest.xml" -I "%PLATFORM_SDK_PATH%\android.jar" -J "%GEN_DIR%\java"
+call "%BUILD_TOOLS_PATH%\aapt.exe" package -f -m -G "%GEN_DIR%\proguard.pro" --auto-add-overlay --min-sdk-version %MIN_SDK% --target-sdk-version %TARGET_SDK% %RES% -J "%CD%\src" -M "%CD%\AndroidManifest.xml" -I "%PLATFORM_SDK_PATH%\android.jar" -J "%GEN_DIR%\java"
 @if errorlevel 1 goto err_r
 
 
@@ -59,7 +59,7 @@ IF [%PROGUARD_HOME%] == [] goto dex_no_shrink
 echo:
 echo:
 echo Shrinking classes...
-call "%JDK_HOME%\bin\java" -jar "%PROGUARD_HOME%\lib\proguard.jar" @proguard_options -injars "%GEN_DIR%\obj" -injars "%CD%\libs" -outjars "%GEN_DIR%\opt" -libraryjars %PLATFORM_SDK_PATH%\android.jar -verbose
+call "%JDK_HOME%\bin\java" -jar "%PROGUARD_HOME%\lib\proguard.jar" @"%CD%\proguard.pro" @"%GEN_DIR%\proguard.pro" -injars "%GEN_DIR%\obj" -injars "%CD%\libs" -outjars "%GEN_DIR%\opt" -libraryjars %PLATFORM_SDK_PATH%\android.jar -verbose -printusage "%GEN_DIR%\unused.txt" -printmapping "%GEN_DIR%\mapping.txt"
 @if errorlevel 1 goto err_proguard
 
 

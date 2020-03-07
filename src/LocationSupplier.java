@@ -2,7 +2,6 @@ package com.caddish_hedgehog.hedgecam2;
 
 import android.Manifest;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
@@ -102,10 +101,9 @@ public class LocationSupplier {
 	boolean setupLocationListener() {
 		if( MyDebug.LOG )
 			Log.d(TAG, "setupLocationListener");
-		SharedPreferences sharedPreferences = ((MainActivity)context).getSharedPrefs();
 		// Define a listener that responds to location updates
 		// we only set it up if store_location is true, to avoid unnecessarily wasting battery
-		boolean store_location = sharedPreferences.getBoolean(Prefs.LOCATION, false);
+		boolean store_location = Prefs.getBoolean(Prefs.LOCATION, false);
 		if( store_location && locationListeners == null ) {
 			// Note, ContextCompat.checkSelfPermission is meant to handle being called on any Android version, i.e., pre
 			// Android Marshmallow it should return true as permissions are set an installation, and can't be switched off by

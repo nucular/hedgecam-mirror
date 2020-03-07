@@ -1,4 +1,4 @@
-package com.caddish_hedgehog.hedgecam2.UI;
+package com.caddish_hedgehog.hedgecam2.preferences;
 
 import com.caddish_hedgehog.hedgecam2.MyDebug;
 import com.caddish_hedgehog.hedgecam2.R;
@@ -74,14 +74,14 @@ public class SeekBarFloatPreference extends DialogPreference implements SeekBar.
 		valueText.setGravity(Gravity.CENTER_HORIZONTAL);
 		valueText.setTextSize(TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.pref_seekbar_text_large));
 		
-		params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.FILL_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+		params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
 		layout.addView(valueText, params);
 
 		seekbar = new SeekBar(context);
 		seekbar.setOnSeekBarChangeListener(this);
 		padding = resources.getDimensionPixelSize(R.dimen.seekbar_padding_large);
 		seekbar.setPadding(seekbar.getPaddingLeft(), padding, seekbar.getPaddingRight(), padding);
-		layout.addView(seekbar, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.FILL_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+		layout.addView(seekbar, params);
 
 		if (shouldPersist()) {
 			try {value = Float.parseFloat(getPersistedString(Float.toString(defValue)));}
@@ -113,12 +113,12 @@ public class SeekBarFloatPreference extends DialogPreference implements SeekBar.
 	protected void onSetInitialValue(boolean restore, Object defaultValue)  
 	{
 		super.onSetInitialValue(restore, defaultValue);
-		if (restore) 
+		if (restore) {
 			if (shouldPersist()) {
 				try {value = Float.parseFloat(getPersistedString(Float.toString(defValue)));}
 				catch(NumberFormatException e) {value = defValue;}
 			}
-		else 
+		} else 
 			value = defValue;
 	}
 

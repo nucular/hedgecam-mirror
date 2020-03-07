@@ -10,7 +10,7 @@ set BUILD_TOOLS_PATH=K:\android\sdk\build-tools\28.0.3
 rem set NDK_PATH=K:\android\android-ndk-r11c
 set PLATFORM_SDK_PATH=K:\android\sdk\platforms\android-28
 
-set CLASS_PATH=%PLATFORM_SDK_PATH%\android.jar;libs\annotations.jar;libs\android-support-v4.jar
+set CLASS_PATH=%PLATFORM_SDK_PATH%\android.jar;libs\annotations.jar;libs\support-v4.jar
 
 rem		ProGuard 5 home directory
 set PROGUARD_HOME=D:\Android\proguard

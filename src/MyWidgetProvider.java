@@ -34,7 +34,7 @@ public class MyWidgetProvider extends AppWidgetProvider {
 
 			PendingIntent pendingIntent;
 			// for now, always put up the keyguard if the device is PIN locked etc
-			/*SharedPreferences sharedPreferences = ((MainActivity)context).getSharedPrefs();
+			/*SharedPreferences sharedPreferences = Prefs.getSharedPreferences();
 			if( sharedPreferences.getBoolean(MainActivity.getShowWhenLockedPreferenceKey(), true) ) {
 				if( MyDebug.LOG )
 					Log.d(TAG, "do show above lock screen");

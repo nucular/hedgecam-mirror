@@ -28,6 +28,23 @@ void __attribute__((kernel)) calc_min_max(uchar4 pixel, uint32_t x, uint32_t y) 
 	calc_max(pixel, x, y);
 }
 
+
+int *histogram_array;
+
+void init_histogram() {
+	for (int i = 0; i < 256; i++)
+		histogram_array[i] = 0;
+}
+
+void __attribute__((kernel)) histogram(uchar4 pixel, uint32_t x, uint32_t y) {
+	uint4 pixel_i = convert_uint4(pixel);
+	uint32_t pixel_max = max(pixel_i.r, pixel_i.g);
+	pixel_max = max(pixel_max, pixel_i.b);
+	
+	rsAtomicInc(&histogram_array[pixel_max]);
+}
+
+
 uchar4 __attribute__((kernel)) auto_l(uchar4 pixel, uint32_t x, uint32_t y) {
 	float4 pixel_f = convert_float4(pixel);
 
@@ -44,6 +61,15 @@ uchar4 __attribute__((kernel)) auto_ls(uchar4 pixel, uint32_t x, uint32_t y) {
     pixel.r = (uchar)clamp((pixel_f.r-fMin)/fDivider, 0.0f, 255.0f);
     pixel.g = (uchar)clamp((pixel_f.g-fMin)/fDivider, 0.0f, 255.0f);
     pixel.b = (uchar)clamp((pixel_f.b-fMin)/fDivider, 0.0f, 255.0f);
+
+	return pixel;
+}
+
+uchar4 __attribute__((kernel)) apply_histogram(uchar4 pixel, uint32_t x, uint32_t y) {
+    pixel.r = histogram_array[pixel.r];
+    pixel.g = histogram_array[pixel.g];
+    pixel.b = histogram_array[pixel.b];
+    pixel.a = 255.0f;
 
 	return pixel;
 }

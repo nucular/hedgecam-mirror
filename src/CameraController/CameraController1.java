@@ -507,18 +507,6 @@ public class CameraController1 extends CameraController {
 	}
 
 	@Override
-	public boolean setWhiteBalanceTemperature(int temperature) {
-		// not supported for CameraController1
-		return false;
-	}
-
-	@Override
-	public int getWhiteBalanceTemperature() {
-		// not supported for CameraController1
-		return 0;
-	}
-
-	@Override
 	public SupportedValues setISO(String value) {
 		Camera.Parameters parameters = this.getParameters();
 		// get available isos - no standard value for this, see http://stackoverflow.com/questions/2978095/android-camera-api-iso-setting
@@ -625,23 +613,6 @@ public class CameraController1 extends CameraController {
 		return this.iso_key;
 	}
 
-	@Override
-	public void setManualISO(boolean manual_iso, int iso) {
-		// not supported for CameraController1
-	}
-
-	@Override
-	public boolean setISO(int iso) {
-		// not supported for CameraController1
-		return false;
-	}
-
-	@Override
-	public boolean setExposureTime(long exposure_time) {
-		// not supported for CameraController1
-		return false;
-	}
-	
 	@Override
 	public CameraController.Size getPictureSize() {
 		/*Camera.Parameters parameters = this.getParameters();

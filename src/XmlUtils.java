@@ -196,9 +196,21 @@ public class XmlUtils {
     public static final void writeMapXml(Map val, OutputStream out)
             throws XmlPullParserException, java.io.IOException {
         XmlSerializer serializer = new FastXmlSerializer();
-        serializer.setOutput(out, StandardCharsets.UTF_8.name());
+        serializer.setOutput(out, getCharsetName());
         serializer.startDocument(null, true);
         serializer.setFeature("http://xmlpull.org/v1/doc/features.html#indent-output", true);
+        writeMapXml(val, null, serializer);
+        serializer.endDocument();
+    }
+
+    public static final void writeMapXml(Map val, String comment, OutputStream out)
+            throws XmlPullParserException, java.io.IOException {
+        XmlSerializer serializer = new FastXmlSerializer();
+        serializer.setOutput(out, getCharsetName());
+        serializer.startDocument(null, true);
+        serializer.setFeature("http://xmlpull.org/v1/doc/features.html#indent-output", true);
+		if (comment != null && comment.length() > 0)
+			serializer.comment(comment);
         writeMapXml(val, null, serializer);
         serializer.endDocument();
     }
@@ -219,7 +231,7 @@ public class XmlUtils {
     throws XmlPullParserException, java.io.IOException
     {
         XmlSerializer serializer = Xml.newSerializer();
-        serializer.setOutput(out, StandardCharsets.UTF_8.name());
+        serializer.setOutput(out, getCharsetName());
         serializer.startDocument(null, true);
         serializer.setFeature("http://xmlpull.org/v1/doc/features.html#indent-output", true);
         writeListXml(val, null, serializer);
@@ -746,7 +758,7 @@ public class XmlUtils {
     throws XmlPullParserException, java.io.IOException
     {
         XmlPullParser   parser = Xml.newPullParser();
-        parser.setInput(in, StandardCharsets.UTF_8.name());
+        parser.setInput(in, getCharsetName());
         return (HashMap<String, ?>) readValueXml(parser, new String[1]);
     }
 
@@ -767,7 +779,7 @@ public class XmlUtils {
     throws XmlPullParserException, java.io.IOException
     {
         XmlPullParser   parser = Xml.newPullParser();
-        parser.setInput(in, StandardCharsets.UTF_8.name());
+        parser.setInput(in, getCharsetName());
         return (ArrayList)readValueXml(parser, new String[1]);
     }
     
@@ -1858,7 +1870,8 @@ public class XmlUtils {
 
 	    public void comment(String text) throws IOException, IllegalArgumentException,
 	            IllegalStateException {
-	        throw new UnsupportedOperationException();
+	        append("<!-- " + text + " -->\n");
+	        mLineStart = true;
 	    }
 
 	    public void docdecl(String text) throws IOException, IllegalArgumentException,
@@ -2071,4 +2084,11 @@ public class XmlUtils {
 
 	}
 
+	private static String getCharsetName() {
+		try {
+			return StandardCharsets.UTF_8.name();
+		} catch (NoClassDefFoundError e) {
+			return "UTF-8";
+		}
+	}
 }

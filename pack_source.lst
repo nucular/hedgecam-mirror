@@ -19,4 +19,4 @@
 ./gpl-3.0.txt
 ./pack_source.cmd
 ./pack_source.lst
-./proguard_options
+./proguard.pro

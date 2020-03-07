@@ -8,6 +8,7 @@ import com.caddish_hedgehog.hedgecam2.R;
 import com.caddish_hedgehog.hedgecam2.CameraController.CameraController;
 import com.caddish_hedgehog.hedgecam2.Preview.Preview;
 import com.caddish_hedgehog.hedgecam2.UI.IconView;
+import com.caddish_hedgehog.hedgecam2.Utils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -20,7 +21,6 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.res.Resources;
-import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.ColorMatrixColorFilter;
@@ -70,7 +70,6 @@ public class PopupView extends LinearLayout {
 	
 	private final MainActivity main_activity;
 	private final Resources resources;
-	private final SharedPreferences sharedPreferences;
 	private final int camera_id;
 
 	private final int total_width;
@@ -105,7 +104,6 @@ public class PopupView extends LinearLayout {
 		main_activity = (MainActivity)this.getContext();
 		resources = main_activity.getResources();
 		final Preview preview = main_activity.getPreview();
-		sharedPreferences = main_activity.getSharedPrefs();
 		camera_id = Prefs.getCameraIdPref();
 		
 		icon_font = IconView.getTypeface(main_activity);
@@ -116,7 +114,7 @@ public class PopupView extends LinearLayout {
 		arrow_width = resources.getDimensionPixelSize(R.dimen.popup_arrow_width);
 		arrow_height = resources.getDimensionPixelSize(R.dimen.popup_arrow_height);
 		
-		switch( sharedPreferences.getString(Prefs.POPUP_SIZE, "normal") ) {
+		switch( Prefs.getString(Prefs.POPUP_SIZE, "normal") ) {
 			case "small":
 				max_buttons_count = 5;
 				arrow_width *= 0.7f;
@@ -136,7 +134,7 @@ public class PopupView extends LinearLayout {
 		this.setPadding(padding, padding-elements_gap, padding, padding);
 
 		
-		switch( sharedPreferences.getString(Prefs.POPUP_FONT_SIZE, "normal") ) {
+		switch( Prefs.getString(Prefs.POPUP_FONT_SIZE, "normal") ) {
 			case "small":
 				text_size_main = resources.getDimension(R.dimen.popup_text_small_default);
 				text_size_title = resources.getDimension(R.dimen.popup_text_small_title);
@@ -168,7 +166,7 @@ public class PopupView extends LinearLayout {
 		}
 		
 		
-		switch (sharedPreferences.getString(Prefs.POPUP_COLOR, "black")) {
+		switch (Prefs.getString(Prefs.POPUP_COLOR, "black")) {
 			case "light_gray":
 			case "white":
 				negative = true;
@@ -186,7 +184,7 @@ public class PopupView extends LinearLayout {
 			});
 		}
 
-		expand_lists = sharedPreferences.getBoolean(Prefs.POPUP_EXPANDED_LISTS, false);
+		expand_lists = Prefs.getBoolean(Prefs.POPUP_EXPANDED_LISTS, false);
 		
 		if (popup_type == PopupType.Flash) {
 			List<String> supported_flash_values = preview.getSupportedFlashValues();
@@ -224,8 +222,8 @@ public class PopupView extends LinearLayout {
 					final String old_value = preview.getCurrentFocusValue();
 					preview.updateFocus(option, false, true);
 					if (!preview.isTakingPhotoOrOnTimer() && 
-							!(preview.isVideo() && main_activity.getSharedPrefs()
-							.getBoolean(Prefs.UPDATE_FOCUS_FOR_VIDEO, false))) {
+							!(preview.isVideo() &&
+							Prefs.getBoolean(Prefs.UPDATE_FOCUS_FOR_VIDEO, false))) {
 						if (!preview.usingCamera2API() && (option.equals("focus_mode_infinity") || option.equals("focus_mode_edof"))) {
 							preview.reopenCamera();
 						}
@@ -263,7 +261,7 @@ public class PopupView extends LinearLayout {
 			if (preview.getCameraController() != null) {
 				List<String> supported_white_balances = preview.getSupportedWhiteBalances();
 				addRadioOptionsToPopup(supported_white_balances, getResources().getString(R.string.white_balance), "wb_",
-						Prefs.WHITE_BALANCE, sharedPreferences.getString(Prefs.WHITE_BALANCE, preview.getCameraController().getDefaultWhiteBalance()),
+						Prefs.WHITE_BALANCE, Prefs.getString(Prefs.WHITE_BALANCE, preview.getCameraController().getDefaultWhiteBalance()),
 						new RadioOptionsListener() {
 					@Override
 					public void onClick(String selected_value) {
@@ -276,14 +274,14 @@ public class PopupView extends LinearLayout {
 			if (preview.getCameraController() != null) {
 				List<String> supported_scene_modes = preview.getSupportedSceneModes();
 				addRadioOptionsToPopup(supported_scene_modes, getResources().getString(R.string.scene_mode), "sm_",
-						Prefs.SCENE_MODE, sharedPreferences.getString(Prefs.SCENE_MODE, preview.getCameraController().getDefaultSceneMode()),
+						Prefs.SCENE_MODE, Prefs.getString(Prefs.SCENE_MODE, preview.getCameraController().getDefaultSceneMode()),
 						new RadioOptionsListener() {
 					@Override
 					public void onClick(String selected_value) {
 						if( preview.getCameraController() != null ) {
 							if( preview.getCameraController().sceneModeAffectsFunctionality() ) {
 								// need to call updateForSettings() and close the popup, as changing scene mode can change available camera features
-								main_activity.updateForSettings(getResources().getString(R.string.scene_mode) + ": " + main_activity.getStringResourceByName("sm_", selected_value));
+								main_activity.updateForSettings(getResources().getString(R.string.scene_mode) + ": " + Utils.getStringResourceByName("sm_", selected_value));
 								main_activity.getMainUI().closePopup();
 							}
 							else {
@@ -299,7 +297,7 @@ public class PopupView extends LinearLayout {
 			if (preview.getCameraController() != null) {
 				List<String> supported_color_effects = preview.getSupportedColorEffects();
 				addRadioOptionsToPopup(supported_color_effects, getResources().getString(R.string.color_effect), "ce_",
-						Prefs.COLOR_EFFECT, sharedPreferences.getString(Prefs.COLOR_EFFECT, preview.getCameraController().getDefaultColorEffect()),
+						Prefs.COLOR_EFFECT, Prefs.getString(Prefs.COLOR_EFFECT, preview.getCameraController().getDefaultColorEffect()),
 						new RadioOptionsListener() {
 					@Override
 					public void onClick(String selected_value) {
@@ -337,17 +335,26 @@ public class PopupView extends LinearLayout {
 		} else {
 			if (!main_activity.getMainUI().isVisible(R.id.flash_mode)) {
 				List<String> supported_flash_values = preview.getSupportedFlashValues();
-				addButtonOptionsToPopup(supported_flash_values, R.array.flash_icons, R.array.flash_values, R.array.flash_keys,
-						getResources().getString(R.string.flash_mode), preview.getCurrentFlashValue(),
-						new ButtonOptionsPopupListener() {
-					@Override
-					public void onClick(String option) {
-						if( MyDebug.LOG )
-							Log.d(TAG, "clicked flash: " + option);
-						preview.updateFlash(option);
-						main_activity.getMainUI().destroyPopup(); // need to recreate popup for new selection
+				if (supported_flash_values != null) {
+					int keys_id = R.array.flash_keys;
+					if (preview.isVideo() && supported_flash_values.contains("flash_off") && supported_flash_values.contains("flash_torch")) {
+						keys_id = 0;
+						supported_flash_values = new ArrayList<>();
+						supported_flash_values.add("flash_off");
+						supported_flash_values.add("flash_torch");
 					}
-				});
+					addButtonOptionsToPopup(supported_flash_values, R.array.flash_icons, R.array.flash_values, keys_id,
+							getResources().getString(R.string.flash_mode), preview.getCurrentFlashValue(),
+							new ButtonOptionsPopupListener() {
+						@Override
+						public void onClick(String option) {
+							if( MyDebug.LOG )
+								Log.d(TAG, "clicked flash: " + option);
+							preview.updateFlash(option);
+							main_activity.getMainUI().destroyPopup(); // need to recreate popup for new selection
+						}
+					});
+				}
 			}
 
 			if (!main_activity.getMainUI().isVisible(R.id.focus_mode) && (preview.isVideo() || Prefs.getPhotoMode() != Prefs.PhotoMode.FocusBracketing)) {
@@ -362,42 +369,42 @@ public class PopupView extends LinearLayout {
 					else {
 						supported_focus_values.remove("focus_mode_continuous_video");
 					}
-				}
-				addButtonOptionsToPopup(supported_focus_values, R.array.focus_mode_icons, R.array.focus_mode_values, R.array.focus_mode_keys,
-						getResources().getString(R.string.focus_mode), preview.getCurrentFocusValue(),
-						new ButtonOptionsPopupListener() {
-					@Override
-					public void onClick(String option) {
-						if( MyDebug.LOG )
-							Log.d(TAG, "clicked focus: " + option);
-						final String old_value = preview.getCurrentFocusValue();
-						preview.updateFocus(option, false, true);
-						if (!preview.isTakingPhotoOrOnTimer() && 
-								!(preview.isVideo() && main_activity.getSharedPrefs()
-								.getBoolean(Prefs.UPDATE_FOCUS_FOR_VIDEO, false))) {
-							if (!preview.usingCamera2API() && (option.equals("focus_mode_infinity") || option.equals("focus_mode_edof"))) {
-								preview.reopenCamera();
-							}
+					addButtonOptionsToPopup(supported_focus_values, R.array.focus_mode_icons, R.array.focus_mode_values, R.array.focus_mode_keys,
+							getResources().getString(R.string.focus_mode), preview.getCurrentFocusValue(),
+							new ButtonOptionsPopupListener() {
+						@Override
+						public void onClick(String option) {
+							if( MyDebug.LOG )
+								Log.d(TAG, "clicked focus: " + option);
+							final String old_value = preview.getCurrentFocusValue();
+							preview.updateFocus(option, false, true);
+							if (!preview.isTakingPhotoOrOnTimer() && 
+									!(preview.isVideo() &&
+									Prefs.getBoolean(Prefs.UPDATE_FOCUS_FOR_VIDEO, false))) {
+								if (!preview.usingCamera2API() && (option.equals("focus_mode_infinity") || option.equals("focus_mode_edof"))) {
+									preview.reopenCamera();
+								}
 
-							if (option.equals("focus_mode_manual2")) {
-								main_activity.getMainUI().setManualFocusSeekbars();
-								main_activity.getMainUI().layoutSeekbars();
-							} else {
-								if (old_value != null && old_value.equals("focus_mode_manual2")) {
+								if (option.equals("focus_mode_manual2")) {
 									main_activity.getMainUI().setManualFocusSeekbars();
 									main_activity.getMainUI().layoutSeekbars();
+								} else {
+									if (old_value != null && old_value.equals("focus_mode_manual2")) {
+										main_activity.getMainUI().setManualFocusSeekbars();
+										main_activity.getMainUI().layoutSeekbars();
+									}
+									if (old_value != null && (old_value.equals("focus_mode_infinity") || old_value.equals("focus_mode_edof")))
+										preview.setCenterFocus();
 								}
-								if (old_value != null && (old_value.equals("focus_mode_infinity") || old_value.equals("focus_mode_edof")))
-									preview.setCenterFocus();
 							}
+							main_activity.getMainUI().destroyPopup(); // need to recreate popup for new selection
 						}
-						main_activity.getMainUI().destroyPopup(); // need to recreate popup for new selection
-					}
-				});
+					});
+				}
 			}
 
 			if (!main_activity.getPreview().isVideoRecording()) {
-				if (!main_activity.getMainUI().isVisible(R.id.iso) && sharedPreferences.getBoolean(Prefs.POPUP_ISO, true)) {
+				if (!main_activity.getMainUI().isVisible(R.id.iso) && Prefs.getBoolean(Prefs.POPUP_ISO, true)) {
 					List<String> supported_isos = getSupportedISOs(main_activity);
 					final String current_iso = Prefs.getISOPref();
 					// n.b., we hardcode the string "ISO" as we don't want it translated - firstly more consistent with the ISO values returned by the driver, secondly need to worry about the size of the buttons, so don't want risk of a translated string being too long
@@ -420,7 +427,7 @@ public class PopupView extends LinearLayout {
 					});
 				}
 
-				if (!preview.isVideo() && !main_activity.getMainUI().isVisible(R.id.photo_mode) && sharedPreferences.getBoolean(Prefs.POPUP_PHOTO_MODE, true)) {
+				if (!preview.isVideo() && !main_activity.getMainUI().isVisible(R.id.photo_mode) && Prefs.getBoolean(Prefs.POPUP_PHOTO_MODE, true)) {
 					List<String> supported_values = getSupportedPhotoModes(main_activity);
 					if( supported_values.size() > 1 ) {
 						addButtonOptionsToPopup(supported_values, R.array.photo_mode_icons, R.array.photo_mode_values, R.array.photo_mode_keys,
@@ -437,7 +444,7 @@ public class PopupView extends LinearLayout {
 					}
 				}
 
-				if( sharedPreferences.getBoolean(Prefs.POPUP_AUTO_STABILISE, true) && (preview.isVideo() ? preview.supportsVideoStabilization() : main_activity.supportsAutoStabilise()) ) {
+				if( Prefs.getBoolean(Prefs.POPUP_AUTO_STABILISE, true) && (preview.isVideo() ? preview.supportsVideoStabilization() : main_activity.supportsAutoStabilise()) ) {
 					addCheckBoxToPopup(
 						getResources().getString(preview.isVideo() ? R.string.preference_video_stabilization : R.string.preference_auto_stabilise),
 						preview.isVideo() ? Prefs.VIDEO_STABILIZATION : Prefs.AUTO_STABILISE, false,
@@ -446,7 +453,7 @@ public class PopupView extends LinearLayout {
 							public void onCheckedChanged(boolean isChecked) {
 								boolean done_dialog = false;
 								if( isChecked ) {
-									boolean done_auto_stabilise_info = sharedPreferences.contains(preview.isVideo() ? Prefs.DONE_VIDEO_STABILIZATION_INFO : Prefs.DONE_AUTO_STABILISE_INFO);
+									boolean done_auto_stabilise_info = Prefs.contains(preview.isVideo() ? Prefs.DONE_VIDEO_STABILIZATION_INFO : Prefs.DONE_AUTO_STABILISE_INFO);
 									if( !done_auto_stabilise_info ) {
 										if (preview.isVideo()) showInfoDialog(R.string.preference_video_stabilization, R.string.preference_video_stabilization_summary, Prefs.DONE_VIDEO_STABILIZATION_INFO);
 										else showInfoDialog(R.string.preference_auto_stabilise, R.string.auto_stabilise_info, Prefs.DONE_AUTO_STABILISE_INFO);
@@ -456,14 +463,14 @@ public class PopupView extends LinearLayout {
 
 								if( !done_dialog ) {
 									String message = getResources().getString(preview.isVideo() ? R.string.preference_video_stabilization : R.string.preference_auto_stabilise) + ": " + getResources().getString(isChecked ? R.string.on : R.string.off);
-									preview.showToast(main_activity.getChangedAutoStabiliseToastBoxer(), message);
+									Utils.showToast(main_activity.getChangedAutoStabiliseToastBoxer(), message);
 								}
 							}
 						}
 					);
 				}
 				
-				if( sharedPreferences.getBoolean(Prefs.POPUP_OPTICAL_STABILIZATION, false) &&  preview.getCameraController() != null) {
+				if( Prefs.getBoolean(Prefs.POPUP_OPTICAL_STABILIZATION, false) &&  preview.getCameraController() != null) {
 					final List<String> modes = preview.getCameraController().getAvailableOpticalStabilizationModes();
 					if (modes.size() == 3) {
 						final String mode = preview.getCameraController().getOpticalStabilizationMode();
@@ -473,10 +480,7 @@ public class PopupView extends LinearLayout {
 									String value = isChecked ? "on" : "off";
 									
 									if (preview.getCameraController() != null && preview.getCameraController().setOpticalStabilizationMode(value)) {
-										final SharedPreferences sharedPreferences = main_activity.getSharedPrefs();
-										SharedPreferences.Editor editor = sharedPreferences.edit();
-										editor.putString(Prefs.OPTICAL_STABILIZATION + "_" + camera_id, value);
-										editor.apply();
+										Prefs.setString(Prefs.OPTICAL_STABILIZATION + "_" + camera_id, value);
 									}
 									
 									main_activity.getMainUI().closePopup(); // don't need to destroy popup
@@ -486,7 +490,7 @@ public class PopupView extends LinearLayout {
 					}
 				}
 
-				if (sharedPreferences.getBoolean(Prefs.POPUP_RESOLUTION, true)) {
+				if (Prefs.getBoolean(Prefs.POPUP_RESOLUTION, true)) {
 					if (!preview.isVideo()) {
 						addTitleToPopup(getResources().getString(R.string.preference_resolution));
 						this.addView(new ArrayOptions(
@@ -524,7 +528,7 @@ public class PopupView extends LinearLayout {
 				}
 
 				if (preview.isVideo()) {
-					if (sharedPreferences.getBoolean(Prefs.POPUP_VIDEO_BITRATE, false)) {
+					if (Prefs.getBoolean(Prefs.POPUP_VIDEO_BITRATE, false)) {
 						addArrayOptionsToPopup(
 							getResources().getString(R.string.preference_video_bitrate),
 							false,
@@ -537,7 +541,7 @@ public class PopupView extends LinearLayout {
 						);
 					}
 
-					if (sharedPreferences.getBoolean(Prefs.POPUP_VIDEO_FPS, false)) {
+					if (Prefs.getBoolean(Prefs.POPUP_VIDEO_FPS, false)) {
 						final List<String> entries = Arrays.asList(getResources().getStringArray(R.array.preference_video_fps_entries));
 						final List<String> values = Arrays.asList(getResources().getStringArray(R.array.preference_video_fps_values));
 						addArrayOptionsToPopup(
@@ -557,7 +561,7 @@ public class PopupView extends LinearLayout {
 						);
 					}
 
-					if (sharedPreferences.getBoolean(Prefs.POPUP_CAPTURE_RATE, true)) {
+					if (Prefs.getBoolean(Prefs.POPUP_CAPTURE_RATE, true)) {
 						final List<Float> capture_rate_values = preview.getSupportedVideoCaptureRates();
 						if( capture_rate_values.size() > 1 ) {
 							if( MyDebug.LOG )
@@ -604,7 +608,7 @@ public class PopupView extends LinearLayout {
 					}
 				}
 
-				if (main_activity.selfie_mode && sharedPreferences.getBoolean(Prefs.POPUP_TIMER, true)) {
+				if (main_activity.selfie_mode && Prefs.getBoolean(Prefs.POPUP_TIMER, true)) {
 					addArrayOptionsToPopup(
 						getResources().getString(R.string.preference_timer),
 						false,
@@ -625,7 +629,7 @@ public class PopupView extends LinearLayout {
 				if (!preview.isVideo()) {
 					final Prefs.PhotoMode photo_mode = Prefs.getPhotoMode();
 					if (photo_mode == Prefs.PhotoMode.FocusBracketing || photo_mode == Prefs.PhotoMode.FastBurst || photo_mode == Prefs.PhotoMode.NoiseReduction) {
-						if (sharedPreferences.getBoolean(Prefs.POPUP_PHOTOS_COUNT, true)) {
+						if (Prefs.getBoolean(Prefs.POPUP_PHOTOS_COUNT, true)) {
 							final List<String> values = Arrays.asList(getResources().getStringArray(R.array.preference_photos_count_values));
 							final String pref_key;
 							switch (photo_mode) {
@@ -661,7 +665,7 @@ public class PopupView extends LinearLayout {
 							);
 						}
 					} else if (main_activity.selfie_mode) {
-						if (sharedPreferences.getBoolean(Prefs.POPUP_BURST_MODE, true)) {
+						if (Prefs.getBoolean(Prefs.POPUP_BURST_MODE, true)) {
 							addArrayOptionsToPopup(
 								getResources().getString(R.string.preference_burst_mode),
 								false,
@@ -679,7 +683,7 @@ public class PopupView extends LinearLayout {
 							);
 						}
 						
-						if (sharedPreferences.getBoolean(Prefs.POPUP_BURST_INTERVAL, true)) {
+						if (Prefs.getBoolean(Prefs.POPUP_BURST_INTERVAL, true)) {
 							addArrayOptionsToPopup(
 								getResources().getString(R.string.preference_burst_interval),
 								false,
@@ -694,7 +698,7 @@ public class PopupView extends LinearLayout {
 					}
 				}
 
-				if (sharedPreferences.getBoolean(Prefs.POPUP_GRID, true)) {
+				if (Prefs.getBoolean(Prefs.POPUP_GRID, true)) {
 					addArrayOptionsToPopup(
 						getResources().getString(R.string.grid),
 						false,
@@ -708,7 +712,20 @@ public class PopupView extends LinearLayout {
 					
 				}
 
-				if( sharedPreferences.getBoolean(Prefs.POPUP_GHOST_IMAGE, false)) {
+				if( Prefs.getBoolean(Prefs.POPUP_HISTOGRAM, false)) {
+					addCheckBoxToPopup(
+						getResources().getString(R.string.preference_show_histogram),
+						Prefs.SHOW_HISTOGRAM, false,
+						new CheckBoxPopupListener() {
+							@Override
+							public void onCheckedChanged(boolean isChecked) {
+								Prefs.setBoolean(Prefs.SHOW_HISTOGRAM, isChecked);
+							}
+						}
+					);
+				}
+
+				if( Prefs.getBoolean(Prefs.POPUP_GHOST_IMAGE, false)) {
 					addCheckBoxToPopup(
 						getResources().getString(R.string.preference_ghost_image),
 						Prefs.GHOST_IMAGE, false,
@@ -723,7 +740,7 @@ public class PopupView extends LinearLayout {
 
 				if (!preview.isVideo()) {
 					final Prefs.PhotoMode photo_mode = Prefs.getPhotoMode();
-					if ((photo_mode == Prefs.PhotoMode.ExpoBracketing || photo_mode == Prefs.PhotoMode.HDR) && sharedPreferences.getBoolean(Prefs.POPUP_EXPO_BRACKETING_STOPS, true)) {
+					if ((photo_mode == Prefs.PhotoMode.ExpoBracketing || photo_mode == Prefs.PhotoMode.HDR) && Prefs.getBoolean(Prefs.POPUP_EXPO_BRACKETING_STOPS, true)) {
 						final List<String> values = Arrays.asList(getResources().getStringArray(R.array.preference_expo_bracketing_stops_values));
 
 						addArrayOptionsToPopup(
@@ -759,7 +776,7 @@ public class PopupView extends LinearLayout {
 						);
 					}
 					if(photo_mode == Prefs.PhotoMode.HDR) {
-						if(sharedPreferences.getBoolean(Prefs.POPUP_HDR_DEGHOST, true)) {
+						if(Prefs.getBoolean(Prefs.POPUP_HDR_DEGHOST, true)) {
 							addCheckBoxToPopup(
 								getResources().getString(R.string.preference_hdr_deghost),
 								Prefs.HDR_DEGHOST, true,
@@ -772,7 +789,7 @@ public class PopupView extends LinearLayout {
 								}*/
 							);
 						}
-						if (sharedPreferences.getBoolean(Prefs.POPUP_HDR_TONEMAPPING, true)) {
+						if (Prefs.getBoolean(Prefs.POPUP_HDR_TONEMAPPING, true)) {
 							addArrayOptionsToPopup(
 								getResources().getString(R.string.preference_hdr_tonemapping),
 								false,
@@ -787,7 +804,7 @@ public class PopupView extends LinearLayout {
 					}
 
 					if (photo_mode == Prefs.PhotoMode.HDR || photo_mode == Prefs.PhotoMode.DRO) { 
-						if (sharedPreferences.getBoolean(Prefs.POPUP_HDR_UNSHARP_MASK, true)) {
+						if (Prefs.getBoolean(Prefs.POPUP_HDR_UNSHARP_MASK, true)) {
 							addArrayOptionsToPopup(
 								getResources().getString(R.string.preference_hdr_unsharp_mask),
 								false,
@@ -800,7 +817,7 @@ public class PopupView extends LinearLayout {
 							);
 						}
 
-						if (sharedPreferences.getBoolean(Prefs.POPUP_HDR_UNSHARP_MASK_RADIUS, true)) {
+						if (Prefs.getBoolean(Prefs.POPUP_HDR_UNSHARP_MASK_RADIUS, true)) {
 							List<String> values = Arrays.asList(getResources().getStringArray(R.array.preference_radius_values));
 							addArrayOptionsToPopup(
 								getResources().getString(R.string.preference_hdr_unsharp_mask_radius),
@@ -814,7 +831,7 @@ public class PopupView extends LinearLayout {
 							);
 						}
 
-						if (sharedPreferences.getBoolean(Prefs.POPUP_HDR_LOCAL_CONTRAST, true)) {
+						if (Prefs.getBoolean(Prefs.POPUP_HDR_LOCAL_CONTRAST, true)) {
 							addArrayOptionsToPopup(
 								getResources().getString(R.string.preference_hdr_local_contrast),
 								false,
@@ -827,7 +844,7 @@ public class PopupView extends LinearLayout {
 							);
 						}
 
-						if (sharedPreferences.getBoolean(Prefs.POPUP_HDR_N_TILES, true)) {
+						if (Prefs.getBoolean(Prefs.POPUP_HDR_N_TILES, true)) {
 							List<String> values = Arrays.asList(getResources().getStringArray(R.array.preference_hdr_n_tiles_values));
 							addArrayOptionsToPopup(
 								getResources().getString(R.string.preference_hdr_n_tiles),
@@ -845,10 +862,10 @@ public class PopupView extends LinearLayout {
 
 				// popup should only be opened if we have a camera controller, but check just to be safe
 				if( preview.getCameraController() != null ) {
-					if (!main_activity.getMainUI().isVisible(R.id.white_balance) && sharedPreferences.getBoolean(Prefs.POPUP_WHITE_BALANCE, true)) {
+					if (!main_activity.getMainUI().isVisible(R.id.white_balance) && Prefs.getBoolean(Prefs.POPUP_WHITE_BALANCE, true)) {
 						List<String> supported_white_balances = preview.getSupportedWhiteBalances();
 						addExpandableRadioOptionsToPopup(supported_white_balances, getResources().getString(R.string.white_balance), "wb_",
-								Prefs.WHITE_BALANCE, sharedPreferences.getString(Prefs.WHITE_BALANCE, preview.getCameraController().getDefaultWhiteBalance()),
+								Prefs.WHITE_BALANCE, Prefs.getString(Prefs.WHITE_BALANCE, preview.getCameraController().getDefaultWhiteBalance()),
 								new RadioOptionsListener() {
 							@Override
 							public void onClick(String selected_value) {
@@ -857,17 +874,17 @@ public class PopupView extends LinearLayout {
 						});
 					}
 
-					if (!main_activity.getMainUI().isVisible(R.id.scene_mode) && sharedPreferences.getBoolean(Prefs.POPUP_SCENE_MODE, true)) {
+					if (!main_activity.getMainUI().isVisible(R.id.scene_mode) && Prefs.getBoolean(Prefs.POPUP_SCENE_MODE, true)) {
 						List<String> supported_scene_modes = preview.getSupportedSceneModes();
 						addExpandableRadioOptionsToPopup(supported_scene_modes, getResources().getString(R.string.scene_mode), "sm_",
-								Prefs.SCENE_MODE, sharedPreferences.getString(Prefs.SCENE_MODE, preview.getCameraController().getDefaultSceneMode()),
+								Prefs.SCENE_MODE, Prefs.getString(Prefs.SCENE_MODE, preview.getCameraController().getDefaultSceneMode()),
 								new RadioOptionsListener() {
 							@Override
 							public void onClick(String selected_value) {
 								if( preview.getCameraController() != null ) {
 									if( preview.getCameraController().sceneModeAffectsFunctionality() ) {
 										// need to call updateForSettings() and close the popup, as changing scene mode can change available camera features
-										main_activity.updateForSettings(getResources().getString(R.string.scene_mode) + ": " + main_activity.getStringResourceByName("sm_", selected_value));
+										main_activity.updateForSettings(getResources().getString(R.string.scene_mode) + ": " + Utils.getStringResourceByName("sm_", selected_value));
 										main_activity.getMainUI().closePopup();
 									}
 									else {
@@ -879,10 +896,10 @@ public class PopupView extends LinearLayout {
 						});
 					}
 
-					if (!main_activity.getMainUI().isVisible(R.id.color_effect) && sharedPreferences.getBoolean(Prefs.POPUP_COLOR_EFFECT, true)) {
+					if (!main_activity.getMainUI().isVisible(R.id.color_effect) && Prefs.getBoolean(Prefs.POPUP_COLOR_EFFECT, true)) {
 						List<String> supported_color_effects = preview.getSupportedColorEffects();
 						addExpandableRadioOptionsToPopup(supported_color_effects, getResources().getString(R.string.color_effect), "ce_",
-								Prefs.COLOR_EFFECT, sharedPreferences.getString(Prefs.COLOR_EFFECT, preview.getCameraController().getDefaultColorEffect()),
+								Prefs.COLOR_EFFECT, Prefs.getString(Prefs.COLOR_EFFECT, preview.getCameraController().getDefaultColorEffect()),
 								new RadioOptionsListener() {
 							@Override
 							public void onClick(String selected_value) {
@@ -964,7 +981,7 @@ public class PopupView extends LinearLayout {
 				for(final String option : options) {
 					for(int i = 0; i < values.length; i++) {
 						if( values[i].equals(option) ) {
-							if (keys[i] == null || sharedPreferences.getBoolean(keys[i] + "_" + camera_id, true))
+							if (keys[i] == null || Prefs.getBoolean(keys[i] + "_" + camera_id, true))
 								supported_options.add(option);
 							break;
 						}
@@ -1190,7 +1207,7 @@ public class PopupView extends LinearLayout {
 						}
 					}
 					if( index != -1 ) {
-						if (keys != null && keys[index] != null && !sharedPreferences.getBoolean(keys[index] + "_" + camera_id, true)) {
+						if (keys != null && keys[index] != null && !Prefs.getBoolean(keys[index] + "_" + camera_id, true)) {
 							continue;
 						}
 						resource = getResources().getIdentifier(icons[index], null, this.getContext().getApplicationContext().getPackageName());
@@ -1407,7 +1424,7 @@ public class PopupView extends LinearLayout {
 			else if (prefix.equals("iso_")) {
 				if (supported_option.equals("manual")) translated_text = getResources().getString(R.string.iso_manual);
 				else translated_text = main_activity.getMainUI().fixISOString(supported_option);
-			} else translated_text = main_activity.getStringResourceByName(prefix, supported_option);
+			} else translated_text = Utils.getStringResourceByName(prefix, supported_option);
 			button.setText(translated_text);
 			button.setTextSize(TypedValue.COMPLEX_UNIT_PX, text_size_main);
 			button.setTextColor(negative ? Color.BLACK : Color.WHITE);
@@ -1434,10 +1451,7 @@ public class PopupView extends LinearLayout {
 					if( MyDebug.LOG ) {
 						Log.d(TAG, "clicked current_option entry: " + supported_option);
 					}
-					SharedPreferences sharedPreferences = main_activity.getSharedPrefs();
-					SharedPreferences.Editor editor = sharedPreferences.edit();
-					editor.putString(preference_key, supported_option);
-					editor.apply();
+					Prefs.setString(preference_key, supported_option);
 
 					if( listener != null ) {
 						listener.onClick(supported_option);
@@ -1510,7 +1524,7 @@ public class PopupView extends LinearLayout {
 			this.entries = entries;
 			this.values = values;
 			this.pref_key = pref_key;
-			String value = sharedPreferences.getString(pref_key, default_value);
+			String value = Prefs.getString(pref_key, default_value);
 			current_index = values.indexOf(value);
 			if( current_index == -1 ) {
 				if( MyDebug.LOG )
@@ -1677,9 +1691,7 @@ public class PopupView extends LinearLayout {
 			}
 			
 			if (value != null) {
-				SharedPreferences.Editor editor = sharedPreferences.edit();
-				editor.putString(pref_key, value);
-				editor.apply();
+				Prefs.setString(pref_key, value);
 			}
 			
 			if (listener == null)
@@ -1732,12 +1744,9 @@ public class PopupView extends LinearLayout {
 		final boolean default_value,
 		final CheckBoxPopupListener listener
 	) {
-		addCheckBoxToPopup(title, sharedPreferences.getBoolean(preference_key, default_value), new CompoundButton.OnCheckedChangeListener() {
+		addCheckBoxToPopup(title, Prefs.getBoolean(preference_key, default_value), new CompoundButton.OnCheckedChangeListener() {
 			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-				final SharedPreferences sharedPreferences = main_activity.getSharedPrefs();
-				SharedPreferences.Editor editor = sharedPreferences.edit();
-				editor.putBoolean(preference_key, isChecked);
-				editor.apply();
+				Prefs.setBoolean(preference_key, isChecked);
 				
 				if (listener != null)
 					listener.onCheckedChanged(isChecked);
@@ -1780,10 +1789,7 @@ public class PopupView extends LinearLayout {
 			public void onClick(DialogInterface dialog, int which) {
 				if( MyDebug.LOG )
 					Log.d(TAG, "user clicked dont_show_again for info dialog");
-				final SharedPreferences sharedPreferences = main_activity.getSharedPrefs();
-				SharedPreferences.Editor editor = sharedPreferences.edit();
-				editor.putBoolean(info_preference_key, true);
-				editor.apply();
+				Prefs.setBoolean(info_preference_key, true);
 			}
 		});
 
@@ -1854,7 +1860,6 @@ public class PopupView extends LinearLayout {
 	}
 	
 	private void clickedPhotoMode(final MainActivity main_activity, final String option, final boolean update_icon) {
-		final SharedPreferences sharedPreferences = main_activity.getSharedPrefs();
 		final String old_option = Prefs.getPhotoModePref();
 		Prefs.setPhotoModePref(option);
 
@@ -1866,7 +1871,7 @@ public class PopupView extends LinearLayout {
 
 		boolean done_dialog = false;
 		if( option.equals("hdr") ) {
-			boolean done_hdr_info = sharedPreferences.contains(Prefs.DONE_HDR_INFO);
+			boolean done_hdr_info = Prefs.contains(Prefs.DONE_HDR_INFO);
 			if( !done_hdr_info ) {
 				showInfoDialog(R.string.photo_mode_hdr, R.string.hdr_info, Prefs.DONE_HDR_INFO);
 				done_dialog = true;

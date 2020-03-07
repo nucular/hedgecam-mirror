@@ -1,18 +1,21 @@
 package com.caddish_hedgehog.hedgecam2;
 
 import com.caddish_hedgehog.hedgecam2.Donations;
+import com.caddish_hedgehog.hedgecam2.Prefs;
 import com.caddish_hedgehog.hedgecam2.Preview.Preview;
 import com.caddish_hedgehog.hedgecam2.UI.FileListDialog;
-import com.caddish_hedgehog.hedgecam2.UI.SeekBarArrayPreference;
-import com.caddish_hedgehog.hedgecam2.UI.SeekBarPreference;
-import com.caddish_hedgehog.hedgecam2.UI.SeekBarCheckBoxPreference;
-import com.caddish_hedgehog.hedgecam2.UI.SeekBarFloatPreference;
+import com.caddish_hedgehog.hedgecam2.preferences.SeekBarArrayPreference;
+import com.caddish_hedgehog.hedgecam2.preferences.SeekBarColorsPreference;
+import com.caddish_hedgehog.hedgecam2.preferences.SeekBarPreference;
+import com.caddish_hedgehog.hedgecam2.preferences.SeekBarCheckBoxPreference;
+import com.caddish_hedgehog.hedgecam2.preferences.SeekBarFloatPreference;
 
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.content.ClipData;
 import android.content.ClipboardManager;
+import android.content.ContentResolver;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
@@ -42,9 +45,20 @@ import android.util.Log;
 import android.view.Display;
 import android.widget.Toast;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+
+import org.xmlpull.v1.XmlPullParserException;
+
 
 /** Fragment to handle the Settings UI. Note that originally this was a
  *  PreferenceActivity rather than a PreferenceFragment which required all
@@ -77,7 +91,7 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 		
 		final Resources resources = getActivity().getResources();
 
-		final SharedPreferences sharedPreferences = ((MainActivity)this.getActivity()).getSharedPrefs();
+		final SharedPreferences sharedPreferences = Prefs.getSharedPreferences();
 		if (sharedPreferences == null) return;
 
 		addPreferencesFromResource(R.xml.preferences);
@@ -164,6 +178,7 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 			removePref(bugfixGroup, Prefs.CENTER_FOCUS);
 			removePref(bugfixGroup, Prefs.UPDATE_FOCUS_FOR_VIDEO);
 			removePref("preference_category_modes", "preference_category_focus_modes");
+			removePref("preference_screen_camera_controls_more", Prefs.TOUCH_FOCUS);
 		}
 
 		final boolean supports_metering_area = bundle.getBoolean("supports_metering_area");
@@ -283,9 +298,7 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 								public void onClick(DialogInterface dialog, int which) {
 									if( MyDebug.LOG )
 										Log.d(TAG, "user clicked dont_show_again for raw info dialog");
-									SharedPreferences.Editor editor = sharedPreferences.edit();
-									editor.putBoolean(Prefs.DONE_RAW_INFO, true);
-									editor.apply();
+									Prefs.setBoolean(Prefs.DONE_RAW_INFO, true);
 								}
 							});
 							alertDialog.show();
@@ -294,6 +307,49 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 					return true;
 				}
 			});
+		}
+		
+		final boolean using_camera_2 = bundle.getBoolean("using_camera_2");
+
+		if (bundle.getBoolean("supports_renderscript")) {
+			if (!using_camera_2) {
+				Preference pref = findPreference(Prefs.SHOW_HISTOGRAM);
+				pref.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
+					@Override
+					public boolean onPreferenceChange(Preference preference, Object newValue) {
+						if( MyDebug.LOG )
+							Log.d(TAG, "clicked show histogram: " + newValue);
+						if( (boolean)newValue && !Prefs.getString(Prefs.PREVIEW_SURFACE, "auto").equals("texture")) {
+							// we check done_raw_info every time, so that this works if the user selects RAW again without leaving and returning to Settings
+							boolean done_raw_info = sharedPreferences.contains(Prefs.DONE_RAW_INFO);
+							if( !done_raw_info ) {
+								AlertDialog.Builder alertDialog = new AlertDialog.Builder(MyPreferenceFragment.this.getActivity());
+								alertDialog.setTitle(R.string.preference_screen_histogram);
+								alertDialog.setMessage(R.string.histogram_surface_question);
+								alertDialog.setPositiveButton(R.string.answer_yes, new OnClickListener() {
+									@Override
+									public void onClick(DialogInterface dialog, int which) {
+										Prefs.setString(Prefs.PREVIEW_SURFACE, "texture");
+									}
+								});
+								alertDialog.setNegativeButton(R.string.answer_no, new OnClickListener() {
+									@Override
+									public void onClick(DialogInterface dialog, int which) {
+										Prefs.setBoolean(Prefs.SHOW_HISTOGRAM, false);
+									}
+								});
+								alertDialog.show();
+							}
+						}
+						return true;
+					}
+				});
+			}
+		} else {
+			removePref("preference_screen_photo_settings", Prefs.ADJUST_LEVELS);
+			removePref("preference_screen_photo_settings", Prefs.HISTOGRAM_LEVEL);
+			removePref(popupGroup, Prefs.POPUP_HISTOGRAM);
+			removePref("preference_screen_osd", "preference_screen_histogram");
 		}
 
 		final boolean supports_dro = bundle.getBoolean("supports_dro");
@@ -376,10 +432,17 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 				p.setKey(preference_key);
 				p.setChecked(sharedPreferences.getBoolean(preference_key, false));
 			}
+			
+			String preference_key = Prefs.FORCE_ISO_EXPOSURE + (Prefs.isVideoPref() ? "_video" : "");
+			p = (TwoStatePreference)findPreference(Prefs.FORCE_ISO_EXPOSURE);
+			p.setKey(preference_key);
+			p.setChecked(sharedPreferences.getBoolean(preference_key, false));
+
 		} else {
 			removePref("preference_screen_sliders", Prefs.ISO_STEPS);
 			removePref("preference_screen_sliders", Prefs.EXPOSURE_STEPS);
 			removePref("preference_screen_bug_fix", Prefs.RESET_MANUAL_MODE);
+			removePref("preference_screen_bug_fix", Prefs.FORCE_ISO_EXPOSURE);
 		}
 
 		if( !supports_iso && !supports_iso_range ) {
@@ -409,8 +472,17 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 			Log.d(TAG, "white_balance_temperature_min: " + white_balance_temperature_min);
 			Log.d(TAG, "white_balance_temperature_max: " + white_balance_temperature_max);
 		}
-		if (!supports_white_balance_temperature)
+		if (supports_white_balance_temperature) {
+			String preference_key = Prefs.WHITE_BALANCE_CALIBRATION + "_" + cameraId;
+			SeekBarColorsPreference lp = (SeekBarColorsPreference)findPreference(Prefs.WHITE_BALANCE_CALIBRATION);
+			lp.setKey(preference_key);
+			lp.setValue(sharedPreferences.getString(preference_key, "1.0|1.0|1.0"));
+		} else {
 			removePref("preference_screen_sliders", Prefs.WHITE_BALANCE_STEPS);
+			removePref("preference_screen_main_indication", Prefs.SHOW_WHITE_BALANCE);
+			removePref("preference_screen_main_indication", Prefs.SHOW_WHITE_BALANCE_XY);
+			removePref("preference_screen_calibration", Prefs.WHITE_BALANCE_CALIBRATION);
+		}
 
 		if( !supports_expo_bracketing || max_expo_bracketing_n_images <= 3 ) {
 			removePref("preference_category_expo_bracketing", Prefs.EXPO_BRACKETING_N_IMAGES);
@@ -526,8 +598,6 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 		if( !supports_video_stabilization ) {
 			removePref("preference_screen_video_settings", Prefs.VIDEO_STABILIZATION);
 		}
-
-		final boolean using_camera_2 = bundle.getBoolean("using_camera_2");
 
 		final String noise_reduction_mode = bundle.getString("noise_reduction_mode");
 		final String [] noise_reduction_modes = bundle.getStringArray("noise_reduction_modes");
@@ -711,13 +781,14 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 			}
 		} else {
 			if (!supports_iso) {
-				removePref("preference_screen_osd", Prefs.SHOW_ISO);
+				removePref("preference_screen_main_indication", Prefs.SHOW_ISO);
 			}
 
 			removePref("preference_screen_bug_fix", Prefs.CAMERA2_FAKE_FLASH);
 			removePref("preference_screen_bug_fix", Prefs.FULL_SIZE_COPY);
 			removePref("preference_category_expo_bracketing", Prefs.CAMERA2_FAST_BURST);
 			removePref("preference_screen_video_settings", Prefs.VIDEO_LOG_PROFILE);
+			removePref("preference_screen_bug_fix", Prefs.DEFAULT_COLOR_CORRECTION);
 		}
 		
 		if (supports_yuv) {
@@ -817,17 +888,13 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 							new FileListDialog(new String[] {"jpeg", "jpg", "jpe", "png"}, new FileListDialog.Listener(){
 								@Override
 								public void onSelected(String file) {
-									SharedPreferences.Editor editor = sharedPreferences.edit();
-									editor.putString(Prefs.GHOST_IMAGE_FILE, file);
-									editor.apply();
+									Prefs.setString(Prefs.GHOST_IMAGE_FILE, file);
 								}
 								
 								@Override
 								public void onCancelled() {
 									if (sharedPreferences.getString(Prefs.GHOST_IMAGE_FILE, "").length() == 0) {
-										SharedPreferences.Editor editor = sharedPreferences.edit();
-										editor.putString(Prefs.GHOST_IMAGE_SOURCE, "last_photo");
-										editor.apply();
+										Prefs.setString(Prefs.GHOST_IMAGE_SOURCE, "last_photo");
 									}
 								}
 							}).show(getFragmentManager(), "GHOST_IMAGE_FRAGMENT");
@@ -902,9 +969,7 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 								@Override
 								public void onCancelled() {
 									if (sharedPreferences.getString(Prefs.SAVE_VIDEO_LOCATION, "").length() == 0) {
-										SharedPreferences.Editor editor = sharedPreferences.edit();
-										editor.putString(Prefs.SAVE_VIDEO_FOLDER, "same_as_photo");
-										editor.apply();
+										Prefs.setString(Prefs.SAVE_VIDEO_FOLDER, "same_as_photo");
 									}
 								}
 							}).show(getFragmentManager(), "FOLDER_FRAGMENT");
@@ -946,9 +1011,9 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 
 						if (sharedPreferences.getString(Prefs.GHOST_IMAGE_SOURCE, "last_photo").equals("file")) {
 							SharedPreferences.Editor editor = sharedPreferences.edit();
-							editor.putBoolean(Prefs.GHOST_IMAGE, false);
-							editor.putString(Prefs.GHOST_IMAGE_SOURCE, "last_photo");
-							editor.apply();
+							Prefs.putBoolean(Prefs.GHOST_IMAGE, false);
+							Prefs.putString(Prefs.GHOST_IMAGE_SOURCE, "last_photo");
+							Prefs.commit();
 						}
 					}
 					return false;
@@ -960,8 +1025,8 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 			final Preference pref = findPreference("preference_about");
 			pref.setOnPreferenceClickListener(new OnPreferenceClickListener() {
 				@Override
-				public boolean onPreferenceClick(Preference arg0) {
-					if( pref.getKey().equals("preference_about") ) {
+				public boolean onPreferenceClick(Preference p) {
+					if( p.getKey().equals("preference_about") ) {
 						if( MyDebug.LOG )
 							Log.d(TAG, "user clicked about");
 						AlertDialog.Builder alertDialog = new AlertDialog.Builder(MyPreferenceFragment.this.getActivity());
@@ -981,7 +1046,7 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 						}
 						about_string.append("HedgeCam v");
 						about_string.append(version);
-						about_string.append("\n\n(c) 2016-2018 alex82 aka Caddish Hedgehog");
+						about_string.append("\n\n(c) 2016-2019 alex82 aka Caddish Hedgehog");
 						about_string.append("\n\n");
 						about_string.append(resources.getString(R.string.about_credits));
 						final String translation = resources.getString(R.string.translation_author);
@@ -1359,82 +1424,43 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 		}
 
 		{
-			final Preference pref = findPreference("preference_reset");
-			pref.setOnPreferenceClickListener(new OnPreferenceClickListener() {
-				@Override
-				public boolean onPreferenceClick(Preference arg0) {
-					if( pref.getKey().equals("preference_reset") ) {
-						if( MyDebug.LOG )
-							Log.d(TAG, "user clicked reset");
-						new AlertDialog.Builder(MyPreferenceFragment.this.getActivity())
-						.setIcon(android.R.drawable.ic_dialog_alert)
-						.setTitle(R.string.preference_reset)
-						.setMessage(R.string.preference_reset_question)
-						.setPositiveButton(R.string.answer_yes, new DialogInterface.OnClickListener() {
-							@Override
-							public void onClick(DialogInterface dialog, int which) {
-								if( MyDebug.LOG )
-									Log.d(TAG, "user confirmed reset");
-								Prefs.reset();
-								MainActivity main_activity = (MainActivity)MyPreferenceFragment.this.getActivity();
-								main_activity.setDeviceDefaults();
-								if( MyDebug.LOG )
-									Log.d(TAG, "user clicked reset - need to restart");
-								
-								((MainActivity)getActivity()).restartActivity();
-							}
-						})
-						.setNegativeButton(R.string.answer_no, null)
-						.show();
-					}
-					return false;
-				}
-			});
-		}
+			PreferenceGroup cat_reset = (PreferenceGroup)findPreference("preference_screen_reset");
+			PreferenceGroup cat_export = (PreferenceGroup)findPreference("preference_screen_export");
+			for (Prefs.Category cat : Prefs.PREF_CATEGORIES) {
+				Preference pref = new Preference(getActivity());
+				pref.setKey("preference_reset_" + cat.id);
+				if (cat.name_resource != 0)
+					pref.setTitle(cat.name_resource);
+				if (cat.summary_resource != 0)
+					pref.setSummary(cat.summary_resource);
+				pref.setOnPreferenceClickListener(reset_listener);
+				cat_reset.addPreference(pref);
 
-		{
-			final Preference pref = findPreference("preference_backup");
-			pref.setOnPreferenceClickListener(new OnPreferenceClickListener() {
-				@Override
-				public boolean onPreferenceClick(Preference arg0) {
-					if( pref.getKey().equals("preference_backup") ) {
-						if( MyDebug.LOG )
-							Log.d(TAG, "user clicked backup");
-						boolean result = Prefs.backup();
-						Toast.makeText((MainActivity)MyPreferenceFragment.this.getActivity(), result ? R.string.backup_saved : R.string.failed_to_save_backup, Toast.LENGTH_SHORT).show();
-					}
-					return false;
-				}
-			});
-		}
+				pref = new Preference(getActivity());
+				pref.setKey("preference_export_" + cat.id);
+				if (cat.name_resource != 0)
+					pref.setTitle(cat.name_resource);
+				if (cat.summary_resource != 0)
+					pref.setSummary(cat.summary_resource);
+				pref.setOnPreferenceClickListener(export_listener);
+				cat_export.addPreference(pref);
+			}
 
-		{
-			final Preference pref = findPreference("preference_restore");
-			pref.setOnPreferenceClickListener(new OnPreferenceClickListener() {
-				@Override
-				public boolean onPreferenceClick(Preference arg0) {
-					if( pref.getKey().equals("preference_restore") ) {
-						if( MyDebug.LOG )
-							Log.d(TAG, "user clicked restore");
+			Preference pref = new Preference(getActivity());
+			pref.setKey("preference_reset");
+			pref.setTitle(R.string.preference_reset_all);
+			pref.setSummary(R.string.preference_reset_summary);
+			pref.setOnPreferenceClickListener(reset_listener);
+			cat_reset.addPreference(pref);
 
-						MainActivity main_activity = (MainActivity)MyPreferenceFragment.this.getActivity();
-						if( main_activity.getStorageUtils().isUsingSAF() ) {
-							main_activity.openBackupChooserDialogSAF(true);
-							return true;
-						}
-						else {
-							new FileListDialog(new String[] {"xml"}, new FileListDialog.Listener(){
-								@Override
-								public void onSelected(String file) {
-									restoreSettings(file, null);
-								}
-							}).show(getFragmentManager(), "RESTORE_FRAGMENT");
-							return true;
-						}
-					}
-					return false;
-				}
-			});
+			pref = findPreference("preference_backup");
+			pref.setOnPreferenceClickListener(export_listener);
+
+			pref = findPreference("preference_restore");
+			pref.setOnPreferenceClickListener(import_listener);
+
+			pref = findPreference("preference_import");
+			pref.setOnPreferenceClickListener(import_listener);
 		}
 
 		{
@@ -1442,7 +1468,7 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 
 			if (!MyDebug.GOOGLE_PLAY) {
 				
-				PreferenceCategory cat = new PreferenceCategory(getActivity());
+				PreferenceGroup cat = (PreferenceGroup)(new PreferenceCategory(getActivity()));
 				cat.setKey("preference_category_webmoney_donations");
 				cat.setTitle("WebMoney");
 				((PreferenceGroup)findPreference("preference_screen_donate")).addPreference(cat);
@@ -1452,7 +1478,7 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 						ClipboardManager clipboard = (ClipboardManager) getActivity().getSystemService(Activity.CLIPBOARD_SERVICE);
 						ClipData clip = ClipData.newPlainText("WebMoney wallet", pref.getSummary());
 						clipboard.setPrimaryClip(clip);
-						((MainActivity)getActivity()).getPreview().showToast(null, R.string.wallet_was_copied);
+						Utils.showToast(null, R.string.wallet_was_copied);
 						return true;
 					}
 				};
@@ -1476,9 +1502,7 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 				public void onReady() {
 					if (!was_donations && donations.wasThereDonations()) {
 						was_donations = true;
-						SharedPreferences.Editor editor = sharedPreferences.edit();
-						editor.putBoolean("was_donations", true);
-						editor.apply();
+						Prefs.setBoolean("was_donations", true);
 					}
 					
 					List<Donations.PlayDonation> list = donations.getPlayDonations();
@@ -1513,9 +1537,7 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 				public void onDonationMade(String id) {
 					if (!was_donations) {
 						was_donations = true;
-						SharedPreferences.Editor editor = sharedPreferences.edit();
-						editor.putBoolean("was_donations", true);
-						editor.apply();
+						Prefs.setBoolean("was_donations", true);
 					}
 
 					AlertDialog.Builder alertDialog = new AlertDialog.Builder(MyPreferenceFragment.this.getActivity());
@@ -1548,7 +1570,7 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 		getView().setBackgroundColor(backgroundColor);
 		array.recycle();
 
-		SharedPreferences sharedPreferences = ((MainActivity)this.getActivity()).getSharedPrefs();
+		SharedPreferences sharedPreferences = Prefs.getSharedPreferences();
 		sharedPreferences.registerOnSharedPreferenceChangeListener(this);
 	}
 
@@ -1578,7 +1600,11 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 	public void onActivityResult(int requestCode, int resultCode, Intent resultData) {
 		if( MyDebug.LOG )
 			Log.d(TAG, "onActivityResult");
-		if ( requestCode == MainActivity.SAF_CODE_OPEN_BACKUP ) {
+		if ( requestCode == MainActivity.SAF_CODE_OPEN_BACKUP || requestCode == MainActivity.SAF_CODE_OPEN_XML_SETTINGS ) {
+			boolean clear = false;
+			if ( requestCode == MainActivity.SAF_CODE_OPEN_BACKUP )
+				clear = true;
+
 			Uri fileUri = null;
 			if( resultCode == Activity.RESULT_OK && resultData != null ) {
 				fileUri = resultData.getData();
@@ -1593,12 +1619,12 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 				catch(SecurityException e) {
 					Log.e(TAG, "SecurityException failed to take permission");
 					e.printStackTrace();
-					((MainActivity)getActivity()).getPreview().showToast(null, R.string.failed_to_read_backup);
+					Utils.showToast(R.string.failed_to_read_file);
 				}
 			}
 			
 			if (fileUri != null)
-				restoreSettings(null, fileUri);
+				importSettings(null, fileUri, clear);
 		} else if (donations != null)
 			donations.handleActivityResult(requestCode, resultCode, resultData);
 	}
@@ -1623,24 +1649,212 @@ public class MyPreferenceFragment extends PreferenceFragment implements OnShared
 		super.onDestroy();
 	}
 	
-	private void restoreSettings(final String file, final Uri uri) {
+	private OnPreferenceClickListener reset_listener = new OnPreferenceClickListener() {
+		@Override
+		public boolean onPreferenceClick(Preference pref) {
+			if( MyDebug.LOG )
+				Log.d(TAG, "user clicked reset");
+
+			String key = pref.getKey();
+			String[] keys = null;
+			if( !key.equals("preference_reset") ) {
+				for (Prefs.Category cat : Prefs.PREF_CATEGORIES) {
+					if (key.equals("preference_reset_" + cat.id)) {
+						keys = cat.keys;
+						break;
+					}
+				}
+				if (keys == null)
+					// Oops... Something wrong...
+					return false;
+			}
+
+			final String[] pref_keys = keys;
+
+			new AlertDialog.Builder(MyPreferenceFragment.this.getActivity())
+			.setIcon(android.R.drawable.ic_dialog_alert)
+			.setTitle(R.string.preference_reset)
+			.setMessage(R.string.preference_reset_question)
+			.setPositiveButton(R.string.answer_yes, new DialogInterface.OnClickListener() {
+				@Override
+				public void onClick(DialogInterface dialog, int which) {
+					if( MyDebug.LOG )
+						Log.d(TAG, "user confirmed reset");
+					MainActivity main_activity = (MainActivity)MyPreferenceFragment.this.getActivity();
+					if (pref_keys == null) {
+						Prefs.reset();
+						main_activity.setDeviceDefaults();
+					} else {
+						Prefs.reset(pref_keys);
+					}
+					if( MyDebug.LOG )
+						Log.d(TAG, "user clicked reset - need to restart");
+					
+					((MainActivity)getActivity()).restartActivity();
+				}
+			})
+			.setNegativeButton(R.string.answer_no, null)
+			.show();
+			return false;
+		}
+	};
+	
+	private OnPreferenceClickListener export_listener = new OnPreferenceClickListener() {
+		@Override
+		public boolean onPreferenceClick(Preference pref) {
+			String prefix = null;
+			String category = null;
+			String[] pref_keys = null;
+	
+			String key = pref.getKey();
+			if( key.equals("preference_backup") ) {
+				if( MyDebug.LOG )
+					Log.d(TAG, "user clicked backup");
+				prefix = "BACKUP";
+			} else {
+				if( MyDebug.LOG )
+					Log.d(TAG, "user clicked export");
+					
+				for (Prefs.Category cat : Prefs.PREF_CATEGORIES) {
+					if (key.equals("preference_export_" + cat.id)) {
+						category = cat.id;
+						pref_keys = cat.keys;
+						prefix = "CFG_" + cat.id.toUpperCase();
+						break;
+					}
+				}
+				
+				if (pref_keys == null)
+					return false;
+			}
+
+			OutputStream output = null;
+			File file = null;
+			StorageUtils storageUtils = ((MainActivity)getActivity()).getStorageUtils();
+			boolean result = false;
+			String error = null;
+			try {
+				if (!storageUtils.isUsingSAF()) {
+					file = storageUtils.createOutputMediaFile(prefix + "_", "", "xml", new Date());
+					output = new FileOutputStream(file);
+				} else {
+					Uri uri = storageUtils.createOutputMediaFileSAF(prefix + "_", "", "xml", new Date());
+					output = ((MainActivity)getActivity()).getContentResolver().openOutputStream(uri);
+					file = storageUtils.getFileFromDocumentUriSAF(uri, false);
+				}
+				if (output != null) {
+					Prefs.exportPrefs(output, category, pref_keys);
+					result = true;
+				}
+			} catch (IOException e) {
+				error = e.getMessage();
+			} catch (XmlPullParserException e) {
+				error = e.getMessage();
+			} finally {
+				try {
+					if (output != null) {
+						output.flush();
+						output.close();
+					}
+				} catch (Throwable ex) {
+					ex.printStackTrace();
+				}
+			}
+
+			if (file != null)
+				storageUtils.broadcastFile(file, false, false, false);
+
+			if (result)
+				Utils.showToast(pref_keys == null ? R.string.backup_file_saved : R.string.settings_file_saved);
+			else
+				Utils.showToast(getActivity().getResources().getString(R.string.failed_to_save_file)
+						+ (error == null ? "" : ": " + error));
+
+			return false;
+		}
+	};
+	
+	private OnPreferenceClickListener import_listener = new OnPreferenceClickListener() {
+		@Override
+		public boolean onPreferenceClick(Preference pref) {
+			final boolean clear;
+			if( pref.getKey().equals("preference_restore") ) {
+				if( MyDebug.LOG )
+					Log.d(TAG, "user clicked restore");
+				clear = true;
+			} else {
+				if( MyDebug.LOG )
+					Log.d(TAG, "user clicked import");
+				clear = false;
+			}
+
+			MainActivity main_activity = (MainActivity)MyPreferenceFragment.this.getActivity();
+			if( main_activity.getStorageUtils().isUsingSAF() ) {
+				((MainActivity)getActivity()).openSettingsFileChooserDialogSAF(true, clear);
+			}
+			else {
+				new FileListDialog(new String[] {"xml"}, new FileListDialog.Listener(){
+					@Override
+					public void onSelected(String file) {
+						importSettings(file, null, clear);
+					}
+				}).show(getFragmentManager(), "RESTORE_FRAGMENT");
+			}
+			return false;
+		}
+	};
+	
+	private void importSettings(final String file, final Uri uri, final boolean clear) {
 		new AlertDialog.Builder(MyPreferenceFragment.this.getActivity())
 		.setIcon(android.R.drawable.ic_dialog_alert)
-		.setTitle(R.string.preference_restore)
-		.setMessage(R.string.preference_restore_question)
+		.setTitle(clear ? R.string.preference_restore : R.string.preference_import)
+		.setMessage(clear ? R.string.preference_restore_question : R.string.preference_import_question)
 		.setPositiveButton(R.string.answer_yes, new DialogInterface.OnClickListener() {
 			@Override
 			public void onClick(DialogInterface dialog, int which) {
 				if( MyDebug.LOG )
 					Log.d(TAG, "user confirmed restore");
-				boolean result = Prefs.restore(file, uri);
+
+				InputStream input = null;
+				boolean result = false;
+				String error = null;
+				try {
+					if (file != null)
+						input = new FileInputStream(file);
+					else if (uri != null) {
+						final ContentResolver resolver = ((MainActivity)getActivity()).getContentResolver();
+						if (resolver != null)
+							input = resolver.openInputStream(uri);
+					}
+
+					if (input != null) {
+						Prefs.importPrefs(input, clear);
+						result = true;
+					}
+
+				} catch (IOException e) {
+					error = e.getMessage();
+				} catch (XmlPullParserException e) {
+					error = e.getMessage();
+				} finally {
+					try {
+						if (input != null) {
+							input.close();
+						}
+					} catch (Throwable ex) {
+						ex.printStackTrace();
+					}
+				}
+
 				if (result) {
 					if( MyDebug.LOG )
 						Log.d(TAG, "user clicked restore - need to restart");
-					
+
 					((MainActivity)getActivity()).restartActivity();
-				} else
-					((MainActivity)getActivity()).getPreview().showToast(null, R.string.failed_to_restore_from_backup);
+				} else {
+					int msg_id = clear ? R.string.failed_to_restore_from_backup : R.string.failed_to_import_settings;
+					Utils.showToast(null, getActivity().getResources().getString(msg_id) + (error == null ? "" : ": " + error));
+				}
 			}
 		})
 		.setNegativeButton(R.string.answer_no, null)

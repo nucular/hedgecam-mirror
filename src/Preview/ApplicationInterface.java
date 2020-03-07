@@ -38,7 +38,6 @@ public interface ApplicationInterface {
 	// methods that request information
 	Context getContext(); // get the application context
 	boolean useCamera2(); // should Android 5's Camera 2 API be used?
-	boolean useTextureView();
 	Location getLocation(); // get current location - null if not available (or you don't care about geotagging)
 	int createOutputVideoMethod(); // return a VIDEOMETHOD_* value to specify how to create a video file
 	File createOutputVideoFile(String prefix, String extension) throws IOException; // will be called if createOutputVideoUsingSAF() returns VIDEOMETHOD_FILE

@@ -1,6 +1,8 @@
 package com.caddish_hedgehog.hedgecam2.CameraController;
 
+import com.caddish_hedgehog.hedgecam2.Matrix;
 import com.caddish_hedgehog.hedgecam2.MyDebug;
+import com.caddish_hedgehog.hedgecam2.ColorTemperature;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -14,6 +16,7 @@ import android.content.Context;
 import android.graphics.ImageFormat;
 import android.graphics.PixelFormat;
 import android.graphics.Point;
+import android.graphics.PointF;
 import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
@@ -28,6 +31,7 @@ import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.DngCreator;
 import android.hardware.camera2.TotalCaptureResult;
+import android.hardware.camera2.params.ColorSpaceTransform;
 import android.hardware.camera2.params.MeteringRectangle;
 import android.hardware.camera2.params.RggbChannelVector;
 import android.hardware.camera2.params.StreamConfigurationMap;
@@ -65,7 +69,7 @@ public class CameraController2 extends CameraController {
 	private boolean supports_face_detect_mode_simple;
 	private boolean supports_face_detect_mode_full;
 	private boolean supports_photo_video_recording;
-	private final int tonemap_max_curve_points_c = 64;
+	private int tonemap_max_curve_points_c;
 	private final ErrorCallback preview_error_cb;
 	private final ErrorCallback camera_error_cb;
 	private CameraCaptureSession captureSession;
@@ -142,6 +146,8 @@ public class CameraController2 extends CameraController {
 	private boolean fake_precapture_torch_focus_performed; // whether we turned on torch to do an autofocus, in fake precapture mode
 	private boolean fake_precapture_use_flash; // whether we decide to use flash in auto mode (if fake_precapture_use_autoflash_time_ms != -1)
 	private long fake_precapture_use_flash_time_ms = -1; // when we last checked to use flash in auto mode
+	
+	private boolean force_iso_exposure;
 
 	private ContinuousFocusMoveCallback continuous_focus_move_callback;
 	
@@ -149,14 +155,17 @@ public class CameraController2 extends CameraController {
 	private boolean capture_result_is_ae_scanning;
 	private Integer capture_result_ae; // latest ae_state, null if not available
 	private boolean is_flash_required; // whether capture_result_ae suggests FLASH_REQUIRED? Or in neither FLASH_REQUIRED nor CONVERGED, this stores the last known result
-	private boolean capture_result_has_white_balance_rggb;
-	private RggbChannelVector capture_result_white_balance_rggb;
 	private boolean capture_result_has_iso;
 	private int capture_result_iso;
 	private boolean capture_result_has_exposure_time;
 	private long capture_result_exposure_time;
 	private boolean capture_result_has_frame_duration;
 	private long capture_result_frame_duration;
+	private boolean capture_result_is_awb_scanning;
+	private boolean capture_result_has_white_balance_rggb;
+	private RggbChannelVector capture_result_white_balance_rggb;
+	private ColorTemperature.CIEColor capture_result_white_balance_xyz;
+	private int capture_result_white_balance = -1;
 	/*private boolean capture_result_has_focus_distance;
 	private float capture_result_focus_distance_min;
 	private float capture_result_focus_distance_max;*/
@@ -173,7 +182,7 @@ public class CameraController2 extends CameraController {
 	}
 
 	private final static int min_white_balance_temperature_c = 2000;
-	private final static int max_white_balance_temperature_c = 8000;
+	private final static int max_white_balance_temperature_c = 10000;
 
 	private boolean uncompressed_photo = false;
 	private boolean full_size_copy = false;
@@ -183,6 +192,9 @@ public class CameraController2 extends CameraController {
 	
 	private final static int LENS_OPTICAL_STABILIZATION_MODE_IF_NECESSARY = 2;
 	private boolean optical_stabilization_if_necessary;
+
+	private double[][] sensor_color_transform;
+	private double[][] sensor_color_transform_inverse;
 
 	private class CameraSettings {
 		// keys that we need to store, to pass to the stillBuilder, but doesn't need to be passed to previewBuilder (should set sensible defaults)
@@ -195,6 +207,9 @@ public class CameraController2 extends CameraController {
 		private int color_effect = CameraMetadata.CONTROL_EFFECT_MODE_OFF;
 		private int white_balance = CameraMetadata.CONTROL_AWB_MODE_AUTO;
 		private int white_balance_temperature = 5000; // used for white_balance == CONTROL_AWB_MODE_OFF
+		private ColorTemperature.CIEColor white_balance_xyz;
+		private RggbChannelVector white_balance_rggb;
+		private float[] white_balance_calibration;
 		private String flash_value = "flash_off";
 		private boolean manual_mode;
 		//private int ae_mode = CameraMetadata.CONTROL_AE_MODE_ON;
@@ -218,8 +233,12 @@ public class CameraController2 extends CameraController {
 		private boolean has_face_detect_mode;
 		private int face_detect_mode = CaptureRequest.STATISTICS_FACE_DETECT_MODE_OFF;
 		private boolean video_stabilization;
-		private float log_profile_strength;
+		private ColorSpaceTransform default_color_space_transform;
+		private int default_color_correction_mode = -1;
+		private String log_profile_curve;
+		private float log_profile_gamma;
 		private Integer default_tonemap_mode; // since we don't know what a device's tonemap mode is, we save it so we can switch back to it
+		private TonemapCurve default_tonemap_curve;
 		private Range<Integer> ae_target_fps_range;
 		private long sensor_frame_duration;
 		private int antibanding = -1;
@@ -275,6 +294,7 @@ public class CameraController2 extends CameraController {
 			setFaceDetectMode(builder);
 			setRawMode(builder);
 			setVideoStabilization(builder);
+			setColorCorrectionTransform(builder);
 			setLogProfile(builder);
 			setAntibanding(builder);
 			setNoiseReductionMode(builder);
@@ -357,19 +377,42 @@ public class CameraController2 extends CameraController {
 			/*if( builder.get(CaptureRequest.CONTROL_AWB_MODE) == null && white_balance == CameraMetadata.CONTROL_AWB_MODE_AUTO ) {
 				// can leave off
 			}
-			else*/ if( builder.get(CaptureRequest.CONTROL_AWB_MODE) == null || builder.get(CaptureRequest.CONTROL_AWB_MODE) != white_balance ) {
+			else*/ 
+			
+			if( builder.get(CaptureRequest.CONTROL_AWB_MODE) == null || builder.get(CaptureRequest.CONTROL_AWB_MODE) != white_balance ) {
 				if( MyDebug.LOG )
 					Log.d(TAG, "setting white balance: " + white_balance);
+				if (default_color_correction_mode != -1 && builder.get(CaptureRequest.CONTROL_AWB_MODE) == CameraMetadata.CONTROL_AWB_MODE_OFF)
+					builder.set(CaptureRequest.COLOR_CORRECTION_MODE, default_color_correction_mode);
+
 				builder.set(CaptureRequest.CONTROL_AWB_MODE, white_balance);
 				changed = true;
 			}
-			if( white_balance == CameraMetadata.CONTROL_AWB_MODE_OFF ) {
+			if( white_balance == CameraMetadata.CONTROL_AWB_MODE_OFF && sensor_color_transform != null ) {
 				if( MyDebug.LOG )
 					Log.d(TAG, "setting white balance temperature: " + white_balance_temperature);
+					
+				if (default_color_correction_mode == -1)
+					default_color_correction_mode = builder.get(CaptureRequest.COLOR_CORRECTION_MODE);
+
 				// manual white balance
-				RggbChannelVector rggbChannelVector = convertTemperatureToRggb(white_balance_temperature);
+				ColorTemperature.RGBColor rgb = new ColorTemperature.CIEColor(white_balance_temperature).toRGB(sensor_color_transform);
+				if (white_balance_calibration != null) {
+					rgb.r /= white_balance_calibration[0];
+					rgb.g /= white_balance_calibration[1];
+					rgb.b /= white_balance_calibration[2];
+				}
+				double max = Math.max(rgb.r, rgb.g);
+				max = Math.max(max, rgb.b);
+				if (max > 1.0f) {
+					rgb.r /= max;
+					rgb.g /= max;
+					rgb.b /= max;
+				}
+
+				white_balance_rggb = new RggbChannelVector((float)(1/rgb.r), (float)(1/rgb.g), (float)(1/rgb.g), (float)(1/rgb.b));
 				builder.set(CaptureRequest.COLOR_CORRECTION_MODE, CameraMetadata.COLOR_CORRECTION_MODE_TRANSFORM_MATRIX);
-				builder.set(CaptureRequest.COLOR_CORRECTION_GAINS, rggbChannelVector);
+				builder.set(CaptureRequest.COLOR_CORRECTION_GAINS, white_balance_rggb);
 				changed = true;
 			}
 			return changed;
@@ -384,18 +427,29 @@ public class CameraController2 extends CameraController {
 					Log.d(TAG, "iso: " + iso);
 					Log.d(TAG, "exposure_time: " + exposure_time);
 				}
-				builder.set(CaptureRequest.CONTROL_AE_MODE, CameraMetadata.CONTROL_AE_MODE_OFF);
-				builder.set(CaptureRequest.SENSOR_SENSITIVITY, iso);
-				long actual_exposure_time = exposure_time;
-				if( !is_still ) {
-					// if this isn't for still capture, have a max exposure time of 1/10s
-					actual_exposure_time = Math.min(exposure_time, 1000000000L/preview_max_exposure);
-					if( MyDebug.LOG )
-						Log.d(TAG, "actually using exposure_time of: " + actual_exposure_time);
+				if (!is_still && flash_value.equals("flash_on")) {
+					builder.set(CaptureRequest.CONTROL_AE_MODE, CameraMetadata.CONTROL_AE_MODE_ON);
+				} else {
+					builder.set(CaptureRequest.CONTROL_AE_MODE, CameraMetadata.CONTROL_AE_MODE_OFF);
+					builder.set(CaptureRequest.SENSOR_SENSITIVITY, iso);
+					long actual_exposure_time = exposure_time;
+					if( !is_still ) {
+						// if this isn't for still capture, have a max exposure time of 1/10s
+						actual_exposure_time = Math.min(exposure_time, 1000000000L/preview_max_exposure);
+						if( MyDebug.LOG )
+							Log.d(TAG, "actually using exposure_time of: " + actual_exposure_time);
+					}
+					builder.set(CaptureRequest.SENSOR_EXPOSURE_TIME, actual_exposure_time);
+					if (sensor_frame_duration > 0) {
+						builder.set(CaptureRequest.SENSOR_FRAME_DURATION, sensor_frame_duration);
+					}
 				}
-				builder.set(CaptureRequest.SENSOR_EXPOSURE_TIME, actual_exposure_time);
+				if (is_still && !previewIsVideoMode && flash_value.equals("flash_on") && !want_expo_bracketing && !want_burst) {
+					builder.set(CaptureRequest.FLASH_MODE, CameraMetadata.FLASH_MODE_SINGLE);
+				} else {
+					builder.set(CaptureRequest.FLASH_MODE, CameraMetadata.FLASH_MODE_OFF);
+				}
 				// for now, flash is disabled when using manual iso - it seems to cause ISO level to jump to 100 on Nexus 6 when flash is turned on!
-				builder.set(CaptureRequest.FLASH_MODE, CameraMetadata.FLASH_MODE_OFF);
 				// set flash via CaptureRequest.FLASH
 				/*if( flash_value.equals("flash_off") ) {
 					builder.set(CaptureRequest.FLASH_MODE, CameraMetadata.FLASH_MODE_OFF);
@@ -548,99 +602,66 @@ public class CameraController2 extends CameraController {
 		private void setVideoStabilization(CaptureRequest.Builder builder) {
 			builder.set(CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE, video_stabilization ? CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_ON : CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_OFF);
 		}
-
-		private float getLogProfile(float in) {
-			//final float black_level = 4.0f/255.0f;
-			final float power = 1.0f/2.2f;
-			final float log_A = log_profile_strength;
-			/*float out;
-			if( in <= black_level ) {
-				out = in;
-			}
-			else {
-				float in_m = (in - black_level) / (1.0f - black_level);
-				out = (float) (Math.log1p(log_A * in_m) / Math.log1p(log_A));
-				out = black_level + (1.0f - black_level)*out;
-			}*/
-			float out = (float) (Math.log1p(log_A * in) / Math.log1p(log_A));
-
-			// apply gamma
-			out = (float)Math.pow(out, power);
-			//out = Math.max(out, 0.5f);
-
-			return out;
+		
+		private void setColorCorrectionTransform(CaptureRequest.Builder builder) {
+			if (default_color_space_transform != null)
+				builder.set(CaptureRequest.COLOR_CORRECTION_TRANSFORM, default_color_space_transform);
 		}
 
 		private void setLogProfile(CaptureRequest.Builder builder) {
 			if( MyDebug.LOG ) {
 				Log.d(TAG, "setLogProfile");
-				Log.d(TAG, "log_profile_strength: " + log_profile_strength);
 				Log.d(TAG, "default_tonemap_mode: " + default_tonemap_mode);
 			}
-			if( log_profile_strength > 0.0f ) {
+			if (log_profile_gamma > 1.0f || log_profile_curve != null) {
 				if( default_tonemap_mode == null ) {
 					// save the default tonemap_mode
 					default_tonemap_mode = builder.get(CaptureRequest.TONEMAP_MODE);
 					if( MyDebug.LOG )
 						Log.d(TAG, "default_tonemap_mode: " + default_tonemap_mode);
 				}
-				// if changing this, make sure we don't exceed tonemap_max_curve_points_c
-				// we want:
-				// 0-15: step 1 (16 values)
-				// 16-47: step 2 (16 values)
-				// 48-111: step 4 (16 values)
-				// 112-231 : step 8 (15 values)
-				// 232-255: step 24 (1 value)
-				int step = 1, c = 0;
+			}
+			if (log_profile_curve != null) {
+				switch (log_profile_curve) {
+					case "srgb":
+						if( MyDebug.LOG )
+							Log.d(TAG, "preset curve: TONEMAP_PRESET_CURVE_SRGB");
+						builder.set(CaptureRequest.TONEMAP_MODE, CaptureRequest.TONEMAP_MODE_PRESET_CURVE);
+						builder.set(CaptureRequest.TONEMAP_PRESET_CURVE, CaptureRequest.TONEMAP_PRESET_CURVE_SRGB);
+						break;
+					case "rec709":
+						if( MyDebug.LOG )
+							Log.d(TAG, "preset curve: TONEMAP_PRESET_CURVE_REC709");
+						builder.set(CaptureRequest.TONEMAP_MODE, CaptureRequest.TONEMAP_MODE_PRESET_CURVE);
+						builder.set(CaptureRequest.TONEMAP_PRESET_CURVE, CaptureRequest.TONEMAP_PRESET_CURVE_REC709);
+						break;
+				}
+			} else if (log_profile_gamma > 1.0f) {
+				double gamma = 1/log_profile_gamma;
 				float [] values = new float[2*tonemap_max_curve_points_c];
-				for(int i=0;i<232;i+=step) {
-					float in = ((float)i) / 255.0f;
-					float out = getLogProfile(in);
-					values[c++] = in;
-					values[c++] = out;
-					if( (c/2) % 16 == 0 ) {
-						step *= 2;
-					}
+				for(int i = 0; i < tonemap_max_curve_points_c; i++) {
+					float value = ((float)i) / (float)(tonemap_max_curve_points_c-1);
+					values[i*2+1] = (float)Math.pow(value, gamma);
+					values[i*2] = value;
 				}
-				values[c++] = 1.0f;
-				values[c++] = getLogProfile(1.0f);
-				int n_values = c/2;
-				/*{
-					int n_values = 257;
-					float [] values = new float [2*n_values];
-					for(int i=0;i<n_values;i++) {
-						float in = ((float)i) / (n_values-1.0f);
-						float out = getLogProfile(in);
-						values[2*i] = in;
-						values[2*i+1] = out;
-					}
-				}*/
+
 				if( MyDebug.LOG ) {
-					for(int i=0;i<n_values;i++) {
-						float in = values[2*i];
-						float out = values[2*i+1];
-						Log.d(TAG, "i = " + i);
-						Log.d(TAG, "	in: " + (int)(in*255.0f+0.5f));
-						Log.d(TAG, "	out: " + (int)(out*255.0f+0.5f));
-					}
+					Log.d(TAG, "values: " + Arrays.toString(values));
 				}
-				// sRGB:
-				/*float [] values = new float []{0.0000f, 0.0000f, 0.0667f, 0.2864f, 0.1333f, 0.4007f, 0.2000f, 0.4845f,
-						0.2667f, 0.5532f, 0.3333f, 0.6125f, 0.4000f, 0.6652f, 0.4667f, 0.7130f,
-						0.5333f, 0.7569f, 0.6000f, 0.7977f, 0.6667f, 0.8360f, 0.7333f, 0.8721f,
-						0.8000f, 0.9063f, 0.8667f, 0.9389f, 0.9333f, 0.9701f, 1.0000f, 1.0000f};*/
-				/*float [] values = new float []{0.0000f, 0.0000f, 0.05f, 0.3f, 0.1f, 0.4f, 0.2000f, 0.4845f,
-						0.2667f, 0.5532f, 0.3333f, 0.6125f, 0.4000f, 0.6652f,
-						0.5f, 0.78f, 1.0000f, 1.0000f};*/
-				/*float [] values = new float []{0.0f, 0.0f, 0.05f, 0.4f, 0.1f, 0.54f, 0.2f, 0.6f, 0.3f, 0.65f, 0.4f, 0.7f,
-						0.5f, 0.78f, 1.0f, 1.0f};*/
-				//float [] values = new float []{0.0f, 0.5f, 0.05f, 0.6f, 0.1f, 0.7f, 0.2f, 0.8f, 0.5f, 0.9f, 1.0f, 1.0f};
 				builder.set(CaptureRequest.TONEMAP_MODE, CaptureRequest.TONEMAP_MODE_CONTRAST_CURVE);
 				TonemapCurve tonemap_curve = new TonemapCurve(values, values, values);
 				builder.set(CaptureRequest.TONEMAP_CURVE, tonemap_curve);
-			}
-			else if( default_tonemap_mode != null ) {
-				builder.set(CaptureRequest.TONEMAP_MODE, default_tonemap_mode);
+/*				else {
+					if( MyDebug.LOG )
+						Log.d(TAG, "log_profile_gamma: " + log_profile_gamma);
+					builder.set(CaptureRequest.TONEMAP_MODE, CaptureRequest.TONEMAP_MODE_GAMMA_VALUE);
+					builder.set(CaptureRequest.TONEMAP_GAMMA, log_profile_gamma);
+				}*/
+			} else {
+				if( default_tonemap_mode != null )
+					builder.set(CaptureRequest.TONEMAP_MODE, default_tonemap_mode);
+				if( default_tonemap_curve != null )
+					builder.set(CaptureRequest.TONEMAP_CURVE, default_tonemap_curve);
 			}
 		}
 
@@ -688,130 +709,21 @@ public class CameraController2 extends CameraController {
 		}
 		// n.b., if we add more methods, remember to update setupBuilder() above!
 	}
+	
+	private double[][] matrixFromColorSpaceTransform(ColorSpaceTransform cst) {
+		int [] arr = new int [18];
+		cst.copyElements(arr, 0);
 
-	/** Converts a white balance temperature to red, green even, green odd and blue components.
-	 */
-	private RggbChannelVector convertTemperatureToRggb(int temperature_kelvin) {
-		float temperature = temperature_kelvin / 100.0f;
-		float red;
-		float green;
-		float blue;
-
-		if( temperature <= 66 ) {
-			red = 255;
-		}
-		else {
-			red = temperature - 60;
-			red = (float) (329.698727446 * (Math.pow((double) red, -0.1332047592)));
-			if( red < 0 )
-				red = 0;
-			if( red > 255 )
-				red = 255;
-		}
-
-		if( temperature <= 66 ) {
-			green = temperature;
-			green = (float) (99.4708025861 * Math.log(green) - 161.1195681661);
-			if( green < 0 )
-				green = 0;
-			if( green > 255 )
-				green = 255;
-		}
-		else {
-			green = temperature - 60;
-			green = (float) (288.1221695283 * (Math.pow((double) green, -0.0755148492)));
-			if (green < 0)
-				green = 0;
-			if (green > 255)
-				green = 255;
-		}
-
-		if( temperature >= 66 )
-			blue = 255;
-		else if( temperature <= 19 )
-			blue = 0;
-		else {
-			blue = temperature - 10;
-			blue = (float) (138.5177312231 * Math.log(blue) - 305.0447927307);
-			if( blue < 0 )
-				blue = 0;
-			if( blue > 255 )
-				blue = 255;
-		}
-
-		if( MyDebug.LOG ) {
-			Log.d(TAG, "red: " + red);
-			Log.d(TAG, "green: " + green);
-			Log.d(TAG, "blue: " + blue);
-		}
-		return new RggbChannelVector((red/255)*2,(green/255),(green/255),(blue/255)*2);
-	}
-
-	/** Converts a red, green even, green odd and blue components to a white balance temperature.
-	 *  Note that this is not necessarily an inverse of convertTemperatureToRggb, since many rggb
-	 *  values can map to the same temperature.
-	 */
-	private int convertRggbToTemperature(RggbChannelVector rggbChannelVector) {
-		if( MyDebug.LOG ) {
-			Log.d(TAG, "temperature:");
-			Log.d(TAG, "	red: " + rggbChannelVector.getRed());
-			Log.d(TAG, "	green even: " + rggbChannelVector.getGreenEven());
-			Log.d(TAG, "	green odd: " + rggbChannelVector.getGreenOdd());
-			Log.d(TAG, "	blue: " + rggbChannelVector.getBlue());
-		}
-		float red = rggbChannelVector.getRed()*64;
-		float green_even = rggbChannelVector.getGreenEven();
-		float green_odd = rggbChannelVector.getGreenOdd();
-		float blue = rggbChannelVector.getBlue()*64;
-		float green = 0.5f*(green_even + green_odd)*64;
-/*
-		float n=(0.23881f*red+0.25499f*green+(-0.58291f)*blue)/(0.11109f*red+(-0.85406f)*green+0.52289f*blue);
-		return (int)(449f*Math.pow(n, 3) + 3525f*Math.pow(n, 2)  + 6823.3f*n + 5520.33f);
-*/
-		float max = Math.max(red, blue);
-		if( green > max )
-			green = max;
-
-		float scale = 255.0f/max;
-		red *= scale;
-		green *= scale;
-		blue *= scale;
-
-		int red_i = (int)red;
-		int green_i = (int)green;
-		int blue_i = (int)blue;
-		int temperature;
-		if( red_i == blue_i ) {
-			temperature = 6600;
-		}
-		else if( red_i > blue_i ) {
-			// temperature <= 6600
-			int t_g = (int)( 100 * Math.exp((green_i + 161.1195681661) / 99.4708025861) );
-			if( blue_i == 0 ) {
-				temperature = t_g;
-			}
-			else {
-				int t_b = (int)( 100 * (Math.exp((blue_i + 305.0447927307) / 138.5177312231) + 10) );
-				temperature = (t_g + t_b)/2;
+		double[][] matrix = new double[3][3];
+		for (int y = 0; y < 3; y++) {
+			for (int x = 0; x < 3; x++) {
+				int arr_i = (x+y*3)*2;
+				// Arr!!! Why so ugly - numerators and denominators instead of floats or doubles???
+				matrix[y][x] = ((double)arr[arr_i])/((double)arr[arr_i+1]);
 			}
 		}
-		else {
-			// temperature >= 6700
-			if( red_i <= 1 || green_i <= 1 ) {
-				temperature = max_white_balance_temperature_c;
-			}
-			else {
-				int t_r = (int) (100 * (Math.pow(red_i / 329.698727446, 1.0 / -0.1332047592) + 60.0));
-				int t_g = (int) (100 * (Math.pow(green_i / 288.1221695283, 1.0 / -0.0755148492) + 60.0));
-				temperature = (t_r + t_g) / 2;
-			}
-		}
-		temperature = Math.max(temperature, min_white_balance_temperature_c);
-		temperature = Math.min(temperature, max_white_balance_temperature_c);
-		if( MyDebug.LOG ) {
-			Log.d(TAG, "	temperature: " + temperature);
-		}
-		return temperature;
+		
+		return matrix;
 	}
 
 	private class OnRawImageAvailableListener implements ImageReader.OnImageAvailableListener {
@@ -1659,6 +1571,39 @@ public class CameraController2 extends CameraController {
 					camera_features.supports_white_balance_temperature = true;
 					camera_features.min_temperature = min_white_balance_temperature_c;
 					camera_features.max_temperature = max_white_balance_temperature_c;
+					
+					if( MyDebug.LOG ) {
+						Log.d(TAG, "SENSOR_REFERENCE_ILLUMINANT1: " + characteristics.get(CameraCharacteristics.SENSOR_REFERENCE_ILLUMINANT1));
+						Log.d(TAG, "SENSOR_COLOR_TRANSFORM1: " + Arrays.deepToString(matrixFromColorSpaceTransform(characteristics.get(CameraCharacteristics.SENSOR_COLOR_TRANSFORM1))));
+						Log.d(TAG, "SENSOR_CALIBRATION_TRANSFORM1: " + Arrays.deepToString(matrixFromColorSpaceTransform(characteristics.get(CameraCharacteristics.SENSOR_CALIBRATION_TRANSFORM1))));
+						Log.d(TAG, "SENSOR_FORWARD_MATRIX1: " + Arrays.deepToString(matrixFromColorSpaceTransform(characteristics.get(CameraCharacteristics.SENSOR_FORWARD_MATRIX1))));
+						Log.d(TAG, "SENSOR_REFERENCE_ILLUMINANT2: " + characteristics.get(CameraCharacteristics.SENSOR_REFERENCE_ILLUMINANT2));
+						Log.d(TAG, "SENSOR_COLOR_TRANSFORM2: " + Arrays.deepToString(matrixFromColorSpaceTransform(characteristics.get(CameraCharacteristics.SENSOR_COLOR_TRANSFORM2))));
+						Log.d(TAG, "SENSOR_CALIBRATION_TRANSFORM2: " + Arrays.deepToString(matrixFromColorSpaceTransform(characteristics.get(CameraCharacteristics.SENSOR_CALIBRATION_TRANSFORM2))));
+						Log.d(TAG, "SENSOR_FORWARD_MATRIX2: " + Arrays.deepToString(matrixFromColorSpaceTransform(characteristics.get(CameraCharacteristics.SENSOR_FORWARD_MATRIX2))));
+					}
+
+					ColorSpaceTransform cst = characteristics.get(CameraCharacteristics.SENSOR_COLOR_TRANSFORM1);
+	
+					if (cst != null) {
+						double[][] matrix;
+						ColorSpaceTransform ccst = characteristics.get(CameraCharacteristics.SENSOR_CALIBRATION_TRANSFORM1);
+						if (ccst != null) {
+							matrix = Matrix.multiply(matrixFromColorSpaceTransform(cst), matrixFromColorSpaceTransform(ccst));
+						} else {
+							matrix = matrixFromColorSpaceTransform(cst);
+						}
+						
+						if (sensor_color_transform == null || !Arrays.deepEquals(sensor_color_transform, matrix)) {
+							sensor_color_transform = matrix;
+							sensor_color_transform_inverse = Matrix.inverse(matrix);
+							if( MyDebug.LOG ) {
+								Log.d(TAG, "sensor_color_transform: " + Arrays.deepToString(sensor_color_transform));
+								Log.d(TAG, "sensor_color_transform_inverse: " + Arrays.deepToString(sensor_color_transform_inverse));
+							}
+						}
+					}
+					break;
 				}
 			}
 		}
@@ -1693,7 +1638,8 @@ public class CameraController2 extends CameraController {
 			if( MyDebug.LOG )
 				Log.d(TAG, "tonemap_max_curve_points: " + tonemap_max_curve_points);
 			camera_features.tonemap_max_curve_points = tonemap_max_curve_points;
-			camera_features.supports_tonemap_curve = tonemap_max_curve_points >= tonemap_max_curve_points_c;
+			camera_features.supports_tonemap_curve = true;
+			tonemap_max_curve_points_c = tonemap_max_curve_points;
 		}
 		else {
 			if( MyDebug.LOG )
@@ -2175,6 +2121,7 @@ public class CameraController2 extends CameraController {
 			temperature = Math.max(temperature, min_white_balance_temperature_c);
 			temperature = Math.min(temperature, max_white_balance_temperature_c);
 			camera_settings.white_balance_temperature = temperature;
+			camera_settings.white_balance_xyz = null;
 			if( camera_settings.setWhiteBalance(previewBuilder) ) {
 				setRepeatingRequest();
 			}
@@ -2193,6 +2140,11 @@ public class CameraController2 extends CameraController {
 	@Override
 	public int getWhiteBalanceTemperature() {
 		return camera_settings.white_balance_temperature;
+	}
+	
+	@Override
+	public void setWhiteBalanceCalibration(float[] calibration) {
+		camera_settings.white_balance_calibration = calibration;
 	}
 
 	@Override
@@ -2571,6 +2523,18 @@ public class CameraController2 extends CameraController {
 	@Override
 	public boolean getUseCamera2FakeFlash() {
 		return this.use_fake_precapture;
+	}
+
+	@Override
+	public void setForceIsoExposure(boolean value) {
+		if( MyDebug.LOG )
+			Log.d(TAG, "setForceIsoExposure: " + value);
+		if( camera == null ) {
+			if( MyDebug.LOG )
+				Log.e(TAG, "no camera");
+			return;
+		}
+		this.force_iso_exposure = value;
 	}
 
 	@Override
@@ -3363,15 +3327,62 @@ public class CameraController2 extends CameraController {
 	public boolean getVideoStabilization() {
 		return camera_settings.video_stabilization;
 	}
+	
+	@Override
+	public void setDefaultCorrection() {
+		if( MyDebug.LOG )
+			Log.d(TAG, "setDefaultCorrection");
+		camera_settings.default_color_space_transform = new ColorSpaceTransform(new int[]{
+			255, 255, 0, 255, 0, 255,
+			0, 255, 255, 255, 0, 255,
+			0, 255, 0, 255, 255, 255
+		});
+		camera_settings.setColorCorrectionTransform(previewBuilder);
+
+		camera_settings.default_tonemap_mode = CaptureRequest.TONEMAP_MODE_CONTRAST_CURVE;
+		float [] values = new float []{0.0f, 0.0f, 1.0f, 1.0f};
+		camera_settings.default_tonemap_curve = new TonemapCurve(values, values, values);
+	}
 
 	@Override
-	public void setLogProfile(float log_profile_strength) {
+	public void setLogProfile(String log_profile_curve) {
 		if( MyDebug.LOG ) {
-			Log.d(TAG, "log_profile_strength: " + log_profile_strength);
+			Log.d(TAG, "log_profile_curve: " + log_profile_curve);
 		}
-		if( camera_settings.log_profile_strength == log_profile_strength )
+		if( Build.VERSION.SDK_INT < Build.VERSION_CODES.M )
+			return; // not supported
+		if( 
+			(log_profile_curve != null
+			&& camera_settings.log_profile_curve != null
+			&& camera_settings.log_profile_curve.equals(log_profile_curve))
+			&& camera_settings.log_profile_gamma == 1.0f
+		)
 			return; // no change
-		camera_settings.log_profile_strength = log_profile_strength;
+		camera_settings.log_profile_gamma = 1.0f;
+		camera_settings.log_profile_curve = log_profile_curve;
+		camera_settings.setLogProfile(previewBuilder);
+		try {
+			setRepeatingRequest();
+		}
+		catch(CameraAccessException e) {
+			if( MyDebug.LOG ) {
+				Log.e(TAG, "failed to set log profile");
+				Log.e(TAG, "reason: " + e.getReason());
+				Log.e(TAG, "message: " + e.getMessage());
+			}
+			e.printStackTrace();
+		}
+	}
+
+	@Override
+	public void setLogProfileGamma(float log_profile_gamma) {
+		if( MyDebug.LOG ) {
+			Log.d(TAG, "log_profile_gamma: " + log_profile_gamma);
+		}
+		if( camera_settings.log_profile_gamma == log_profile_gamma && camera_settings.log_profile_curve != null)
+			return; // no change
+		camera_settings.log_profile_curve = null;
+		camera_settings.log_profile_gamma = log_profile_gamma;
 		camera_settings.setLogProfile(previewBuilder);
 		try {
 			setRepeatingRequest();
@@ -3388,7 +3399,7 @@ public class CameraController2 extends CameraController {
 
 	@Override
 	public boolean isLogProfile() {
-		return camera_settings.log_profile_strength != 0.0f;
+		return camera_settings.log_profile_gamma > 1.0f || camera_settings.log_profile_curve != null;
 	}
 
 	@Override
@@ -4120,9 +4131,25 @@ public class CameraController2 extends CameraController {
 		}
 		this.texture = texture;
 	}
+	
+	CaptureRequest previous_request;
+	// Ultimate hack for fuckin buggy qualcomm shit: set repeating request after every frame
+	private void repeatRepeatingRequest() throws CameraAccessException {
+		if( MyDebug.LOG )
+			Log.d(TAG, "setRepeatingRequest");
+		if( camera == null || captureSession == null || previous_request == null ) {
+			return;
+		}
+		try {
+			captureSession.setRepeatingRequest(previous_request, previewCaptureCallback, handler);
+		} catch(IllegalStateException e) {
+			e.printStackTrace();
+		}
+	}
 
 	private void setRepeatingRequest() throws CameraAccessException {
-		setRepeatingRequest(previewBuilder.build());
+		previous_request = previewBuilder.build();
+		setRepeatingRequest(previous_request);
 	}
 
 	private void setRepeatingRequest(CaptureRequest request) throws CameraAccessException {
@@ -4819,7 +4846,9 @@ public class CameraController2 extends CameraController {
 			{
 				// set ISO
 				int iso = 800;
-				if (camera_settings.manual_iso)
+				if (camera_settings.manual_mode)
+					iso = camera_settings.iso;
+				else if (camera_settings.manual_iso)
 					iso = camera_settings.manual_iso_value;
 				else if( capture_result_has_iso )
 					iso = capture_result_iso;
@@ -5310,7 +5339,9 @@ public class CameraController2 extends CameraController {
 
 			int iso = 0;
 			long exposure_time = 0L;
-			if( camera_settings.manual_iso ) {
+			if( camera_settings.manual_mode )
+				iso = camera_settings.iso;
+			else if( camera_settings.manual_iso ) {
 				iso = camera_settings.manual_iso_value;
 				exposure_time = getActualExposureTime();
 			}
@@ -5778,14 +5809,57 @@ public class CameraController2 extends CameraController {
 	}
 
 	@Override
-	public boolean captureResultHasWhiteBalanceTemperature() {
-		return capture_result_has_white_balance_rggb;
+	public int getActualWhiteBalanceTemperature() {
+		if( MyDebug.LOG )
+			Log.d(TAG, "getActualWhiteBalanceTemperature");
+		if (camera_settings.white_balance == CameraMetadata.CONTROL_AWB_MODE_OFF) {
+			return camera_settings.white_balance_temperature;
+		} else if (capture_result_has_white_balance_rggb) {
+			if (capture_result_white_balance == -1) {
+				ColorTemperature.RGBColor rgb = new ColorTemperature.RGBColor(
+					1 / capture_result_white_balance_rggb.getRed(),
+					1 / (capture_result_white_balance_rggb.getGreenEven()/2 + capture_result_white_balance_rggb.getGreenOdd()/2),
+					1 / capture_result_white_balance_rggb.getBlue()
+				);
+
+				if (camera_settings.white_balance_calibration != null) {
+					rgb.r *= camera_settings.white_balance_calibration[0];
+					rgb.g *= camera_settings.white_balance_calibration[1];
+					rgb.b *= camera_settings.white_balance_calibration[2];
+				}
+
+				capture_result_white_balance_xyz = rgb.toXYZ(sensor_color_transform_inverse);
+				capture_result_white_balance = capture_result_white_balance_xyz.getTemperature();
+			}
+			
+			return capture_result_white_balance;
+		}
+
+		return -1;
+	}
+	
+	@Override
+	public ColorTemperature.CIECoordinates getActualWhiteBalanceXY() {
+		ColorTemperature.CIEColor xyz = null;
+
+		if (camera_settings.white_balance == CameraMetadata.CONTROL_AWB_MODE_OFF) {
+			if (camera_settings.white_balance_xyz == null)
+				camera_settings.white_balance_xyz = new ColorTemperature.CIEColor(camera_settings.white_balance_temperature);
+			xyz = camera_settings.white_balance_xyz;
+		} else {
+			xyz = capture_result_white_balance_xyz;
+		}
+
+		if (xyz != null) {
+			return xyz.toXY();
+		}
+
+		return null;
 	}
 
 	@Override
-	public int captureResultWhiteBalanceTemperature() {
-		// for performance reasons, we don't convert from rggb to temperature in every frame, rather only when requested
-		return convertRggbToTemperature(capture_result_white_balance_rggb);
+	public boolean captureResultIsAWBScanning() {
+		return capture_result_is_awb_scanning;
 	}
 
 	@Override
@@ -6399,6 +6473,14 @@ public class CameraController2 extends CameraController {
 					Log.d(TAG, "CONTROL_AF_STATE changed from " + last_af_state + " to " + af_state);
 				last_af_state = af_state;
 			}
+			
+			Integer awb_state = result.get(CaptureResult.CONTROL_AWB_STATE);
+			if( awb_state != null && awb_state == CaptureResult.CONTROL_AWB_STATE_SEARCHING ) {
+				capture_result_is_awb_scanning = true;
+			}
+			else {
+				capture_result_is_awb_scanning = false;
+			}
 		}
 		
 		/** Processes a total result.
@@ -6418,19 +6500,23 @@ public class CameraController2 extends CameraController {
 				capture_result_iso = result.get(CaptureResult.SENSOR_SENSITIVITY);
 				/*if( MyDebug.LOG )
 					Log.d(TAG, "capture_result_iso: " + capture_result_iso);*/
-				if( camera_settings.manual_mode && Math.abs(camera_settings.iso - capture_result_iso) > 10  ) {
+				if(
+					camera_settings.manual_mode
+					&& request.get(CaptureRequest.CONTROL_AE_MODE) == CaptureRequest.CONTROL_AE_MODE_OFF
+					&& (force_iso_exposure || Math.abs(camera_settings.iso - capture_result_iso) > 10)
+				) {
 					// ugly hack: problem (on Nexus 6 at least) that when we start recording video (video_recorder.start() call), this often causes the ISO setting to reset to the wrong value!
 					// seems to happen more often with shorter exposure time
 					// seems to happen on other camera apps with Camera2 API too
 					// update: allow some tolerance, as on OnePlus 3T it's normal to have some slight difference between requested and actual
 					// this workaround still means a brief flash with incorrect ISO, but is best we can do for now!
-					if( MyDebug.LOG ) {
+/*					if( MyDebug.LOG ) {
 						Log.d(TAG, "ISO " + capture_result_iso + " different to requested ISO " + camera_settings.iso);
 						Log.d(TAG, "	requested ISO was: " + request.get(CaptureRequest.SENSOR_SENSITIVITY));
 						Log.d(TAG, "	requested AE mode was: " + request.get(CaptureRequest.CONTROL_AE_MODE));
-					}
+					}*/
 					try {
-						setRepeatingRequest();
+						repeatRepeatingRequest();
 					}
 					catch(CameraAccessException e) {
 						if( MyDebug.LOG ) {
@@ -6482,16 +6568,16 @@ public class CameraController2 extends CameraController {
 				RggbChannelVector vector = result.get(CaptureResult.COLOR_CORRECTION_GAINS);
 				if( vector != null ) {
 					capture_result_has_white_balance_rggb = true;
-					capture_result_white_balance_rggb = vector;
+					// Android bug: we can't get gains back, because the value of blue gain will always be equal to green (Seen on LG G4 LS991 with zvb firmware).
+					// So we use pre-saved gains. At the moment it is not used anywhere, but it was needed for tests.
+					if (camera_settings.white_balance == CameraMetadata.CONTROL_AWB_MODE_OFF) {
+						capture_result_white_balance_rggb = camera_settings.white_balance_rggb;
+					} else {
+						capture_result_white_balance_rggb = vector;
+					}
+					capture_result_white_balance = -1;
 				}
 			}
-
-			/*if( MyDebug.LOG ) {
-				RggbChannelVector vector = result.get(CaptureResult.COLOR_CORRECTION_GAINS);
-				if( vector != null ) {
-					convertRggbToTemperature(vector); // logging will occur in this function
-				}
-			}*/
 
 			if( face_detection_listener != null && previewBuilder != null && previewBuilder.get(CaptureRequest.STATISTICS_FACE_DETECT_MODE) != null && previewBuilder.get(CaptureRequest.STATISTICS_FACE_DETECT_MODE) != CaptureRequest.STATISTICS_FACE_DETECT_MODE_OFF ) {
 				Rect sensor_rect = getViewableRect();

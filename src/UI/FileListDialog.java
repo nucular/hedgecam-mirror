@@ -16,7 +16,6 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.DialogFragment;
 import android.content.DialogInterface;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Environment;
 import android.preference.PreferenceManager;
@@ -81,8 +80,7 @@ public class FileListDialog extends DialogFragment {
 	public Dialog onCreateDialog(Bundle savedInstanceState) {
 		if( MyDebug.LOG )
 			Log.d(TAG, "onCreateDialog");
-		SharedPreferences sharedPreferences = ((MainActivity)this.getActivity()).getSharedPrefs();
-		String folder_name = sharedPreferences.getString(pref_key, "HedgeCam");
+		String folder_name = Prefs.getString(pref_key, "HedgeCam");
 		if( MyDebug.LOG )
 			Log.d(TAG, "folder_name: " + folder_name);
 		File new_folder = StorageUtils.getImageFolder(folder_name);

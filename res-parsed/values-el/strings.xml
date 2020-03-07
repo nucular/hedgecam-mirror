@@ -110,8 +110,8 @@
 <!-- Translate me
 	<string name="auto_adjustment_locked">Auto adjustment locked</string>
 	<string name="auto_adjustment_unlocked">Auto adjustment unlocked</string>
+	<string name="cancelled_burst_mode">Cancelled burst mode</string>
 -->
-	<string name="cancelled_burst_mode">Ακύρωση λειτουργίας ριπής</string>
 	<string name="cancelled_timer">Ακύρωση χρονομέτρου</string>
 	<string name="capturing">Λήψη…</string>
 	<string name="failed_to_reconnect_camera">Αποτυχία επανασύνδεσης με την κάμερα</string>
@@ -133,7 +133,8 @@
 	<string name="video_pause">Το βίντεο τέθεικε σε παύση</string>
 	<string name="video_resume">Το βίντεο συνεχίζεται</string>
 <!-- Translate me
-	<string name="backup_saved">Backup file was saved succesfully</string>
+	<string name="backup_file_saved">Backup file was saved succesfully</string>
+	<string name="settings_file_saved">Settings file was saved succesfully</string>
 
 -->
 	<string name="failed_to_open_camera_1">ΑΠΟΤΥΧΙΑ ΑΝΟΙΓΜΑΤΟς ΚΑΜΕΡΑΣ.</string>
@@ -162,9 +163,10 @@
 	<string name="speech_recognizer_unavailable">Speech recognizer unavailable</string>
 	<string name="open_files_saf_exception_ghost">No file dialog found on this device, ghost image option is not supported</string>
 	<string name="saf_permission_failed_open_image">Unable to open this image</string>
-	<string name="failed_to_save_backup">Failed to save backup file</string>
-	<string name="failed_to_read_backup">Failed to read backup file</string>
-	<string name="failed_to_restore_from_backup">Failed to restore settings from backup file</string>
+	<string name="failed_to_save_file">Failed to save the file</string>
+	<string name="failed_to_read_file">Failed to read the file</string>
+	<string name="failed_to_restore_from_backup">Failed to restore settings from the backup file</string>
+	<string name="failed_to_import_settings">Failed to import settings from the file</string>
 
 -->
 	<string name="no_permission">Η ΑΔΕΙΑ ΧΡΗΣΗΣ ΔΕΝ ΕΙΝΑΙ ΔΙΑΘΕΣΙΜΗ</string>
@@ -182,10 +184,14 @@
 	<string name="hdr_info">Η λειτουργία HDR είναι χρήσιμη για λήψεις με μεγάλες διαφορές στην φωτεινότητα. Λειτουργεί με πολλαπλές λήψεις σε διαφορετικές εκθέσεις, και τις συνδυάζει για να δημιουργήσει την τελική εικόνα.\n\nΣημειώστε ότι το HDR δεν είναι κατάλληλο για σκηνές με γρήγορη κίνηση, και μπορεί να οδηγήσει σε λιγότερο ακριβή αναπαραγωγή των χρωμάτων.\n\nΗ λήψη φωτογραφιών σε λειτουργία HDR θα είναι πιο αργή.</string>
 	<string name="preference_reset_question">Είστε σίγουρος οτι θέλετε να γίνει, επαναφορά όλων των HedgeCam ρυθμίσεων στις προεπιλογές;</string>
 <!-- Translate me
-	<string name="preference_restore_question">Are you sure you want to restore all settings from file? All current settings will be overwritten!</string>
+	<string name="preference_restore_question">Are you sure you want to restore all settings from the file? All current settings will be overwritten!</string>
+	<string name="preference_import_question">Are you sure you want to import settings from the file? Some settings will be overwritten!\n\nIf this settings file was created on another device, it is strongly recommended to backup all settings before importing.</string>
 -->
 	<string name="dont_show_again">Καμμία εμφάνιση ξανά</string>
+<!-- Translate me
+	<string name="histogram_surface_question">Histogram display does not work when using SurfaceView. Do you want to change the preview surface to TextureView?</string>
 
+-->
 	<string name="mb_abbreviation">MB</string>
 	<string name="gb_abbreviation">GB</string>
 	<string name="metres_abbreviation">μ</string>
@@ -298,7 +304,7 @@
 	<string name="preference_selfie_mode_summary">Enable selfie mode</string>
 -->
 	<string name="preference_timer">Χρόνομετρο</string>
-	<string name="preference_burst_mode">Ριπή</string>
+	<string name="preference_burst_mode">συνεχής λήψη</string>
 <!-- Translate me
 	<string name="burst_unlimited">Unlimited</string>
 -->
@@ -477,7 +483,7 @@
 	<string name="preference_preview_max_size">Max preview size</string>
 	<string name="preference_preview_max_size_summary">Maximal preview size</string>
 	<string name="preference_preview_resolution">Preview resolution</string>
-	<string name="preference_preview_resolution_summary">Resolution of the preview. If this option was changed, previous one will be ignored. This setting is saved separately for each camera and photo/video mode.</string>
+	<string name="preference_preview_resolution_summary">%s\n\nResolution of the preview. If this option was changed, previous one will be ignored. This setting is saved separately for each camera and photo/video mode.</string>
 	<string name="match_target_resolution">Match to target resolution</string>
 	<string name="preference_preview_location">Preview location</string>
 	<string name="preference_preview_location_summary">%s</string>
@@ -489,7 +495,7 @@
 	<string name="dont_rotate">Don\'t rotate</string>
 	<string name="rotate_180_degrees">Rotate 180 degrees</string>
 	<string name="preference_preview_max_expo">Maximum exposure</string>
-	<string name="preference_preview_max_expo_summary">Maximum preview exposure in manual mode (won\'t affect resultant photos/videos)</string>
+	<string name="preference_preview_max_expo_summary">%s\n\nMaximum preview exposure in manual mode (won\'t affect resultant photos/videos)</string>
 	<string name="preference_zoom_when_focusing">Zoom when focusing</string>
 	<string name="preference_zoom_when_focusing_summary">Increase the center of the preview when adjusting manual focus</string>
 	<string name="preference_ghost_image">Ghost image</string>
@@ -501,6 +507,8 @@
 	<string name="preference_preview_surface_summary">%s\n\nSurface for displaying preview. Switch this option only if you know what you do</string>
 
 	<string name="preference_screen_osd">Indication</string>
+	<string name="preference_screen_main_indication">Main indication</string>
+	<string name="preference_screen_lines">Lines</string>
 -->
 	<string name="preference_show_zoom">Εμφάνιση μεγέθυνσης</string>
 	<string name="preference_show_zoom_summary">Εμφανίζει το τρέχον επίπεδο μεγέθυνσης</string>
@@ -509,6 +517,8 @@
 <!-- Translate me
 	<string name="preference_show_white_balance">Show white balance</string>
 	<string name="preference_show_white_balance_summary">Display the current white balance temperature</string>
+	<string name="preference_show_white_balance_xy">Show white point</string>
+	<string name="preference_show_white_balance_xy_summary">Display the coordinates of the white point</string>
 -->
 	<string name="preference_free_memory">Εμφάνιση ελεύθερης μνήμης</string>
 	<string name="preference_free_memory_summary">Εμφάνιση της ελεύθερης μνήμης τις συσκευής</string>
@@ -550,6 +560,19 @@
 	<string name="preference_crop_guide">Εμφάνιση οδηγιών αποκοπής</string>
 	<string name="preference_crop_guide_summary">%s\n\nΕμφάνιση ορθογώνιου όταν εμφανίζεται οτι μία συγκεκριμένη αναλογία διαστάσεων μοιάζει χρήσιμη αν σκοπεύετε να περικόψετε την φωτογραφία/το βίντεο σε διαφορετική αναλογία. Απαιτείται η WYSIWYG λειτουργία "φωτογραφία", ή να είναι σε λειτουργία βίντεο.</string>
 <!-- Translate me
+	<string name="preference_screen_histogram">Histogram</string>
+	<string name="preference_show_histogram">Show histogram</string>
+	<string name="preference_histogram_mode">Histogram mode</string>
+	<string name="ht_brightness">Brightness</string>
+	<string name="ht_maximum">Maximum</string>
+	<string name="ht_colors">Colors</string>
+	<string name="preference_histogram_size">Histogram size</string>
+	<string name="preference_histogram_frequency">Update frequency</string>
+	<string name="preference_histogram_frequency_summary">%s\n\nHistogram update frequency. Higher value leads to higher CPU load.</string>
+	<string name="preference_histogram_accuracy">Accuracy</string>
+	<string name="preference_histogram_accuracy_summary">%s\n\nHistogram accuracy. Higher value leads to higher CPU load.</string>
+	<string name="preference_color_probe">Color probe</string>
+	<string name="preference_color_probe_size">Color probe size</string>
 	<string name="preference_osd_frequency">Update frequency</string>
 	<string name="preference_osd_frequency_summary">OSD update frequency. Increasing this value will will make the indication smoother, but the battery will discharge faster</string>
 	<string name="freq_low">Low</string>
@@ -603,14 +626,17 @@
 <!-- Translate me
 	<string name="no_lock">No lock</string>
 	<string name="lock_landscape">Lock to landscape</string>
+	<string name="lock_reverse_landscape">Lock to reverse landscape</string>
 	<string name="lock_portrait">Lock to portrait</string>
 -->
-	<string name="preference_lock_orientation_summary">Αν ορίσετε τον προσανατολισμό της συσκευής θα πρέπει να αγνοηθεί, και ο προσανατολισμός της φωτογραφίας/βίντεο θα αλληλοσχετίζεται με τον συγκεκριμένο προσανατολισμό</string>
-	<string name="preference_show_when_locked">Εμφάνιση κάμερας όταν λοκαρίστηκε</string>
+	<string name="preference_lock_orientation_summary">%s\n\nΑν ορίσετε τον προσανατολισμό της συσκευής θα πρέπει να αγνοηθεί, και ο προσανατολισμός της φωτογραφίας/βίντεο θα αλληλοσχετίζεται με τον συγκεκριμένο προσανατολισμό</string>
+	<string name="preference_show_when_locked">εμφάνιση της κάμερας όταν κλειδώθηκε</string>
 	<string name="preference_show_when_locked_summary">Αν είναι αυτή η ρύθμιση ενεργή, το HedgeCam θα εμφανίζετε πάνω από κάθε οθόνη κλειδώματος (μπορείτε ακόμα να ξεκλειδώσετε για να αποκτήσετε πρόσβαση στις Ρυθμίσεις κ.λ.π.)</string>
 <!-- Translate me
 	<string name="preference_multitouch_zoom">Multitouch zoom</string>
 	<string name="preference_multitouch_zoom_summary">You must restart the application to apply this option</string>
+	<string name="preference_touch_focus">Touch to focus</string>
+	<string name="preference_touch_focus_summary">Do not change focus and metering zones when you touch the screen, just perform the autofocus</string>
 	<string name="preference_focus_range">Focus range</string>
 	<string name="preference_focus_range_summary">Manual focus range limit for for more precise control</string>
 	<string name="fr_landscape_macro">Landscape/Macro</string>
@@ -623,12 +649,16 @@
 	<string name="preference_min_focus_distance">Minimum focus distance</string>
 	<string name="preference_focus_distance_calibration">Focus distance calibration</string>
 	<string name="preference_focus_distance_calibration_summary">%s\n\nPositive values correspond to short distances, negative values to long distances.</string>
+	<string name="preference_white_balance_calibration">White balance calibration</string>
+	<string name="preference_white_balance_calibration_summary">%s\n\nCalibration of manual white balance neutral point. This setting is saved separately for each camera.</string>
 	<string name="preference_row_space_y">Luma row space</string>
 	<string name="preference_row_space_y_summary">%s\n\nSpace between a rows in luminance channel. Used when uncompressed output option is enabled. This setting is saved separately for each camera.</string>
 	<string name="preference_row_space_uv">Chroma row space</string>
 	<string name="preference_row_space_uv_summary">%s\n\nSpace betweena rows in chroma channels. Used when uncompressed output option is enabled. This setting is saved separately for each camera.</string>
 
 	<string name="preference_screen_bug_fix">Bug fixes</string>
+	<string name="preference_dont_rotate">Do not rotate photos</string>
+	<string name="preference_dont_rotate_summary">Do not rotate photos according to device orientation. Instead, save the rotation to the EXIF tag. Use this option to speed up photo saving when using uncompressed output option.</string>
 -->
 	<string name="preference_startup_focus">Αυτόματη εστίαση κατά την εκκίνηση</string>
 	<string name="preference_startup_focus_summary">Με αυτή την ρύθμιση η αυτόματη εστίαση, θα ενεργοποιηθεί όταν ανοίξετε την Κάμερα. Αν έχετε πρόβλημα με το flash κατά την εκκίνηση, απενεργοποιήστε αυτή την επιλογή</string>
@@ -638,7 +668,7 @@
 	<string name="preference_center_focus">Center focus</string>
 	<string name="preference_center_focus_summary">Set focus zone in the center of the frame at startup</string>
 	<string name="preference_update_focus_for_video">Update focus mode</string>
-	<string name="preference_update_focus_for_video_summary">Workaround for bug on Samsung Galaxy S5 with UHD, where if the user switches to another (non-continuous-video) focus mode, then goes to Settings, then returns and records video, the preview freezes and the video is corrupted</string>
+	<string name="preference_update_focus_for_video_summary">Workaround for bug on Samsung Galaxy S5 with UHD, where if the user switches to another (non-continuous-video) focus mode, then goes to Settings, then returns and records video, the preview freezes and the video is corrupted.</string>
 -->
 	<string name="preference_camera2_fake_flash">Χρήση εναλλακτικής μεθόδου φλας</string>
 	<string name="preference_camera2_fake_flash_summary">Ενεργοποιήστε αυτό αν η συσκευή σας έχει λανθασμένη συμπεριφορά σε σχέση με το Camera2 API</string>
@@ -650,9 +680,13 @@
 	<string name="preference_full_size_copy">Full-size copy</string>
 	<string name="preference_full_size_copy_summary">Create full-size compressed copy of photo when capturing an uncompressed photo. Use this option if you have problems with YUV capturing.</string>
 	<string name="preference_reset_manual_mode">Reset manual mode</string>
-	<string name="preference_reset_manual_mode_summary">Reset manual ISO mode when connected to the camera. Use this option if autofocus works incorrectly after connecting to the camera and ISO mode is manual</string>
+	<string name="preference_reset_manual_mode_summary">Reset manual ISO mode when connected to the camera. Use this option if autofocus works incorrectly after connecting to the camera and ISO mode is manual.</string>
 	<string name="preference_lock_preview_fps">Lock preview FPS</string>
 	<string name="preference_lock_preview_fps_summary">Lock preview FPS to video frame rate. Use this option if video frame rate control does not work on your device.</string>
+	<string name="preference_default_color_correction">Default color correction</string>
+	<string name="preference_default_color_correction_summary">Force set default color correction. Fixes some issues on Sony devices.</string>
+	<string name="preference_force_iso_exposure">Force manual mode parameters</string>
+	<string name="preference_force_iso_exposure_summary">In manual mode set ISO and exposute time after each captured frame. Helps to fix spontaneous change of ISO and exposure time in manual mode on Qualcomm based devices. May retuce video FPS. This setting is saved separately for photo and video modes.</string>
 
 -->
 	<string name="preference_category_camera_quality">Ρυθμίσεις φωτογραφίας και βίντεο</string>
@@ -729,9 +763,15 @@
 	<string name="preference_fast_burst_disable_filters">Disable filters</string>
 	<string name="preference_fast_burst_disable_filters_summary">Disable noise reduction and edge enhancement when capturing a burst</string>
 	<string name="preference_category_nr_summary">Noise reduction photo mode settings</string>
+	<string name="preference_save_base_image">Save base image</string>
+	<string name="preference_save_base_image_summary">Save the first burst image that is used as the base</string>
 	<string name="preference_adjust_levels">Adjust levels</string>
+	<string name="preference_adjust_levels_summary">%s\n\nAutomatic levels adjustment</string>
 	<string name="al_highlights">Highlights</string>
 	<string name="al_highlights_and_shadows">Highlights and shadows</string>
+	<string name="al_boost">Boost</string>
+	<string name="preference_histogram_level">Histogram clipping</string>
+	<string name="preference_histogram_level_summary">%s\n\nHistogram clipping power when performing automatic levels adjustment</string>
 -->
 	<string name="preference_category_stamp">Σφραγίδα φωτογραφίας</string>
 <!-- Translate me
@@ -762,6 +802,10 @@
 	<string name="preference_stamp_gpsformat">Μορφή σφραγίδας GPS</string>
 <!-- Translate me
 	<string name="degrees_minutes_seconds">Degrees/minutes/seconds</string>
+	<string name="preference_stamp_store_address">Store address</string>
+	<string name="preference_stamp_store_address_summary">If possible, use address instead of GPS coordinates. This option requires internet connection.</string>
+	<string name="preference_stamp_store_altitude">Store altitude</string>
+	<string name="preference_stamp_store_altitude_summary">If possible, add altitude after GPS coordinates.</string>
 -->
 	<string name="preference_textstamp">Προσαρμοσμένο κείμενο</string>
 	<string name="preference_textstamp_summary">Προσθήκη σφραγίδας με προσαρμοσμένο κείμενο</string>
@@ -794,10 +838,6 @@
 	<string name="preference_video_fps_summary">%s\n\nΡύθξμιση καρέ τού βίντεο (μπορεί να είναι περίπου, δεν είναι εγγυημένο να επιτευχθεί και μπορεί να προκαλέσει αποτυχία καταγραφής των βίντεο, εάν το καρέ δεν υποστηρίζεται)</string>
 <!-- Translate me
 	<string name="preference_video_log">Video flat (log) profile</string>
-	<string name="vl_low">Low</string>
-	<string name="vl_medium">Medium</string>
-	<string name="vl_strong">Strong</string>
-	<string name="vl_extra_strong">Extra strong</string>
 	<string name="preference_video_log_summary">%s\n\nEnable a flat (log) profile for video mode</string>
 	<string name="video_log">Log profile</string>
 -->
@@ -835,7 +875,8 @@
 	<string name="as_camcorder">Camcorder</string>
 	<string name="as_external_mic">External mic (if present)</string>
 	<string name="as_default_source">Default audio source</string>
-	<string name="as_voice_optimized">Optimised for voice</string>
+	<string name="as_voice_optimized">Voice communication</string>
+	<string name="as_unprocessed">Unprocessed</string>
 -->
 	<string name="preference_record_audio_channels">Κανάλια ήχου</string>
 	<string name="preference_record_audio_channels_summary">%s\n\nΚαθορισμός μονοφωνικής ή στερεοφωνικής καταγραφής ήχου (ο ήχος στέρεο υποστηρίζεται μόνο σε ορισμένες συσκευές)</string>
@@ -939,14 +980,31 @@
 	
 <!-- Translate me
 	<string name="preference_screen_preferences_control">Preferences control</string>
+	<string name="preference_category_backup_restore">Backup and restore</string>
 	<string name="preference_backup">Backup</string>
 	<string name="preference_backup_summary">Backup the settings to a file. Backup will be saved in photo/video folder.</string>
 	<string name="preference_restore">Restore</string>
 	<string name="preference_restore_summary">Restore the settings from backup.</string>
 -->
 	<string name="preference_reset">Ρυθμίσεις επαναφοράς</string>
+<!-- Translate me
+	<string name="preference_reset_all">All settings</string>
+-->
 	<string name="preference_reset_summary">Επαναφορά όλων των HedgeCam ρυθμίσεων στις προεπιλογές</string>
+<!-- Translate me
+	<string name="preference_category_export_import">Export and import</string>
+	<string name="preference_export">Export</string>
+	<string name="preference_export_summary">Export some settings to a file. The file will be saved in photo/video folder.</string>
+	<string name="preference_import">Import</string>
+	<string name="preference_import_summary">Import the settings from a file.</string>
+	<string name="preference_category_modes">Modes</string>
+	<string name="preference_category_modes_summary">Capturing modes (flash mode, ISO, scene, etc) for all cameras.</string>
+	<string name="preference_category_model">Device model</string>
+	<string name="preference_category_model_summary">Bug fixes, some calibrations and other settings specific to this device model.</string>
+	<string name="preference_category_device">Device</string>
+	<string name="preference_category_device_summary">Bug fixes, all calibrations and other settings specific to this device. Includes the same settings as in the previous option and per-device calibrations.</string>
 
+-->
 	<string name="preference_advanced">Προηγμένες δυνατότητες</string>
 
 	<string name="time_1_second">1 δευτερόλεπτο</string>

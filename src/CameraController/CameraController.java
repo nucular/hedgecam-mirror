@@ -1,5 +1,6 @@
 package com.caddish_hedgehog.hedgecam2.CameraController;
 
+import com.caddish_hedgehog.hedgecam2.ColorTemperature;
 import com.caddish_hedgehog.hedgecam2.MyDebug;
 
 import java.io.Serializable;
@@ -9,6 +10,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
+import android.graphics.PointF;
 import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.DngCreator;
@@ -16,6 +18,7 @@ import android.location.Location;
 import android.media.Image;
 import android.media.Image.Plane;
 import android.media.MediaRecorder;
+import android.support.media.ExifInterface;
 import android.util.Log;
 import android.view.SurfaceHolder;
 
@@ -214,7 +217,7 @@ public abstract class CameraController {
 		public int pixelStrideUV;
 		public int rowStrideUV;
 
-		public int orientation = 0;
+		public int orientation = ExifInterface.ORIENTATION_UNDEFINED;
 		
 		public Photo(byte [] jpeg) {
 			this.jpeg = jpeg;
@@ -372,8 +375,10 @@ public abstract class CameraController {
 	public abstract String getColorEffect();
 	public abstract SupportedValues setWhiteBalance(String value);
 	public abstract String getWhiteBalance();
-	public abstract boolean setWhiteBalanceTemperature(int temperature);
-	public abstract int getWhiteBalanceTemperature();
+	public boolean setWhiteBalanceTemperature(int temperature) {return false;};
+	public int getWhiteBalanceTemperature() {return -1;};
+	public void setWhiteBalanceCalibration(float[] calibration) {};
+	
 	/** Set an ISO value. Only supported if supports_iso_range is false.
 	 */
 	public abstract SupportedValues setISO(String value);
@@ -383,18 +388,18 @@ public abstract class CameraController {
 	 *			the min_iso/max_iso, the value will be snapped so it does lie within that range.
 	 *			If manual_iso i false, this value is ignored.
 	 */
-	public abstract void setManualISO(boolean manual_iso, int iso);
+	public void setManualISO(boolean manual_iso, int iso) {};
 
 	public boolean isManualExposure() {return false;};
 	/** Specify a specific ISO value. Only supported if supports_iso_range is true. Callers should
 	 *  first switch to manual ISO mode using setManualISO().
 	 */
-	public abstract boolean setISO(int iso);
+	public boolean setISO(int iso) {return false;};
 	public void setManualMode(boolean mode) {};
 	public abstract String getISOKey();
 	/** Returns the manual ISO value. Only supported if supports_iso_range is true.
 	 */
-	public abstract boolean setExposureTime(long exposure_time);
+	public boolean setExposureTime(long exposure_time) {return false;};
 	public abstract CameraController.Size getPictureSize();
 	public abstract void setPictureSize(int width, int height);
 	public abstract CameraController.Size getPreviewSize();
@@ -431,11 +436,9 @@ public abstract class CameraController {
 	 *   - Some devices also don't seem to fire flash for autofocus in Camera2 mode (e.g., Samsung S7)
 	 *   - When capture follows autofocus, we need to make the same decision for firing flash for both the autofocus and the capture.
 	 */
-	public void setUseCamera2FakeFlash(boolean use_fake_precapture) {
-	}
-	public boolean getUseCamera2FakeFlash() {
-		return false;
-	}
+	public void setUseCamera2FakeFlash(boolean use_fake_precapture) {}
+	public boolean getUseCamera2FakeFlash() {return false;}
+	public void setForceIsoExposure(boolean value) {}
 	public abstract String getAntibanding();
 	public abstract boolean setAntibanding(String value);
 	public boolean setNoiseReductionMode(String value) {return false;}
@@ -455,7 +458,9 @@ public abstract class CameraController {
 	public List<String> getAvailableZeroShutterDelayModes() {return new ArrayList<>();}
 	public abstract void setVideoStabilization(boolean enabled);
 	public abstract boolean getVideoStabilization();
-	public void setLogProfile(float log_profile_strength) {};
+	public void setDefaultCorrection() {};
+	public void setLogProfile(String log_profile_curve) {};
+	public void setLogProfileGamma(float log_profile_gamma) {};
 	public boolean isLogProfile() {return false;};
 	public abstract int getJpegQuality();
 	public abstract void setJpegQuality(int quality);
@@ -543,36 +548,16 @@ public abstract class CameraController {
 	 */
 	public abstract void initVideoRecorderPostPrepare(MediaRecorder video_recorder, boolean want_photo_video_recording) throws CameraControllerException;
 	public abstract String getParametersString();
-	public boolean captureResultIsAEScanning() {
-		return false;
-	}
-	/**
-	 * @return whether flash will fire; returns false if not known
-	 */
-	public boolean needsFlash() {
-		return false;
-	}
-	public boolean canReportNeedsFlash() {
-		return false;
-	}
-	public boolean captureResultHasWhiteBalanceTemperature() {
-		return false;
-	}
-	public int captureResultWhiteBalanceTemperature() {
-		return 0;
-	}
-	public boolean captureResultHasIso() {
-		return false;
-	}
-	public int captureResultIso() {
-		return 0;
-	}
-	public boolean captureResultHasExposureTime() {
-		return false;
-	}
-	public long captureResultExposureTime() {
-		return 0;
-	}
+	public boolean captureResultIsAEScanning() {return false;}
+	public boolean needsFlash() {return false;}
+	public boolean canReportNeedsFlash() {return false;} // return whether flash will fire; returns false if not known
+	public int getActualWhiteBalanceTemperature() {return -1;}
+	public ColorTemperature.CIECoordinates getActualWhiteBalanceXY() {return null;}
+	public boolean captureResultIsAWBScanning() {return false;}
+	public boolean captureResultHasIso() {return false;}
+	public int captureResultIso() {return 0;}
+	public boolean captureResultHasExposureTime() {return false;}
+	public long captureResultExposureTime() {return 0;}
 	public int getIso() { return -1; }
 	public long getExposureTime() { return -1; }
 	public long getExpectedCaptureTime() { return 0; }
@@ -580,21 +565,11 @@ public abstract class CameraController {
 	public boolean isExposureOverRange() {return false;}
 	public void setSmartFilterISO(int iso) {}
 	public boolean isFilteringBlocked() {return false;}
-	/*public boolean captureResultHasFrameDuration() {
-		return false;
-	}*/
-	/*public long captureResultFrameDuration() {
-		return 0;
-	}*/
-	/*public boolean captureResultHasFocusDistance() {
-		return false;
-	}*/
-	/*public float captureResultFocusDistanceMin() {
-		return 0.0f;
-	}*/
-	/*public float captureResultFocusDistanceMax() {
-		return 0.0f;
-	}*/
+	/*public boolean captureResultHasFrameDuration() {return false;}*/
+	/*public long captureResultFrameDuration() {return 0;}*/
+	/*public boolean captureResultHasFocusDistance() {return false;}*/
+	/*public float captureResultFocusDistanceMin() {return 0.0f;}*/
+	/*public float captureResultFocusDistanceMax() {return 0.0f;}*/
 
 	// gets the available values of a generic mode, e.g., scene, color etc, and makes sure the requested mode is available
 	SupportedValues checkModeIsSupported(List<String> values, String value, String default_value) {

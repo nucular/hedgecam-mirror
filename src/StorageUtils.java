@@ -15,7 +15,6 @@ import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.media.MediaScannerConnection;
@@ -38,7 +37,6 @@ public class StorageUtils {
 	private static final String TAG = "HedgeCam/StorageUtils";
 
 	private final Context context;
-	private final SharedPreferences sharedPreferences;
 	private Uri last_media_scanned;
 
 	// for testing:
@@ -46,7 +44,6 @@ public class StorageUtils {
 	
 	StorageUtils(Context context) {
 		this.context = context;
-		this.sharedPreferences = ((MainActivity)context).getSharedPrefs();
 	}
 	
 	Uri getLastMediaScanned() {
@@ -270,7 +267,7 @@ public class StorageUtils {
 	public boolean isUsingSAF() {
 		// check Android version just to be safe
 		if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP ) {
-			if( sharedPreferences.getBoolean(Prefs.USING_SAF, false) ) {
+			if( Prefs.getBoolean(Prefs.USING_SAF, false) ) {
 				return true;
 			}
 		}
@@ -278,14 +275,14 @@ public class StorageUtils {
 	}
 	
 	String getSaveLocationMain() {
-		return sharedPreferences.getString(Prefs.SAVE_LOCATION, "HedgeCam");
+		return Prefs.getString(Prefs.SAVE_LOCATION, "HedgeCam");
 	}
 
 	// only valid if !isUsingSAF()
 	String getSaveLocation() {
 		String result = "";
 		if (Prefs.isVideoFolder())
-			result = sharedPreferences.getString(Prefs.SAVE_VIDEO_LOCATION, "");
+			result = Prefs.getString(Prefs.SAVE_VIDEO_LOCATION, "");
 		if (result.length() == 0)
 			result = getSaveLocationMain();
 
@@ -296,9 +293,9 @@ public class StorageUtils {
 	String getSaveLocationSAF() {
 		String result = "";
 		if (Prefs.isVideoFolder())
-			result = sharedPreferences.getString(Prefs.SAVE_VIDEO_LOCATION_SAF, "");
+			result = Prefs.getString(Prefs.SAVE_VIDEO_LOCATION_SAF, "");
 		if (result.length() == 0)
-			result = sharedPreferences.getString(Prefs.SAVE_LOCATION_SAF, "");
+			result = Prefs.getString(Prefs.SAVE_LOCATION_SAF, "");
 
 		return result;
 	}
@@ -463,7 +460,7 @@ public class StorageUtils {
 		if( count > 0 ) {
 			index = "_" + count; // try to find a unique filename
 		}
-		boolean useZuluTime = sharedPreferences.getString(Prefs.SAVE_ZULU_TIME, "local").equals("zulu");
+		boolean useZuluTime = Prefs.getString(Prefs.SAVE_ZULU_TIME, "local").equals("zulu");
 		String timeStamp;
 		if( useZuluTime ) {
 			SimpleDateFormat fmt = new SimpleDateFormat("yyyyMMdd_HHmmss'Z'", Locale.US);
@@ -529,7 +526,7 @@ public class StorageUtils {
 			if (is_video)
 				treeUri = getTreeUriSAF();
 			else
-				treeUri = Uri.parse(sharedPreferences.getString(Prefs.SAVE_LOCATION_SAF, ""));
+				treeUri = Uri.parse(Prefs.getString(Prefs.SAVE_LOCATION_SAF, ""));
 			if( MyDebug.LOG )
 				Log.d(TAG, "treeUri: " + treeUri);
 			Uri docUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, DocumentsContract.getTreeDocumentId(treeUri));
@@ -639,8 +636,10 @@ public class StorageUtils {
 		final int column_date_taken_c = 1;
 		final int column_data_c = 2;
 		final int column_orientation_c = 3;
-		String [] projection = video ? new String[] {VideoColumns._ID, VideoColumns.DATE_TAKEN, VideoColumns.DATA} : new String[] {ImageColumns._ID, ImageColumns.DATE_TAKEN, ImageColumns.DATA, ImageColumns.ORIENTATION};
-		String selection = video ? "" : ImageColumns.MIME_TYPE + "='image/jpeg'";
+		String [] projection = video
+				? new String[] {VideoColumns._ID, VideoColumns.DATE_TAKEN, VideoColumns.DATA}
+				: new String[] {ImageColumns._ID, ImageColumns.DATE_TAKEN, ImageColumns.DATA, ImageColumns.ORIENTATION};
+		String selection = video ? "" : ImageColumns.MIME_TYPE + "='image/jpeg' OR " + ImageColumns.MIME_TYPE + "='image/png'";
 		String order = video ? VideoColumns.DATE_TAKEN + " DESC," + VideoColumns._ID + " DESC" : ImageColumns.DATE_TAKEN + " DESC," + ImageColumns._ID + " DESC";
 		Cursor cursor = null;
 		try {

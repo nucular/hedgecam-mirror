@@ -1,25 +1,28 @@
 package com.caddish_hedgehog.hedgecam2;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
 import android.content.ContentResolver;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.util.Log;
 import android.util.Pair;
+import android.os.Build;
 import android.os.Environment;
+
+import java.io.InputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.TreeMap;
+
+import org.xmlpull.v1.XmlPullParserException;
 
 public class Prefs {
 	private static final String TAG = "HedgeCam/Prefs";
 	private static SharedPreferences sharedPreferences;
 	private static MainActivity main_activity;
+	private static SharedPreferences.Editor prefEditor;
 
 	public static final String DONE_FIRST_TIME = "done_first_time";
 	public static final String DONE_AUTO_STABILISE_INFO = "done_auto_stabilise_info";
@@ -61,6 +64,8 @@ public class Prefs {
 	public static final String STAMP_DATEFORMAT = "preference_stamp_dateformat";
 	public static final String STAMP_TIMEFORMAT = "preference_stamp_timeformat";
 	public static final String STAMP_GPSFORMAT = "preference_stamp_gpsformat";
+	public static final String STAMP_STORE_ADDRESS = "preference_stamp_store_address";
+	public static final String STAMP_STORE_ALTITUDE = "preference_stamp_store_altitude";
 	public static final String TEXTSTAMP = "preference_textstamp";
 	public static final String STAMP_FONTSIZE = "preference_stamp_fontsize";
 	public static final String STAMP_FONT_COLOR = "preference_stamp_font_color";
@@ -97,6 +102,7 @@ public class Prefs {
 	public static final String SHOW_ZOOM = "preference_show_zoom";
 	public static final String SHOW_ISO = "preference_show_iso";
 	public static final String SHOW_WHITE_BALANCE = "preference_show_white_balance";
+	public static final String SHOW_WHITE_BALANCE_XY = "preference_show_white_balance_xy";
 	public static final String SHOW_ANGLE = "preference_show_angle";
 	public static final String SHOW_ANGLE_LINE = "preference_show_angle_line";
 	public static final String SHOW_PITCH_LINES = "preference_show_pitch_lines";
@@ -111,6 +117,13 @@ public class Prefs {
 	public static final String GRID = "preference_grid";
 	public static final String GRID_ALPHA = "preference_grid_alpha";
 	public static final String CROP_GUIDE = "preference_crop_guide";
+	public static final String SHOW_HISTOGRAM = "preference_show_histogram";
+	public static final String HISTOGRAM_MODE = "preference_histogram_mode";
+	public static final String HISTOGRAM_SIZE = "preference_histogram_size";
+	public static final String HISTOGRAM_UPDATE = "preference_histogram_frequency";
+	public static final String HISTOGRAM_ACCURACY = "preference_histogram_accuracy";
+	public static final String SHOW_COLOR_PROBE = "preference_color_probe";
+	public static final String COLOR_PROBE_SIZE = "preference_color_probe_size";
 	public static final String FACE_DETECTION = "preference_face_detection";
 	public static final String VIDEO_STABILIZATION = "preference_video_stabilization";
 	public static final String FORCE_VIDEO_4K = "preference_force_video_4k";
@@ -133,7 +146,8 @@ public class Prefs {
 	public static final String RECORD_AUDIO_SAMPLE_RATE = "preference_record_audio_sample_rate";
 	public static final String PREVIEW_MAX_SIZE = "preference_preview_max_size";
 	public static final String ROTATE_PREVIEW = "preference_rotate_preview";
-	public static final String LOCK_ORIENTATION = "preference_lock_orientation";
+	public static final String LOCK_PHOTO_ORIENTATION = "preference_lock_orientation";
+	public static final String LOCK_VIDEO_ORIENTATION = "preference_lock_video_orientation";
 	public static final String SELFIE_MODE = "selfie_mode";
 	public static final String AUDIO_CONTROL = "audio_control";
 	public static final String TIMER = "preference_timer";
@@ -168,12 +182,14 @@ public class Prefs {
 	public static final String HDR_STOPS_DOWN = "preference_hdr_stops";
 	public static final String HDR_DEGHOST = "preference_hdr_deghost";
 	public static final String HDR_ADJUST_LEVELS = "preference_hdr_adjust_levels";
+	public static final String HDR_HISTOGRAM_LEVEL = "preference_hdr_histogram_level";
 
 	public static final String DRO_UNSHARP_MASK = "preference_dro_unsharp_mask";
 	public static final String DRO_UNSHARP_MASK_RADIUS = "preference_dro_unsharp_mask_radius";
 	public static final String DRO_LOCAL_CONTRAST = "preference_dro_local_contrast";
 	public static final String DRO_N_TILES = "preference_dro_n_tiles";
 	public static final String DRO_ADJUST_LEVELS = "preference_dro_adjust_levels";
+	public static final String DRO_HISTOGRAM_LEVEL = "preference_dro_histogram_level";
 
 	public static final String PREVIEW_LOCATION = "preference_preview_location";
 	public static final String PREVIEW_MAX_EXPO = "preference_preview_max_expo";
@@ -219,6 +235,7 @@ public class Prefs {
 	public static final String CTRL_PANEL_SETTINGS = "preference_ctrl_panel_settings";
 	public static final String FLIP_FRONT_FACING = "preference_flip_front_facing";
 	public static final String MULTITOUCH_ZOOM = "preference_multitouch_zoom";
+	public static final String TOUCH_FOCUS = "preference_touch_focus";
 	public static final String UPDATE_FOCUS_FOR_VIDEO = "preference_update_focus_for_video";
 	public static final String ALT_INDICATION = "preference_alt_indication";
 	public static final String POPUP_SIZE = "preference_popup_size";
@@ -238,6 +255,7 @@ public class Prefs {
 	public static final String POPUP_BURST_MODE = "preference_popup_burst_mode";
 	public static final String POPUP_BURST_INTERVAL = "preference_popup_burst_interval";
 	public static final String POPUP_GRID = "preference_popup_grid";
+	public static final String POPUP_HISTOGRAM = "preference_popup_histogram";
 	public static final String POPUP_GHOST_IMAGE = "preference_popup_ghost_image";
 	public static final String POPUP_EXPO_BRACKETING_STOPS = "preference_popup_stops";
 	public static final String POPUP_HDR_TONEMAPPING = "preference_popup_hdr_tonemapping";
@@ -253,8 +271,10 @@ public class Prefs {
 	public static final String FORCE_FACE_FOCUS = "preference_force_face_focus";
 	public static final String CENTER_FOCUS = "preference_center_focus";
 	public static final String USE_1920X1088 = "preference_use_1920x1088";
+	public static final String FORCE_ISO_EXPOSURE = "preference_force_iso_exposure";
 	public static final String MIN_FOCUS_DISTANCE = "preference_min_focus_distance";
 	public static final String FOCUS_DISTANCE_CALIBRATION = "preference_focus_distance_calibration";
+	public static final String WHITE_BALANCE_CALIBRATION = "preference_white_balance_calibration";
 	public static final String ANTIBANDING = "preference_antibanding";
 	public static final String IND_FREQ = "preference_osd_frequency";
 	public static final String IND_SLOW_IF_BUSY = "preference_osd_slow_if_busy";
@@ -282,8 +302,12 @@ public class Prefs {
 	public static final String FAST_BURST_COUNT = "preference_fast_burst_count";
 	public static final String FAST_BURST_DISABLE_FILTERS = "preference_fast_burst_disable_filters";
 	public static final String NR_COUNT = "preference_nr_count";
+	public static final String NR_ALIGN = "preference_nr_align";
 	public static final String NR_ADJUST_LEVELS = "preference_nr_adjust_levels";
+	public static final String NR_HISTOGRAM_LEVEL = "preference_nr_histogram_level";
+	public static final String NR_SAVE_BASE = "preference_nr_save_base";
 	public static final String NR_DISABLE_FILTERS = "preference_nr_disable_filters";
+
 	public static final String UNCOMPRESSED_PHOTO = "preference_uncompressed_photo";
 	public static final String YUV_CONVERSION = "preference_yuv_conversion";
 	public static final String ROW_SPACE_Y = "preference_row_space_y";
@@ -299,11 +323,159 @@ public class Prefs {
 	public static final String METADATA_COMMENT_AS_FILE = "preference_metadata_comment_as_file";
 
 	public static final String ADJUST_LEVELS = "preference_adjust_levels";
+	public static final String HISTOGRAM_LEVEL = "preference_histogram_level";
 
 	public static final String ZOOM_WHEN_FOCUSING = "preference_zoom_when_focusing";
 	
 	public static final String RESET_MANUAL_MODE = "preference_reset_manual_mode";
 	public static final String LOCK_PREVIEW_FPS_TO_VIDEO_FPS = "preference_lock_preview_fps";
+	public static final String DEFAULT_COLOR_CORRECTION = "preference_default_color_correction";
+	
+	public static final String DONT_ROTATE = "preference_dont_rotate";
+	
+	public static final int ADJUST_LEVELS_NONE = 0;
+	public static final int ADJUST_LEVELS_LIGHTS = 1;
+	public static final int ADJUST_LEVELS_LIGHTS_SHADOWS = 2;
+	public static final int ADJUST_LEVELS_BOOST = 3;
+	
+	public static final int HISTOGRAM_MODE_BRIGHTNESS = 1;
+	public static final int HISTOGRAM_MODE_MAXIMUM = 2;
+	public static final int HISTOGRAM_MODE_COLORS = 3;
+	
+	public static class Category {
+		public String id;
+		public int name_resource;
+		public int summary_resource;
+		public String[] keys;
+		
+		Category(String id, int name_resource, int summary_resource, String[] keys) {
+			this.id = id;
+			this.name_resource = name_resource;
+			this.summary_resource = summary_resource;
+			this.keys = keys;
+		}
+	}
+	
+	public static Category[] PREF_CATEGORIES = {
+		new Category("modes", R.string.preference_category_modes, R.string.preference_category_modes_summary, new String[] {
+			"flash_value_0",
+			"flash_value_1",
+			"flash_value_2",
+			"flash_value_0_video",
+			"flash_value_1_video",
+			"flash_value_2_video",
+			"focus_value_0",
+			"focus_value_1",
+			"focus_value_2",
+			"focus_value_0_video",
+			"focus_value_1_video",
+			"focus_value_2_video",
+			ISO + "_0",
+			ISO + "_1",
+			ISO + "_2",
+			ISO + "_0_video",
+			ISO + "_1_video",
+			ISO + "_2_video",
+			SCENE_MODE,
+			COLOR_EFFECT,
+			WHITE_BALANCE,
+			PHOTO_MODE,
+			MANUAL_ISO,
+			EXPOSURE,
+			EXPOSURE_TIME,
+			FOCUS_DISTANCE,
+			FOCUS_BRACKETING_DISTANCE,
+			WHITE_BALANCE,
+			WHITE_BALANCE_TEMPERATURE
+		}),
+		new Category("model", R.string.preference_category_model, R.string.preference_category_model_summary, new String[] {
+			MIN_FOCUS_DISTANCE+"_0",
+			MIN_FOCUS_DISTANCE+"_1",
+			MIN_FOCUS_DISTANCE+"_2",
+			WHITE_BALANCE_CALIBRATION+"_0",
+			WHITE_BALANCE_CALIBRATION+"_1",
+			WHITE_BALANCE_CALIBRATION+"_2",
+			ROW_SPACE_Y+"_0",
+			ROW_SPACE_Y+"_1",
+			ROW_SPACE_Y+"_2",
+			ROW_SPACE_UV+"_0",
+			ROW_SPACE_UV+"_1",
+			ROW_SPACE_UV+"_2",
+
+			EXPO_BRACKETING_USE_ISO+"_0",
+			EXPO_BRACKETING_USE_ISO+"_1",
+			EXPO_BRACKETING_USE_ISO+"_2",
+			EXPO_BRACKETING_DELAY,
+			FB_FOCUS_TIME,
+			
+			DONT_ROTATE,
+			STARTUP_FOCUS,
+			UPDATE_FOCUS_FOR_VIDEO,
+			CAMERA2_FAKE_FLASH,
+			USE_1920X1088,
+			SPEED_UP_SENSORS,
+			FULL_SIZE_COPY,
+			RESET_MANUAL_MODE,
+			LOCK_PREVIEW_FPS_TO_VIDEO_FPS,
+			DEFAULT_COLOR_CORRECTION,
+			FORCE_ISO_EXPOSURE
+		}),
+		new Category("device", R.string.preference_category_device, R.string.preference_category_device_summary, new String[] {
+			CALIBRATED_LEVEL_ANGLE,
+			FOCUS_DISTANCE_CALIBRATION+"_0",
+			FOCUS_DISTANCE_CALIBRATION+"_1",
+			FOCUS_DISTANCE_CALIBRATION+"_2",
+
+			MIN_FOCUS_DISTANCE+"_0",
+			MIN_FOCUS_DISTANCE+"_1",
+			MIN_FOCUS_DISTANCE+"_2",
+			WHITE_BALANCE_CALIBRATION+"_0",
+			WHITE_BALANCE_CALIBRATION+"_1",
+			WHITE_BALANCE_CALIBRATION+"_2",
+			ROW_SPACE_Y+"_0",
+			ROW_SPACE_Y+"_1",
+			ROW_SPACE_Y+"_2",
+			ROW_SPACE_UV+"_0",
+			ROW_SPACE_UV+"_1",
+			ROW_SPACE_UV+"_2",
+
+			EXPO_BRACKETING_USE_ISO+"_0",
+			EXPO_BRACKETING_USE_ISO+"_1",
+			EXPO_BRACKETING_USE_ISO+"_2",
+			EXPO_BRACKETING_DELAY,
+			FB_FOCUS_TIME,
+			
+			DONT_ROTATE,
+			STARTUP_FOCUS,
+			UPDATE_FOCUS_FOR_VIDEO,
+			CAMERA2_FAKE_FLASH,
+			USE_1920X1088,
+			SPEED_UP_SENSORS,
+			FULL_SIZE_COPY,
+			RESET_MANUAL_MODE,
+			LOCK_PREVIEW_FPS_TO_VIDEO_FPS,
+			DEFAULT_COLOR_CORRECTION,
+			FORCE_ISO_EXPOSURE
+		}),
+		new Category("filtering", R.string.preference_screen_filtering, 0, new String[] {
+			ANTIBANDING,
+			NOISE_REDUCTION+"_2_0",
+			NOISE_REDUCTION+"_2_1",
+			NOISE_REDUCTION+"_2_2",
+			EDGE+"_2_0",
+			EDGE+"_2_1",
+			EDGE+"_2_2",
+			SMART_FILTER+"_0",
+			SMART_FILTER+"_1",
+			SMART_FILTER+"_2",
+			OPTICAL_STABILIZATION+"_0",
+			OPTICAL_STABILIZATION+"_1",
+			OPTICAL_STABILIZATION+"_2",
+			HOT_PIXEL_CORRECTION+"_2_0",
+			HOT_PIXEL_CORRECTION+"_2_1",
+			HOT_PIXEL_CORRECTION+"_2_2"
+		})
+	};
 
 	// note, okay to change the order of enums in future versions, as getPhotoMode() does not rely on the order for the saved photo mode
 	public enum PhotoMode {
@@ -322,13 +494,14 @@ public class Prefs {
 	
 	private static boolean is_video = false;
 	private static boolean is_video_cached = false;
-	
-	public static void setSharedPreferences(SharedPreferences prefs) {
+
+	public static void init(MainActivity activity, SharedPreferences prefs) {
+		main_activity = activity;
 		sharedPreferences = prefs;
 	}
 
-	public static void setMainActivity(MainActivity activity) {
-		main_activity = activity;
+	public static SharedPreferences getSharedPreferences() {
+		return sharedPreferences;
 	}
 
 	public static String getFlashPreferenceKey() {
@@ -430,13 +603,13 @@ public class Prefs {
 		pref_photo_mode = option;
 
 		SharedPreferences.Editor editor = sharedPreferences.edit();
-		editor.putString(Prefs.PHOTO_MODE, option);
+		editor.putString(PHOTO_MODE, option);
 		editor.apply();
 	}
 
 	public static void updatePhotoMode() {
 		if( MyDebug.LOG ) Log.d(TAG, "updatePhotoMode");
-		String photo_mode_string = sharedPreferences.getString(Prefs.PHOTO_MODE, "std");
+		String photo_mode_string = sharedPreferences.getString(PHOTO_MODE, "std");
 		if( photo_mode_string.equals("dro") && main_activity.supportsDRO() && sharedPreferences.getBoolean("preference_photo_mode_dro_" + pref_camera_id, true) ) {
 			photo_mode = PhotoMode.DRO;
 			pref_photo_mode = "dro";
@@ -622,105 +795,6 @@ public class Prefs {
 		return isVideoPref() && sharedPreferences.getString(Prefs.SAVE_VIDEO_FOLDER, "same_as_photo").equals("folder");
 	}
 
-	public static String getSceneModePref() {
-		return sharedPreferences.getString(SCENE_MODE, "auto");
-	}
-
-	public static void setSceneModePref(String scene_mode) {
-		SharedPreferences.Editor editor = sharedPreferences.edit();
-		editor.putString(SCENE_MODE, scene_mode);
-		editor.apply();
-	}
-
-	public static void clearSceneModePref() {
-		SharedPreferences.Editor editor = sharedPreferences.edit();
-		editor.remove(SCENE_MODE);
-		editor.apply();
-	}
-
-	public static String getColorEffectPref() {
-		return sharedPreferences.getString(COLOR_EFFECT, "none");
-	}
-
-	public static void setColorEffectPref(String color_effect) {
-		SharedPreferences.Editor editor = sharedPreferences.edit();
-		editor.putString(COLOR_EFFECT, color_effect);
-		editor.apply();
-	}
-
-	public static void clearColorEffectPref() {
-		SharedPreferences.Editor editor = sharedPreferences.edit();
-		editor.remove(COLOR_EFFECT);
-		editor.apply();
-	}
-
-	public static String getWhiteBalancePref() {
-		return sharedPreferences.getString(WHITE_BALANCE, "auto");
-	}
-
-	public static void setWhiteBalancePref(String white_balance) {
-		SharedPreferences.Editor editor = sharedPreferences.edit();
-		editor.putString(WHITE_BALANCE, white_balance);
-		editor.apply();
-	}
-
-	public static void clearWhiteBalancePref() {
-		SharedPreferences.Editor editor = sharedPreferences.edit();
-		editor.remove(WHITE_BALANCE);
-		editor.apply();
-	}
-
-	public static int getWhiteBalanceTemperaturePref() {
-		return sharedPreferences.getInt(WHITE_BALANCE_TEMPERATURE, 5000);
-	}
-
-	public static void setWhiteBalanceTemperaturePref(int white_balance_temperature) {
-		SharedPreferences.Editor editor = sharedPreferences.edit();
-		editor.putInt(WHITE_BALANCE_TEMPERATURE, white_balance_temperature);
-		editor.apply();
-	}
-
-	public static boolean getMultitouchZoomPref() {
-		return sharedPreferences.getBoolean(MULTITOUCH_ZOOM, true);
-	}
-
-	public static int getExposureCompensationPref() {
-		String value = sharedPreferences.getString(EXPOSURE, "0");
-		if( MyDebug.LOG )
-			Log.d(TAG, "saved exposure value: " + value);
-		int exposure = 0;
-		try {
-			exposure = Integer.parseInt(value);
-			if( MyDebug.LOG )
-				Log.d(TAG, "exposure: " + exposure);
-		}
-		catch(NumberFormatException exception) {
-			if( MyDebug.LOG )
-				Log.d(TAG, "exposure invalid format, can't parse to int");
-		}
-		return exposure;
-	}
-
-	public static void setExposureCompensationPref(int exposure) {
-		SharedPreferences.Editor editor = sharedPreferences.edit();
-		editor.putString(EXPOSURE, "" + exposure);
-		editor.apply();
-	}
-
-	public static void clearExposureCompensationPref() {
-		SharedPreferences.Editor editor = sharedPreferences.edit();
-		editor.remove(EXPOSURE);
-		editor.apply();
-	}
-
-	public static boolean getForceFaceFocusPref() {
-		return sharedPreferences.getBoolean(FORCE_FACE_FOCUS, false);
-	}
-
-	public static boolean getCenterFocusPref() {
-		return sharedPreferences.getBoolean(CENTER_FOCUS, false);
-	}
-
 	public static Pair<Integer, Integer> getCameraResolutionPref() {
 		String resolution_value = sharedPreferences.getString(getResolutionPreferenceKey(), "");
 		if( MyDebug.LOG )
@@ -767,27 +841,6 @@ public class Prefs {
 		editor.apply();
 	}
 
-	/** getImageQualityPref() returns the image quality used for the Camera Controller for taking a
-	 *  photo - in some cases, we may set that to a higher value, then perform processing on the
-	 *  resultant JPEG before resaving. method returns the image quality setting to be used for
-	 *  saving the final image (as specified by the user).
-	 */
-	public static int getSaveImageQualityPref() {
-		if( MyDebug.LOG )
-			Log.d(TAG, "getSaveImageQualityPref");
-		String image_quality_s = sharedPreferences.getString(QUALITY, "90");
-		int image_quality;
-		try {
-			image_quality = Integer.parseInt(image_quality_s);
-		}
-		catch(NumberFormatException exception) {
-			if( MyDebug.LOG )
-				Log.e(TAG, "image_quality_s invalid format: " + image_quality_s);
-			image_quality = 90;
-		}
-		return image_quality;
-	}
-
 	public static int getImageQualityPref(){
 		if( MyDebug.LOG )
 			Log.d(TAG, "getImageQualityPref");
@@ -796,11 +849,7 @@ public class Prefs {
 		// setting
 		if( photo_mode == PhotoMode.DRO || photo_mode == PhotoMode.NoiseReduction || sharedPreferences.getString(Prefs.IMAGE_FORMAT, "jpeg").equals("png") )
 			return 100;
-		return getSaveImageQualityPref();
-	}
-
-	public static boolean getFaceDetectionPref() {
-		return sharedPreferences.getBoolean(FACE_DETECTION, false);
+		return getStringAsInt(QUALITY, 90);
 	}
 
 	public static String getVideoQualityPref() {
@@ -812,19 +861,11 @@ public class Prefs {
 		editor.apply();
 	}
 
-	public static boolean getVideoStabilizationPref() {
-		return sharedPreferences.getBoolean(VIDEO_STABILIZATION, false);
-	}
-
 	public static boolean getForce4KPref() {
 		if( pref_camera_id == 0 && sharedPreferences.getBoolean(FORCE_VIDEO_4K, false) && main_activity.supportsForceVideo4K() ) {
 			return true;
 		}
 		return false;
-	}
-
-	public static String getVideoBitratePref() {
-		return sharedPreferences.getString(VIDEO_BITRATE, "default");
 	}
 
 	public static String getVideoFPSPref() {
@@ -885,24 +926,6 @@ public class Prefs {
 		return capture_rate_factor;
 	}
 
-	public static float getVideoLogProfile() {
-		String video_log = sharedPreferences.getString(VIDEO_LOG_PROFILE, "off");
-		// remember to update useVideoLogProfile() if adding/changing modes
-		switch( video_log ) {
-			case "off":
-				return 0.0f;
-			case "low":
-				return 5.0f;
-			case "medium":
-				return 10.0f;
-			case "strong":
-				return 100.0f;
-			case "extra_strong":
-				return 500.0f;
-		}
-		return 0.0f;
-	}
-
 	public static long getVideoMaxDurationPref() {
 		String video_max_duration_value = sharedPreferences.getString(VIDEO_MAX_DURATION, "0");
 		long video_max_duration;
@@ -952,52 +975,11 @@ public class Prefs {
 		return video_max_filesize;
 	}
 
-	public static boolean getVideoRestartMaxFileSizeUserPref() {
-		return sharedPreferences.getBoolean(VIDEO_RESTART_MAX_FILESIZE, true);
-	}
-
-
-	public static boolean getVideoFlashPref() {
-		return sharedPreferences.getBoolean(VIDEO_FLASH, false);
-	}
-
-	public static boolean getVideoLowPowerCheckPref() {
-		return sharedPreferences.getBoolean(VIDEO_LOW_POWER_CHECK, true);
-	}
-
-	public static boolean getPreviewMaxSizePref() {
-		return sharedPreferences.getBoolean(PREVIEW_MAX_SIZE, false);
-	}
-
-	public static String getPreviewRotationPref() {
-		return sharedPreferences.getString(ROTATE_PREVIEW, "0");
-	}
-
-	public static String getLockOrientationPref() {
-		return sharedPreferences.getString(LOCK_ORIENTATION, "none");
-	}
-
-	public static boolean getTouchCapturePref() {
-		return sharedPreferences.getBoolean(TOUCH_CAPTURE, false);
-	}
-
 	public static boolean getPausePreviewPref() {
 		if (!isVideoPref()) {
 				return sharedPreferences.getBoolean(PAUSE_PREVIEW, false);
 		}
 		return false;
-	}
-
-	public static boolean getShowToastsPref() {
-		return sharedPreferences.getBoolean(SHOW_TOASTS, true);
-	}
-
-	public static boolean getThumbnailAnimationPref() {
-		return sharedPreferences.getBoolean(THUMBNAIL_ANIMATION, true);
-	}
-
-	public static boolean getStartupFocusPref() {
-		return sharedPreferences.getBoolean(STARTUP_FOCUS, false);
 	}
 
 	public static long getTimerPref() {
@@ -1015,16 +997,8 @@ public class Prefs {
 		return timer_delay;
 	}
 
-	public static String getRepeatPref() {
-		return sharedPreferences.getString(BURST_MODE, "1");
-	}
-
 	public static boolean getSelfieModePref() {
 		return main_activity.selfie_mode;
-	}
-
-	public static boolean getWaitFacePref() {
-		return sharedPreferences.getBoolean(WAIT_FACE, false);
 	}
 
 	public static long getRepeatIntervalPref() {
@@ -1040,30 +1014,6 @@ public class Prefs {
 			timer_delay = 0;
 		}
 		return timer_delay;
-	}
-
-	public static boolean getGeotaggingPref() {
-		return sharedPreferences.getBoolean(LOCATION, false);
-	}
-
-	public static boolean getRequireLocationPref() {
-		return sharedPreferences.getBoolean(REQUIRE_LOCATION, false);
-	}
-
-	public static boolean getGeodirectionPref() {
-		return sharedPreferences.getBoolean(GPS_DIRECTION, false);
-	}
-
-	public static boolean getRecordAudioPref() {
-		return sharedPreferences.getBoolean(RECORD_AUDIO, true);
-	}
-
-	public static String getRecordAudioChannelsPref() {
-		return sharedPreferences.getString(RECORD_AUDIO_CHANNELS, "audio_default");
-	}
-
-	public static String getRecordAudioSourcePref() {
-		return sharedPreferences.getString(RECORD_AUDIO_SRC, "audio_src_camcorder");
 	}
 
 	public static int getRecordAudioBitRatePref() {
@@ -1110,44 +1060,6 @@ public class Prefs {
 		return angle;
 	}
 
-	public static boolean useCamera2FakeFlash() {
-		return sharedPreferences.getBoolean(CAMERA2_FAKE_FLASH, false);
-	}
-
-	public static boolean useCamera2FastBurst() {
-		return sharedPreferences.getBoolean(CAMERA2_FAST_BURST, true);
-	}
-
-	public static boolean getUpdateFocusForVideoPref() {
-		return sharedPreferences.getBoolean(UPDATE_FOCUS_FOR_VIDEO, false);
-	}
-
-	public static String getAntibandingPref() {
-		return sharedPreferences.getString(ANTIBANDING, "auto");
-	}
-	
-	public static long getFBFocusTimePref() {
-		long value;
-		try {
-			value = (long)Integer.parseInt(sharedPreferences.getString(FB_FOCUS_TIME, "1000"));
-		}
-		catch(NumberFormatException e) {
-			value = 1000;
-		}
-		return value;
-	}
-
-	public static int getExposureCompensationDelayPref() {
-		int value;
-		try {
-			value = Integer.parseInt(sharedPreferences.getString(EXPO_BRACKETING_DELAY, "1000"));
-		}
-		catch(NumberFormatException e) {
-			value = 1000;
-		}
-		return value;
-	}
-
 	public static int getRowSpaceYPref() {
 		String value = sharedPreferences.getString(ROW_SPACE_Y + "_" + pref_camera_id, "default");
 		if (value.equals("default"))
@@ -1171,106 +1083,191 @@ public class Prefs {
 			return -1;
 		}
 	}
+	
+	/*##########################################
+		
+	##########################################*/
 
-	public static void setShowSeekbarsPref(boolean value) {
+	public static boolean contains(final String prefKey) {
+		return sharedPreferences.contains(prefKey);
+	}
+
+	public static boolean getBoolean(final String prefKey, final boolean defaultValue) {
+		return sharedPreferences.getBoolean(prefKey, defaultValue);
+	}
+
+	public static void setBoolean(final String prefKey, final boolean value) {
 		SharedPreferences.Editor editor = sharedPreferences.edit();
-		editor.putBoolean(SHOW_SEEKBARS, value);
+		editor.putBoolean(prefKey, value);
 		editor.apply();
 	}
 
-	public static boolean backup() {
-		if( MyDebug.LOG )
-			Log.e(TAG, "backup()");
-		
-		boolean res = false;
-
-		OutputStream output = null;
-		File file = null;
-		StorageUtils storageUtils = main_activity.getStorageUtils();
-		try {
-			if (!storageUtils.isUsingSAF()) {
-				file = storageUtils.createOutputMediaFile("BACKUP_", "", "xml", new Date());
-				output = new FileOutputStream(file);
-			} else {
-				Uri uri = storageUtils.createOutputMediaFileSAF("BACKUP_", "", "xml", new Date());
-				output = main_activity.getContentResolver().openOutputStream(uri);
-				file = storageUtils.getFileFromDocumentUriSAF(uri, false);
-			}
-			if (output != null) {
-				XmlUtils.writeMapXml(sharedPreferences.getAll(), output);
-				
-				if (file != null)
-					storageUtils.broadcastFile(file, false, false, false);
-
-				res = true;
-			}
-		} catch (Throwable e) {
-			e.printStackTrace();
-		} finally {
-			try {
-				if (output != null) {
-					output.flush();
-					output.close();
-				}
-			} catch (Throwable ex) {
-				ex.printStackTrace();
-			}
-		}
-		return res;
+	public static void putBoolean(final String prefKey, final boolean value) {
+		if (prefEditor == null)
+			prefEditor = sharedPreferences.edit();
+		prefEditor.putBoolean(prefKey, value);
 	}
 
-	public static boolean restore(String filename, Uri uri) {
-		if( MyDebug.LOG )
-			Log.e(TAG, "restore()");
-		boolean res = false;
-		InputStream input = null;
+	public static int getInt(final String prefKey, final int defaultValue) {
+		return sharedPreferences.getInt(prefKey, defaultValue);
+	}
+
+	public static int getStringAsInt(final String prefKey, final int defaultValue) {
+		int value = defaultValue;
 		try {
-			if (filename != null)
-				input = new FileInputStream(filename);
-			else if (uri != null) {
-				final ContentResolver resolver = main_activity.getContentResolver();
-				if (resolver != null)
-					input = resolver.openInputStream(uri);
-			}
-			
-			if (input == null)
-				return false;
-			
-			SharedPreferences.Editor editor = sharedPreferences.edit();
-			editor.clear();
-			Map<String, ?> entries = XmlUtils.readMapXml(input);
-			for (Map.Entry<String, ?> entry : entries.entrySet()) {
-				String key = entry.getKey();
-				Object value = entry.getValue();
-				if (value instanceof Boolean)
-					editor.putBoolean(key, ((Boolean)value).booleanValue());
-				else if (value instanceof Float)
-					editor.putFloat(key, ((Float)value).floatValue());
-				else if (value instanceof Integer)
-					editor.putInt(key, ((Integer)value).intValue());
-				else if (value instanceof Long)
-					editor.putLong(key, ((Long)value).longValue());
-				else if (value instanceof String)
-					editor.putString(key, (String)value);
-			}
+			value = Integer.parseInt(sharedPreferences.getString(prefKey, Integer.toString(defaultValue)));
+		} catch(NumberFormatException e) {}
+		return value;
+	}
 
-			editor.apply();
+	public static void setInt(final String prefKey, final int value) {
+		SharedPreferences.Editor editor = sharedPreferences.edit();
+		editor.putInt(prefKey, value);
+		editor.apply();
+	}
 
-			res = true;
-		} catch (Throwable e) {
-			e.printStackTrace();
-		} finally {
-			try {
-				if (input != null) {
-					input.close();
-				}
-			} catch (Throwable ex) {
-				ex.printStackTrace();
-			}
-		}
-		return res;
+	public static void putInt(final String prefKey, final int value) {
+		if (prefEditor == null)
+			prefEditor = sharedPreferences.edit();
+		prefEditor.putInt(prefKey, value);
+	}
+
+	public static long getLong(final String prefKey, final long defaultValue) {
+		return sharedPreferences.getLong(prefKey, defaultValue);
+	}
+
+	public static long getStringAsLong(final String prefKey, final long defaultValue) {
+		long value = defaultValue;
+		try {
+			value = Long.parseLong(sharedPreferences.getString(prefKey, Long.toString(defaultValue)));
+		} catch(NumberFormatException e) {}
+		return value;
+	}
+
+	public static void setLong(final String prefKey, final long value) {
+		SharedPreferences.Editor editor = sharedPreferences.edit();
+		editor.putLong(prefKey, value);
+		editor.apply();
+	}
+
+	public static float getFloat(final String prefKey, final float defaultValue) {
+		return sharedPreferences.getFloat(prefKey, defaultValue);
+	}
+
+	public static float getStringAsFloat(final String prefKey, final float defaultValue) {
+		float value = defaultValue;
+		try {
+			value = Float.parseFloat(sharedPreferences.getString(prefKey, Float.toString(defaultValue)));
+		} catch(NumberFormatException e) {}
+		return value;
+	}
+
+	public static void setFloat(final String prefKey, final float value) {
+		SharedPreferences.Editor editor = sharedPreferences.edit();
+		editor.putFloat(prefKey, value);
+		editor.apply();
+	}
+
+	public static String getString(final String prefKey, final String defaultValue) {
+		return sharedPreferences.getString(prefKey, defaultValue);
 	}
 	
+	public static void setString(final String prefKey, final String value) {
+		SharedPreferences.Editor editor = sharedPreferences.edit();
+		editor.putString(prefKey, value);
+		editor.apply();
+	}
+	
+	public static void putString(final String prefKey, final String value) {
+		if (prefEditor == null)
+			prefEditor = sharedPreferences.edit();
+		prefEditor.putString(prefKey, value);
+	}
+
+	public static void clearPref(final String prefKey) {
+		SharedPreferences.Editor editor = sharedPreferences.edit();
+		editor.remove(prefKey);
+		editor.apply();
+	}
+	
+	public static void commit() {
+		if (prefEditor != null) {
+			prefEditor.apply();
+			prefEditor = null;
+		}
+	}
+
+	public static void exportPrefs(OutputStream output, String category, String[] pref_names) throws XmlPullParserException, IOException {
+		if( MyDebug.LOG )
+			Log.e(TAG, "exportPrefs()");
+		
+		Map<String, ?> prefs;
+		final Map<String, ?> all = sharedPreferences.getAll();
+		if (pref_names == null) {
+			prefs = new TreeMap<String, Object>(all);
+		} else {
+			prefs = new TreeMap<String, Object>();
+			if (category != null)
+				((TreeMap)prefs).put("category", category);
+			for (String name : pref_names) {
+				Object value = all.get(name);
+				if (value != null)
+					((TreeMap)prefs).put(name, value);
+			}
+		}
+		String comment = "Device: " + Build.MANUFACTURER + " " + Build.MODEL + " (" + Build.DEVICE + "), fingerprint: " + Build.FINGERPRINT;
+		XmlUtils.writeMapXml(prefs, comment, output);
+	}
+
+	public static void importPrefs(InputStream input, boolean clear) throws XmlPullParserException, IOException {
+		if( MyDebug.LOG )
+			Log.e(TAG, "importPrefs()");
+			
+		SharedPreferences.Editor editor = sharedPreferences.edit();
+		Map<String, ?> entries = XmlUtils.readMapXml(input);
+		if (clear)
+			editor.clear();
+		else {
+			String category = (String)(entries.get("category"));
+			if (category != null) {
+				for (Category cat : PREF_CATEGORIES) {
+					if (category.equals(cat.id)) {
+						for (String key : cat.keys) {
+							editor.remove(key);
+						}
+						break;
+					}
+				}
+			}
+		}
+		for (Map.Entry<String, ?> entry : entries.entrySet()) {
+			String key = entry.getKey();
+			if (key.equals("category"))
+				continue;
+
+			Object value = entry.getValue();
+			if (value instanceof Boolean)
+				editor.putBoolean(key, ((Boolean)value).booleanValue());
+			else if (value instanceof Float)
+				editor.putFloat(key, ((Float)value).floatValue());
+			else if (value instanceof Integer)
+				editor.putInt(key, ((Integer)value).intValue());
+			else if (value instanceof Long)
+				editor.putLong(key, ((Long)value).longValue());
+			else if (value instanceof String)
+				editor.putString(key, (String)value);
+		}
+
+		editor.apply();
+	}
+	
+	public static void reset(String[] pref_keys) {
+		SharedPreferences.Editor editor = sharedPreferences.edit();
+		for (String key : pref_keys)
+			editor.remove(key);
+		editor.apply();
+	}
+
 	public static void reset() {
 		SharedPreferences.Editor editor = sharedPreferences.edit();
 		editor.clear();

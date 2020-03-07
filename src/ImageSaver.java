@@ -2,6 +2,9 @@ package com.caddish_hedgehog.hedgecam2;
 
 import com.caddish_hedgehog.hedgecam2.CameraController.CameraController;
 //import com.caddish_hedgehog.hedgecam2.JniBitmap;
+import com.caddish_hedgehog.hedgecam2.Prefs;
+import com.caddish_hedgehog.hedgecam2.UI.QueueCounter;
+import com.caddish_hedgehog.hedgecam2.Utils;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -33,22 +36,23 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
-import android.graphics.Paint;
 import android.graphics.Paint.Align;
+import android.graphics.Paint;
 import android.hardware.camera2.DngCreator;
 import android.location.Location;
+import android.media.Image;
+import android.net.Uri;
+import android.os.Build;
+import android.renderscript.Allocation;
 import android.renderscript.Element;
 import android.renderscript.RenderScript;
 import android.renderscript.RSInvalidStateException;
 import android.renderscript.Script;
 import android.renderscript.Type;
-import android.support.media.ExifInterface;
-import android.media.Image;
-import android.net.Uri;
-import android.os.Build;
-import android.renderscript.Allocation;
 import android.support.annotation.RequiresApi;
+import android.support.media.ExifInterface;
 import android.util.Log;
+import android.widget.TextView;
 
 /** Handles the saving (and any required processing) of photos.
  */
@@ -77,14 +81,10 @@ public class ImageSaver {
 	private int n_images_to_save = 0;
 	private final List<Request> queue = new ArrayList<>(); // since we remove from the queue and then process in the saver thread, in practice the number of background photos - including the one being processed - is one more than the length of this queue
 	private volatile Thread saving_thread;
+	private final QueueCounter queueCounter;
 	
 	static class ProcessingSettings {
-		enum SaveBase {
-			NONE,
-			FIRST,
-			ALL
-		}
-		public SaveBase save_base;
+		public boolean save_base;
 		public String hdr_tonemapping;
 		public String hdr_local_contrast;
 		public String hdr_n_tiles;
@@ -96,17 +96,21 @@ public class ImageSaver {
 		public double level_angle;
 		public boolean mirror;
 		public int adjust_levels;
+		public double histogram_level;
 		public boolean stamp;
 		public String stamp_text;
 		public String stamp_dateformat;
 		public String stamp_timeformat;
 		public String stamp_gpsformat;
+		public boolean stamp_store_address;
+		public boolean stamp_store_altitude;
 		
 		public String align;
 		
 		ProcessingSettings () {
-			save_base = SaveBase.NONE;
+			save_base = false;
 			adjust_levels = 0;
+			histogram_level = 0.0d;
 			align = "none";
 		}
 	}
@@ -134,6 +138,7 @@ public class ImageSaver {
 		final Uri image_capture_intent_uri;
 		final boolean using_camera2;
 		final int image_quality;
+		final boolean allow_rotation;
 		final ProcessingSettings processing_settings;
 		final Metadata metadata;
 		final boolean is_front_facing;
@@ -153,6 +158,7 @@ public class ImageSaver {
 			DngCreator dngCreator, Image image,
 			boolean image_capture_intent, Uri image_capture_intent_uri,
 			boolean using_camera2, int image_quality,
+			boolean allow_rotation,
 			ProcessingSettings processing_settings,
 			Metadata metadata,
 			boolean is_front_facing,
@@ -169,6 +175,7 @@ public class ImageSaver {
 			this.image_capture_intent_uri = image_capture_intent_uri;
 			this.using_camera2 = using_camera2;
 			this.image_quality = image_quality;
+			this.allow_rotation = allow_rotation;
 			this.processing_settings = processing_settings;
 			this.metadata = metadata;
 			this.is_front_facing = is_front_facing;
@@ -188,7 +195,8 @@ public class ImageSaver {
 			Log.d(TAG, "ImageSaver");
 		this.main_activity = main_activity;
 		this.hdrProcessor = new HDRProcessor(main_activity);
-		
+		this.queueCounter = new QueueCounter((TextView)main_activity.findViewById(R.id.queue_count));
+
 		String version = null;
 		try {
 			PackageInfo pInfo = main_activity.getPackageManager().getPackageInfo(main_activity.getPackageName(), 0);
@@ -212,6 +220,7 @@ public class ImageSaver {
 			String yuv_conversion,
 			boolean image_capture_intent, Uri image_capture_intent_uri,
 			boolean using_camera2, int image_quality,
+			boolean allow_rotation,
 			ProcessingSettings processing_settings,
 			Metadata metadata,
 			boolean is_front_facing,
@@ -223,21 +232,41 @@ public class ImageSaver {
 			Log.d(TAG, "do_in_background? " + do_in_background);
 			Log.d(TAG, "number of images: " + images.size());
 		}
-		return saveImage(do_in_background,
-				use_png,
-				false,
+		Request request = new Request(use_png ? Request.Type.PNG : Request.Type.JPEG,
 				photo_mode,
 				images,
 				yuv_conversion,
 				null, null,
 				image_capture_intent, image_capture_intent_uri,
 				using_camera2, image_quality,
+				allow_rotation,
 				processing_settings,
 				metadata,
 				is_front_facing,
 				prefix, current_date, image_number,
 				store_location, location, store_geo_direction, geo_direction,
 				sample_factor);
+
+		boolean success;
+		if( do_in_background ) {
+			if( MyDebug.LOG )
+				Log.d(TAG, "add background request");
+			addRequest(request);
+			if( request.photo_mode == Prefs.PhotoMode.HDR || request.images.size() > 1 ) {
+				// For (multi-image) HDR, we also add a dummy request, effectively giving it a cost of 2 - to reflect the fact that HDR is more memory intensive
+				// (arguably it should have a cost of 3, to reflect the 3 JPEGs, but one can consider this comparable to RAW+JPEG, which have a cost
+				// of 2, due to RAW and JPEG each needing their own request).
+				// Similarly for saving multiple images (expo-bracketing)
+				addDummyRequest();
+			}
+			success = true; // always return true when done in background
+		}
+		else {
+			success = saveImageNow(request, false);
+		}
+		if( MyDebug.LOG )
+			Log.d(TAG, "success: " + success);
+		return success;
 	}
 
 	/** Saves a RAW photo.
@@ -254,67 +283,27 @@ public class ImageSaver {
 			Log.d(TAG, "saveImageRaw");
 			Log.d(TAG, "do_in_background? " + do_in_background);
 		}
-		return saveImage(do_in_background,
-				false,
-				true,
+		Request request = new Request(Request.Type.RAW,
 				photo_mode,
 				null,
 				null,
 				dngCreator, image,
 				false, null,
 				false, 0,
+				false,
 				null,
 				null,
 				false,
 				prefix, current_date, image_number,
 				false, null, false, 0.0,
 				1);
-	}
 
-	/** Internal saveImage method to handle both JPEG and RAW.
-	 */
-	private boolean saveImage(boolean do_in_background,
-			boolean use_png,
-			boolean is_raw,
-			Prefs.PhotoMode photo_mode,
-			List<CameraController.Photo> images,
-			String yuv_conversion,
-			DngCreator dngCreator, Image image,
-			boolean image_capture_intent, Uri image_capture_intent_uri,
-			boolean using_camera2, int image_quality,
-			ProcessingSettings processing_settings,
-			Metadata metadata,
-			boolean is_front_facing,
-			String prefix, Date current_date, int image_number,
-			boolean store_location, Location location, boolean store_geo_direction, double geo_direction,
-			int sample_factor) {
-		if( MyDebug.LOG ) {
-			Log.d(TAG, "saveImage");
-			Log.d(TAG, "do_in_background? " + do_in_background);
-		}
 		boolean success;
-		
-		//do_in_background = false;
-		
-		Request request = new Request(is_raw ? Request.Type.RAW : (use_png ? Request.Type.PNG : Request.Type.JPEG),
-				photo_mode,
-				images,
-				yuv_conversion,
-				dngCreator, image,
-				image_capture_intent, image_capture_intent_uri,
-				using_camera2, image_quality,
-				processing_settings,
-				metadata,
-				is_front_facing,
-				prefix, current_date, image_number,
-				store_location, location, store_geo_direction, geo_direction,
-				sample_factor);
-
 		if( do_in_background ) {
 			if( MyDebug.LOG )
 				Log.d(TAG, "add background request");
 			addRequest(request);
-			if( ( request.photo_mode == Prefs.PhotoMode.HDR ) || ( !is_raw && request.images.size() > 1 ) ) {
+			if (request.photo_mode == Prefs.PhotoMode.HDR) {
 				// For (multi-image) HDR, we also add a dummy request, effectively giving it a cost of 2 - to reflect the fact that HDR is more memory intensive
 				// (arguably it should have a cost of 3, to reflect the 3 JPEGs, but one can consider this comparable to RAW+JPEG, which have a cost
 				// of 2, due to RAW and JPEG each needing their own request).
@@ -324,14 +313,8 @@ public class ImageSaver {
 			success = true; // always return true when done in background
 		}
 		else {
-			if( is_raw ) {
-				success = saveImageNowRaw(request.dngCreator, request.image, request.prefix, request.current_date, false);
-			}
-			else {
-				success = saveImageNow(request, false);
-			}
+			success = saveImageNowRaw(request.dngCreator, request.image, request.prefix, request.current_date, false);
 		}
-
 		if( MyDebug.LOG )
 			Log.d(TAG, "success: " + success);
 		return success;
@@ -358,6 +341,14 @@ public class ImageSaver {
 			synchronized( this ) { // keep FindBugs happy
 				Log.d(TAG, "ImageSaver thread added to queue, size is now: " + queue.size());
 				Log.d(TAG, "images still to save is now: " + n_images_to_save);
+			}
+		}
+		
+		if( request.type != Request.Type.DUMMY ) {
+			queueCounter.increase();
+			if (request.processing_settings != null && request.processing_settings.save_base) {
+				for (int i = 0; i < request.images.size(); i++)
+					queueCounter.increase();
 			}
 		}
 
@@ -418,8 +409,11 @@ public class ImageSaver {
 						}
 						queue_size = queue.size();
 					}
+					if( request.type != Request.Type.DUMMY )
+						queueCounter.decrease();
 				}
 				main_activity.savingImage(false);
+				queueCounter.reset();
 				saving_thread = null;
 			}
 		};
@@ -438,6 +432,7 @@ public class ImageSaver {
 			null, null,
 			false, null,
 			false, 0,
+			false,
 			null,
 			null,
 			false,
@@ -460,12 +455,16 @@ public class ImageSaver {
 			Log.d(TAG, "loadBitmap");
 			Log.d(TAG, "mutable?: " + mutable);
 		}
+		long time_s = System.currentTimeMillis();
 		if (photo.y != null) {
 			Allocation alloc = loadYUV(photo, yuv_conversion);
 			Bitmap bitmap = Bitmap.createBitmap(photo.width, photo.height, Bitmap.Config.ARGB_8888);
 			
 			alloc.copyTo(bitmap);
 			
+			if( MyDebug.LOG )
+				Log.d(TAG, "time after alloc.copyTo: " + (System.currentTimeMillis() - time_s));
+
 			return bitmap;
 		} else {
 			BitmapFactory.Options options = new BitmapFactory.Options();
@@ -480,10 +479,21 @@ public class ImageSaver {
 			if( bitmap == null ) {
 				Log.e(TAG, "failed to decode bitmap");
 			}
+			if( MyDebug.LOG )
+				Log.d(TAG, "time after BitmapFactory.decodeByteArray: " + (System.currentTimeMillis() - time_s));
 			return bitmap;
 		}
 	}
 	
+	private Allocation loadAllocation(CameraController.Photo photo, String yuv_conversion) {
+		if (photo.y != null) {
+			return loadYUV(photo, yuv_conversion);
+		} else {
+			Bitmap bitmap = loadBitmap(photo, yuv_conversion, false);
+			return Allocation.createFromBitmap(main_activity.getRenderScript(), bitmap);
+		}
+	}
+
 	private Allocation loadYUV(CameraController.Photo photo, String conversion) {
 		long time_s = System.currentTimeMillis();
 
@@ -669,6 +679,10 @@ public class ImageSaver {
 			// throw runtime exception, as this is a programming error
 			throw new RuntimeException();
 		}
+		
+		if (request.sample_factor != 0) {
+			
+		}
 
 		boolean success;
 		if( request.photo_mode == Prefs.PhotoMode.NoiseReduction ) {
@@ -679,23 +693,40 @@ public class ImageSaver {
 
 			success = true;
 
-//			saveBaseImages(request, "_", in_background);
-			Bitmap bitmap = loadBitmap(request.images.get(0), request.yuv_conversion, false);
-			
 			if (request.image_number == 1) {
+				if (!request.image_capture_intent && request.processing_settings.save_base)
+					saveSingleImageNow(request, request.images.get(0), null, null, "", false, false, in_background);
+
+				Bitmap bitmap = loadBitmap(request.images.get(0), request.yuv_conversion, false);
 				if (!in_background) main_activity.savingImage(true);
-				nrProcessor = new NRProcessor(main_activity.getRenderScript(), bitmap);
+				boolean align = false;
+				boolean crop_aligned = false;
+				switch (request.processing_settings.align) {
+					case "align":
+						align = true;
+						break;
+					case "align_crop":
+						align = true;
+						crop_aligned = true;
+						break;
+				}
+				nrProcessor = new NRProcessor(main_activity, main_activity.getRenderScript(), bitmap, align, crop_aligned);
+				if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP ) {
+					bitmap.recycle();
+				}
 			} else {
-				if (nrProcessor != null)
-					nrProcessor.addBitmap(bitmap);
+				if (nrProcessor != null) {
+					Allocation alloc = loadAllocation(request.images.get(0), request.yuv_conversion);
+					nrProcessor.addAllocation(alloc);
+				}
 			}
 
 			if (request.sample_factor != 0) {
 				if( MyDebug.LOG )
 					Log.d(TAG, "saving NR image");
-				Allocation nr_alloc = nrProcessor.finish(request.processing_settings.adjust_levels);
+				Allocation nr_alloc = nrProcessor.finish(request.processing_settings.adjust_levels, request.processing_settings.histogram_level);
 				nrProcessor = null;
-				request.processing_settings.adjust_levels = 0;
+				request.processing_settings.adjust_levels = Prefs.ADJUST_LEVELS_NONE;
 				
 				String suffix = "_NR";
 				success = saveSingleImageNow(request, request.images.get(0), null, nr_alloc, suffix, true, true, in_background);
@@ -703,9 +734,6 @@ public class ImageSaver {
 					Log.e(TAG, "saveSingleImageNow failed for nr image");
 			}
 
-			if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP ) {
-				bitmap.recycle();
-			}
 			System.gc();
 		}
 		else if( request.photo_mode == Prefs.PhotoMode.HDR || request.photo_mode == Prefs.PhotoMode.DRO ) {
@@ -719,12 +747,24 @@ public class ImageSaver {
 			}
 
 			long time_s = System.currentTimeMillis();
-			if( request.images.size() > 1 ) {
+			if( request.images.size() > 1 && !request.image_capture_intent && request.processing_settings.save_base ) {
 				// if there's only 1 image, we're in DRO mode, and shouldn't save the base image
-				saveBaseImages(request, "_EXP", in_background);
-				if( MyDebug.LOG ) {
-					Log.d(TAG, "HDR performance: time after saving base exposures: " + (System.currentTimeMillis() - time_s));
+				if( MyDebug.LOG )
+					Log.d(TAG, "save base images");
+				for(int i=0;i<request.images.size();i++) {
+					// note, even if one image fails, we still try saving the other images - might as well give the user as many images as we can...
+					CameraController.Photo image = request.images.get(i);
+					// don't update the thumbnails, only do this for the final image - so user doesn't think it's complete, click gallery, then wonder why the final image isn't there
+					// also don't mark these images as being shared
+					if( !saveSingleImageNow(request, image, null, null, "_EXP" + i, false, false, in_background) ) {
+						if( MyDebug.LOG )
+							Log.e(TAG, "saveSingleImageNow failed for exposure image");
+						// we don't set success to false here - as for deciding whether to pause preview or not (which is all we use the success return for), all that matters is whether we saved the final HDR image
+					}
+					queueCounter.decrease();
 				}
+				if( MyDebug.LOG )
+					Log.d(TAG, "HDR performance: time after saving base exposures: " + (System.currentTimeMillis() - time_s));
 			}
 
 			// note, even if we failed saving some of the expo images, still try to save the HDR image
@@ -816,7 +856,7 @@ public class ImageSaver {
 				e.printStackTrace();
 				if( e.getCode() == HDRProcessorException.UNEQUAL_SIZES ) {
 					// this can happen on OnePlus 3T with old camera API with front camera, seems to be a bug that resolution changes when exposure compensation is set!
-					main_activity.getPreview().showToast(null, R.string.failed_to_process_hdr);
+					Utils.showToast(null, R.string.failed_to_process_hdr);
 					Log.e(TAG, "UNEQUAL_SIZES");
 					bitmaps.clear();
 					System.gc();
@@ -884,31 +924,6 @@ public class ImageSaver {
 		}
 
 		return success;
-	}
-
-	/** Saves all the images in request.images, depending on the save_base option.
-	 */
-	private void saveBaseImages(Request request, String suffix, boolean in_background) {
-		if( MyDebug.LOG )
-			Log.d(TAG, "saveBaseImages");
-		if( !request.image_capture_intent && request.processing_settings.save_base != ProcessingSettings.SaveBase.NONE ) {
-			if( MyDebug.LOG )
-				Log.d(TAG, "save base images");
-			for(int i=0;i<request.images.size();i++) {
-				// note, even if one image fails, we still try saving the other images - might as well give the user as many images as we can...
-				CameraController.Photo image = request.images.get(i);
-				String filename_suffix = suffix + i;
-				// don't update the thumbnails, only do this for the final image - so user doesn't think it's complete, click gallery, then wonder why the final image isn't there
-				// also don't mark these images as being shared
-				if( !saveSingleImageNow(request, image, null, null, filename_suffix, false, false, in_background) ) {
-					if( MyDebug.LOG )
-						Log.e(TAG, "saveSingleImageNow failed for exposure image");
-					// we don't set success to false here - as for deciding whether to pause preview or not (which is all we use the success return for), all that matters is whether we saved the final HDR image
-				}
-				if( request.processing_settings.save_base == ProcessingSettings.SaveBase.FIRST )
-					break; // only requested the first
-			}
-		}
 	}
 
 	/** Performs the auto-stabilise algorithm on the image.
@@ -1103,7 +1118,7 @@ public class ImageSaver {
 						applicationInterface.drawTextOnPhoto(canvas, p, datetime_stamp, width, height, line_count);
 						line_count++;
 					}
-					String gps_stamp = main_activity.getTextFormatter().getGPSString(request.processing_settings.stamp_gpsformat, request.store_location, request.location, request.store_geo_direction, request.geo_direction);
+					String gps_stamp = main_activity.getTextFormatter().getGPSString(request.processing_settings.stamp_gpsformat, request.store_location, request.location, request.processing_settings.stamp_store_address, request.processing_settings.stamp_store_altitude, request.store_geo_direction, request.geo_direction);
 					if( gps_stamp.length() > 0 ) {
 						if( MyDebug.LOG )
 							Log.d(TAG, "stamp with location_string: " + gps_stamp);
@@ -1163,6 +1178,13 @@ public class ImageSaver {
 		final Date current_date = request.current_date;
 		final boolean store_location = request.store_location;
 		final boolean store_geo_direction = request.store_geo_direction;
+		
+		int orientation = ExifInterface.ORIENTATION_UNDEFINED;
+		if (photo.y != null) {
+			orientation = photo.orientation;
+		} else {
+			orientation = getExifOrientation(photo.jpeg);
+		}
 
 		boolean success = false;
 		final MyApplicationInterface applicationInterface = main_activity.getApplicationInterface();
@@ -1175,51 +1197,96 @@ public class ImageSaver {
 			photo.y != null ||
 			alloc != null ||
 			request.processing_settings.do_auto_stabilise ||
-			request.processing_settings.mirror ||
+			(request.allow_rotation && request.processing_settings.mirror) ||
 			request.processing_settings.stamp ||
 			text_stamp ||
 			(request.image_capture_intent && request.image_capture_intent_uri == null) ||
 			use_png;
 	
-		if( need_bitmap || request.processing_settings.adjust_levels > 0 ) {
-			int rotation = getPhotoRotation(photo);
+		if( need_bitmap || request.processing_settings.adjust_levels != Prefs.ADJUST_LEVELS_NONE ) {
+			int rotation = getPhotoRotation(orientation);
 
 			if (photo.y != null && alloc == null) {
 				alloc = loadYUV(photo, request.yuv_conversion);
 			}
 
-			if( request.processing_settings.adjust_levels > 0 ) {
+			if( request.processing_settings.adjust_levels != Prefs.ADJUST_LEVELS_NONE ) {
 				RenderScript rs = main_activity.getRenderScript();
 				ScriptC_auto_levels script = new ScriptC_auto_levels(rs);
 				if (alloc == null) {
 					bitmap = loadBitmap(photo, request.yuv_conversion, request.processing_settings.stamp || text_stamp);
 					alloc = Allocation.createFromBitmap(rs, bitmap);
 				}
-				Allocation alloc_max_min = Allocation.createSized(rs, Element.U32(rs), 2);
-
-				script.bind_max_min(alloc_max_min);
-				script.invoke_init_max_min();
-
-				if (request.processing_settings.adjust_levels == 2) {
-					script.forEach_calc_min_max(alloc);
-					if( MyDebug.LOG )
-						Log.d(TAG, "time after script.forEach_calc_min_max: " + (System.currentTimeMillis() - time_s));
-				} else if (request.processing_settings.adjust_levels == 1) {
-					script.forEach_calc_max(alloc);
-					if( MyDebug.LOG )
-						Log.d(TAG, "time after script.forEach_calc_max: " + (System.currentTimeMillis() - time_s));
-				}
-
+				
 				int [] max_min = new int[2];
-				alloc_max_min.copyTo(max_min);
+				Allocation alloc_histogram = null;
+				if (request.processing_settings.histogram_level == 0) {
+					Allocation alloc_max_min = Allocation.createSized(rs, Element.U32(rs), 2);
+
+					script.bind_max_min(alloc_max_min);
+					script.invoke_init_max_min();
+
+					if (request.processing_settings.adjust_levels == Prefs.ADJUST_LEVELS_LIGHTS_SHADOWS) {
+						script.forEach_calc_min_max(alloc);
+						if( MyDebug.LOG )
+							Log.d(TAG, "time after script.forEach_calc_min_max: " + (System.currentTimeMillis() - time_s));
+					} else if (request.processing_settings.adjust_levels == Prefs.ADJUST_LEVELS_LIGHTS) {
+						script.forEach_calc_max(alloc);
+						if( MyDebug.LOG )
+							Log.d(TAG, "time after script.forEach_calc_max: " + (System.currentTimeMillis() - time_s));
+					}
+
+					alloc_max_min.copyTo(max_min);
+				} else {
+					if( MyDebug.LOG )
+						Log.d(TAG, "histogram_level = " + request.processing_settings.histogram_level);
+
+					alloc_histogram = Allocation.createSized(rs, Element.U32(rs), 256);
+					script.bind_histogram_array(alloc_histogram);
+					script.invoke_init_histogram();
+					script.forEach_histogram(alloc);
+					if( MyDebug.LOG )
+						Log.d(TAG, "time after script.forEach_histogram: " + (System.currentTimeMillis() - time_s));
+
+					int [] histogram = new int[256];
+					alloc_histogram.copyTo(histogram);
+					if( MyDebug.LOG )
+						Log.d(TAG, "time after alloc_histogram.copyTo: " + (System.currentTimeMillis() - time_s));
+						
+					int histogram_height = 0;
+					for (int i = 0; i < 256; i++) {
+						histogram_height = Math.max(histogram_height, histogram[i]);
+					}
+					if( MyDebug.LOG )
+						Log.d(TAG, "histogram_height = " + histogram_height + ", time after calc: " + (System.currentTimeMillis() - time_s));
+
+					int level = (int)(((double)histogram_height)*request.processing_settings.histogram_level);
+					
+					for (max_min[0] = 255; max_min[0] > 0; max_min[0]--) {
+						if (histogram[max_min[0]] >= level)
+							break;
+					}
+					
+					if (request.processing_settings.adjust_levels == Prefs.ADJUST_LEVELS_LIGHTS_SHADOWS) {
+						for (max_min[1] = 0; max_min[1] < 256; max_min[1]++) {
+							if (histogram[max_min[1]] >= level)
+								break;
+						}
+					}
+
+					if( MyDebug.LOG )
+						Log.d(TAG, "time after calc histogram levels: " + (System.currentTimeMillis() - time_s));
+				}
 				
 				if( MyDebug.LOG )
 					Log.d(TAG, "min: " + max_min[1] + ", max: " + max_min[0]);
 
-				if (request.processing_settings.adjust_levels == 2 && (max_min[1] == 0 || max_min[1] >= max_min[0]))
-					request.processing_settings.adjust_levels = 1;
+				if (request.processing_settings.adjust_levels == Prefs.ADJUST_LEVELS_LIGHTS_SHADOWS && (max_min[1] == 0 || max_min[1] >= max_min[0]))
+					request.processing_settings.adjust_levels = Prefs.ADJUST_LEVELS_LIGHTS;
 
-				if (request.processing_settings.adjust_levels == 1 && (max_min[0] == 255 || max_min[0] == 0)) {
+				if ((request.processing_settings.adjust_levels == Prefs.ADJUST_LEVELS_LIGHTS
+						|| request.processing_settings.adjust_levels == Prefs.ADJUST_LEVELS_BOOST)
+						&& (max_min[0] == 255 || max_min[0] == 0)) {
 					if (!need_bitmap) {
 						alloc = null;
 						if (bitmap != null) {
@@ -1228,17 +1295,41 @@ public class ImageSaver {
 						}
 					}
 				} else {
-					if (request.processing_settings.adjust_levels == 2) {
-						script.set_fDivider((float)(max_min[0]-max_min[1]) / 255.0f);
-						script.set_fMin((float)max_min[1]);
-						script.forEach_auto_ls(alloc, alloc);
-						if( MyDebug.LOG )
-							Log.d(TAG, "time after script.forEach_auto_ls: " + (System.currentTimeMillis() - time_s));
-					} else if (request.processing_settings.adjust_levels == 1) {
-						script.set_fDivider((float)max_min[0] / 255.0f);
-						script.forEach_auto_l(alloc, alloc);
-						if( MyDebug.LOG )
-							Log.d(TAG, "time after script.forEach_auto_l: " + (System.currentTimeMillis() - time_s));
+					switch (request.processing_settings.adjust_levels) {
+						case Prefs.ADJUST_LEVELS_LIGHTS_SHADOWS:
+							script.set_fDivider((float)(max_min[0]-max_min[1]) / 255.0f);
+							script.set_fMin((float)max_min[1]);
+							script.forEach_auto_ls(alloc, alloc);
+							if( MyDebug.LOG )
+								Log.d(TAG, "time after script.forEach_auto_ls: " + (System.currentTimeMillis() - time_s));
+							break;
+						case Prefs.ADJUST_LEVELS_LIGHTS:
+							script.set_fDivider((float)max_min[0] / 255.0f);
+							script.forEach_auto_l(alloc, alloc);
+							if( MyDebug.LOG )
+								Log.d(TAG, "time after script.forEach_auto_l: " + (System.currentTimeMillis() - time_s));
+							break;
+						case Prefs.ADJUST_LEVELS_BOOST:
+							double divider = (double)max_min[0];
+							double gamma = 1.0d/Math.sqrt(255.0d/(double)max_min[0]);
+							if( MyDebug.LOG )
+								Log.d(TAG, "gamma: " + gamma);
+
+							int [] histogram = new int[256];
+							double level_out;
+							for (double level = 0; level < 256; level++) {
+								level_out = Math.max(0.0d, Math.pow((level/divider), gamma)*255.0d);
+								histogram[(int)level] = (int)Math.min(255.0d, level_out);
+							}
+							if (alloc_histogram == null) {
+								alloc_histogram = Allocation.createSized(rs, Element.U32(rs), 256);
+								script.bind_histogram_array(alloc_histogram);
+							}
+							alloc_histogram.copyFrom(histogram);
+							script.forEach_apply_histogram(alloc, alloc);
+							if( MyDebug.LOG )
+								Log.d(TAG, "time after script.forEach_apply_histogram: " + (System.currentTimeMillis() - time_s));
+							break;
 					}
 				}
 			}
@@ -1261,23 +1352,39 @@ public class ImageSaver {
 						Log.d(TAG, "creating new bitmap");
 					}
 					bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+					if( MyDebug.LOG )
+						Log.d(TAG, "Save single image performance: time after creating new bitmap: " + (System.currentTimeMillis() - time_s));
 				} else {
 					if( MyDebug.LOG )
 						Log.d(TAG, "using old bitmap");
 				}
 				alloc.copyTo(bitmap);
+
+				if( MyDebug.LOG )
+					Log.d(TAG, "Save single image performance: time after alloc.copyTo: " + (System.currentTimeMillis() - time_s));
 			} else if( need_bitmap ) {
 				bitmap = loadBitmap(photo, request.yuv_conversion,  request.processing_settings.stamp || text_stamp);
 				if( MyDebug.LOG ) {
 					Log.d(TAG, "Save single image performance: time after loadBitmap: " + (System.currentTimeMillis() - time_s));
 				}
 			}
-			if (bitmap != null && (rotation != 0 || request.processing_settings.mirror)) {
+			if (request.allow_rotation && bitmap != null && (rotation != 0 || request.processing_settings.mirror)) {
 				bitmap = rotateBitmap(bitmap, rotation, request.processing_settings.mirror);
 				if( MyDebug.LOG ) {
 					Log.d(TAG, "Save single image performance: time after rotateBitmap: " + (System.currentTimeMillis() - time_s));
 				}
+				orientation = ExifInterface.ORIENTATION_NORMAL;
+			} 
+		}
+		if (!request.allow_rotation && request.processing_settings.mirror) {
+			if( MyDebug.LOG ) {
+				Log.d(TAG, "ExifInterface.TAG_ORIENTATION: " + orientation);
 			}
+			if (orientation == 0)
+				orientation++;
+			orientation++;
+			if (orientation == 9)
+				orientation = ExifInterface.ORIENTATION_TRANSPOSE;
 		}
 		if( request.processing_settings.do_auto_stabilise ) {
 			boolean is_front_facing = request.processing_settings.mirror ? !request.is_front_facing : request.is_front_facing;
@@ -1391,7 +1498,7 @@ public class ImageSaver {
 							// need to update EXIF data!
 							if( MyDebug.LOG )
 								Log.d(TAG, "set Exif tags from data");
-							setExifFromData(request, photo.jpeg, picFile);
+							setExifFromData(request, photo.jpeg, orientation, picFile);
 						} else {
 							try {
 								ExifInterface exif = new ExifInterface(picFile.getAbsolutePath());
@@ -1415,6 +1522,8 @@ public class ImageSaver {
 										Log.d(TAG, "Save single image performance: time after removing GPS timestamp hack: " + (System.currentTimeMillis() - time_s));
 									}
 								}
+								if (!request.allow_rotation && request.processing_settings.mirror)
+									exif.setAttribute(ExifInterface.TAG_ORIENTATION, Integer.toString(orientation));
 								setMetadata(exif, request.metadata);
 								exif.saveAttributes();
 							}
@@ -1503,20 +1612,20 @@ public class ImageSaver {
 			if( MyDebug.LOG )
 				Log.e(TAG, "File not found: " + e.getMessage());
 			e.printStackTrace();
-			main_activity.getPreview().showToast(null, R.string.failed_to_save_photo);
+			Utils.showToast(null, R.string.failed_to_save_photo);
 		}
 		catch(IOException e) {
 			if( MyDebug.LOG )
 				Log.e(TAG, "I/O error writing file: " + e.getMessage());
 			e.printStackTrace();
-			main_activity.getPreview().showToast(null, R.string.failed_to_save_photo);
+			Utils.showToast(null, R.string.failed_to_save_photo);
 		}
 		catch(SecurityException e) {
 			// received security exception from copyFileToUri()->openOutputStream() from Google Play
 			if( MyDebug.LOG )
 				Log.e(TAG, "security exception writing file: " + e.getMessage());
 			e.printStackTrace();
-			main_activity.getPreview().showToast(null, R.string.failed_to_save_photo);
+			Utils.showToast(null, R.string.failed_to_save_photo);
 		}
 
 		if( success && saveUri == null ) {
@@ -1540,6 +1649,12 @@ public class ImageSaver {
 				Log.d(TAG, "	sample_size  : " + sample_size);
 			}
 			Bitmap thumbnail;
+			int rotation = getPhotoRotation(orientation);
+			boolean mirror = (orientation == ExifInterface.ORIENTATION_FLIP_HORIZONTAL ||
+					orientation == ExifInterface.ORIENTATION_FLIP_VERTICAL ||
+					orientation == ExifInterface.ORIENTATION_TRANSVERSE ||
+					orientation == ExifInterface.ORIENTATION_TRANSPOSE);
+
 			if( bitmap == null ) {
 				BitmapFactory.Options options = new BitmapFactory.Options();
 				options.inMutable = false;
@@ -1552,9 +1667,8 @@ public class ImageSaver {
 				// now get the rotation from the Exif data
 				if( MyDebug.LOG )
 					Log.d(TAG, "rotate thumbnail for exif tags?");
-				int rotation = getPhotoRotation(photo);
-				if (rotation != 0) {
-					thumbnail = rotateBitmap(thumbnail, rotation, false);
+				if (rotation != 0 || mirror) {
+					thumbnail = rotateBitmap(thumbnail, rotation, mirror);
 				}
 			}
 			else {
@@ -1567,7 +1681,9 @@ public class ImageSaver {
 					Log.d(TAG, "	scale: " + scale);
 				if( width > 0 && height > 0 ) {
 					thumbnail = Bitmap.createBitmap(bitmap, 0, 0, width, height, matrix, true);
-					// don't need to rotate for exif, as we already did that when creating the bitmap
+					if (rotation != 0 || mirror) {
+						thumbnail = rotateBitmap(thumbnail, rotation, mirror);
+					}
 				}
 				else {
 					// received IllegalArgumentException on Google Play from Bitmap.createBitmap; documentation suggests this
@@ -1619,7 +1735,7 @@ public class ImageSaver {
 		return success;
 	}
 
-	private void setExifFromData(final Request request, byte [] data, File to_file) throws IOException {
+	private void setExifFromData(final Request request, byte [] data, int orientation, File to_file) throws IOException {
 		if( MyDebug.LOG ) {
 			Log.d(TAG, "setExifFromData");
 			Log.d(TAG, "to_file: " + to_file);
@@ -1629,38 +1745,13 @@ public class ImageSaver {
 			inputStream = new ByteArrayInputStream(data);
 			ExifInterface exif = new ExifInterface(inputStream);
 			ExifInterface exif_new = new ExifInterface(to_file.getAbsolutePath());
+			exif_new.setAttribute(ExifInterface.TAG_ORIENTATION, Integer.toString(orientation));
 			setExif(request, exif, exif_new);
 		}
 		finally {
 			if( inputStream != null ) {
 				inputStream.close();
 			}
-		}
-	}
-
-	/** Used to transfer exif tags, if we had to convert the jpeg info to a bitmap (for post-processing such as
-	 *  auto-stabilise or photo stamp).
-	 *  Note that we use several ExifInterface tags that are now deprecated in API level 23 and 24. These are replaced with new tags that have
-	 *  the same string value (e.g., TAG_APERTURE replaced with TAG_F_NUMBER, but both have value "FNumber"). We use the deprecated versions
-	 *  to avoid complicating the code (we'd still have to read the deprecated values for older devices).
-	 */
-	@SuppressWarnings("deprecation")
-	private void setExifFromFile(final Request request, File from_file, File to_file) throws IOException {
-		if( MyDebug.LOG ) {
-			Log.d(TAG, "setExifFromFile");
-			Log.d(TAG, "from_file: " + from_file);
-			Log.d(TAG, "to_file: " + to_file);
-		}
-		try {
-			ExifInterface exif = new ExifInterface(from_file.getAbsolutePath());
-			ExifInterface exif_new = new ExifInterface(to_file.getAbsolutePath());
-			setExif(request, exif, exif_new);
-		}
-		catch(NoClassDefFoundError exception) {
-			// have had Google Play crashes from new ExifInterface() for Galaxy Ace4 (vivalto3g)
-			if( MyDebug.LOG )
-				Log.e(TAG, "exif orientation NoClassDefFoundError");
-			exception.printStackTrace();
 		}
 	}
 
@@ -1949,13 +2040,6 @@ public class ImageSaver {
 			output.close();
 			output = null;
 
-			/*Location location = null;
-			if( main_activity.getApplicationInterface().getGeotaggingPref() ) {
-				location = main_activity.getApplicationInterface().getLocation();
-				if( MyDebug.LOG )
-					Log.d(TAG, "location: " + location);
-			}*/
-
 			if( saveUri == null ) {
 				success = true;
 				storageUtils.broadcastFile(picFile, true, false, false);
@@ -1990,13 +2074,13 @@ public class ImageSaver {
 			if( MyDebug.LOG )
 				Log.e(TAG, "File not found: " + e.getMessage());
 			e.printStackTrace();
-			main_activity.getPreview().showToast(null, R.string.failed_to_save_photo_raw);
+			Utils.showToast(null, R.string.failed_to_save_photo_raw);
 		}
 		catch(IOException e) {
 			if( MyDebug.LOG )
 				Log.e(TAG, "ioexception writing raw image file");
 			e.printStackTrace();
-			main_activity.getPreview().showToast(null, R.string.failed_to_save_photo_raw);
+			Utils.showToast(null, R.string.failed_to_save_photo_raw);
 		}
 		finally {
 			if( output != null ) {
@@ -2024,48 +2108,21 @@ public class ImageSaver {
 		return success;
 	}
 	
-	private int getPhotoRotation(CameraController.Photo photo) {
+	private int getExifOrientation(byte [] jpeg) {
 		if( MyDebug.LOG )
 			Log.d(TAG, "getPhotoRotation");
 		InputStream inputStream = null;
-		int rotation = 0;
+		int exif_orientation = ExifInterface.ORIENTATION_UNDEFINED;
 		try {
-			int exif_orientation;
-			if (photo.orientation != ExifInterface.ORIENTATION_UNDEFINED) {
-				exif_orientation = photo.orientation;
-			} else {
-				ExifInterface exif;
+			ExifInterface exif;
 
-				if( MyDebug.LOG )
-					Log.d(TAG, "Android 7: use data stream to read exif tags");
-				inputStream = new ByteArrayInputStream(photo.jpeg);
-				exif = new ExifInterface(inputStream);
+			inputStream = new ByteArrayInputStream(jpeg);
+			exif = new ExifInterface(inputStream);
 
-				exif_orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_UNDEFINED);
-			}
+			exif_orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_UNDEFINED);
+
 			if( MyDebug.LOG )
-				Log.d(TAG, "	exif orientation string: " + exif_orientation);
-			// from http://jpegclub.org/rotation.html
-			// and http://stackoverflow.com/questions/20478765/how-to-get-the-correct-orientation-of-the-image-selected-from-the-default-image
-			if( exif_orientation == ExifInterface.ORIENTATION_UNDEFINED || exif_orientation == ExifInterface.ORIENTATION_NORMAL ) {
-				// leave unchanged
-			}
-			else if( exif_orientation == ExifInterface.ORIENTATION_ROTATE_180 ) {
-				rotation = 180;
-			}
-			else if( exif_orientation == ExifInterface.ORIENTATION_ROTATE_90 ) {
-				rotation = 90;
-			}
-			else if( exif_orientation == ExifInterface.ORIENTATION_ROTATE_270 ) {
-				rotation = 270;
-			}
-			else {
-				// just leave unchanged for now
-				if( MyDebug.LOG )
-					Log.e(TAG, "	unsupported exif orientation: " + exif_orientation);
-			}
-			if( MyDebug.LOG )
-				Log.d(TAG, "	rotation: " + rotation);
+				Log.d(TAG, "	exif orientation: " + exif_orientation);
 		}
 		catch(IOException exception) {
 			if( MyDebug.LOG )
@@ -2089,6 +2146,28 @@ public class ImageSaver {
 				inputStream = null;
 			}
 		}
+		return exif_orientation;
+	}
+	
+	private int getPhotoRotation(int exif_orientation) {
+		int rotation = 0;
+		switch (exif_orientation) {
+			case ExifInterface.ORIENTATION_ROTATE_180:
+			case ExifInterface.ORIENTATION_FLIP_VERTICAL:
+				rotation = 180;
+				break;
+			case ExifInterface.ORIENTATION_ROTATE_90:
+			case ExifInterface.ORIENTATION_TRANSVERSE:
+				rotation = 90;
+				break;
+			case ExifInterface.ORIENTATION_ROTATE_270:
+			case ExifInterface.ORIENTATION_TRANSPOSE:
+				rotation = 270;
+				break;
+		}
+		if( MyDebug.LOG )
+			Log.d(TAG, "	rotation: " + rotation);
+
 		return rotation;
 	}
 	

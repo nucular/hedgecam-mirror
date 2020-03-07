@@ -122,11 +122,13 @@
 	<string-array name="preference_lock_orientation_entries">
 		<item>@string/no_lock</item>
 		<item>@string/lock_landscape</item>
+		<item>@string/lock_reverse_landscape</item>
 		<item>@string/lock_portrait</item>
 	</string-array>
 	<string-array name="preference_lock_orientation_values">
 		<item>none</item>
 		<item>landscape</item>
+		<item>reverse_landscape</item>
 		<item>portrait</item>
 	</string-array>
 	<string-array name="preference_timer_entries">
@@ -667,12 +669,14 @@
 		<item>@string/as_external_mic</item>
 		<item>@string/as_default_source</item>
 		<item>@string/as_voice_optimized</item>
+		<item>@string/as_unprocessed</item>
 	</string-array>
 	<string-array name="preference_record_audio_src_values">
 		<item>audio_src_camcorder</item>
 		<item>audio_src_mic</item>
 		<item>audio_src_default</item>
 		<item>audio_src_voice_communication</item>
+		<item>audio_src_unprocessed</item>
 	</string-array>
 	<string-array name="preference_record_audio_channels_entries">
 		<item>@string/default_str</item>
@@ -1065,17 +1069,25 @@
 	</string-array>
 	<string-array name="preference_video_log_entries">
 		<item>@string/off</item>
-		<item>@string/vl_low</item>
-		<item>@string/vl_medium</item>
-		<item>@string/vl_strong</item>
-		<item>@string/vl_extra_strong</item>
+		<item>Gamma 1.5</item>
+		<item>Gamma 1.8</item>
+		<item>Gamma 2.0</item>
+		<item>Gamma 2.2</item>
+		<item>Gamma 2.5</item>
+		<item>Gamma 2.8</item>
+		<item>sRGB</item>
+		<item>REC709</item>
 	</string-array>
 	<string-array name="preference_video_log_values">
 		<item>off</item>
-		<item>low</item>
-		<item>medium</item>
-		<item>strong</item>
-		<item>extra_strong</item>
+		<item>gamma_1.5</item>
+		<item>gamma_1.8</item>
+		<item>gamma_2.0</item>
+		<item>gamma_2.2</item>
+		<item>gamma_2.5</item>
+		<item>gamma_2.8</item>
+		<item>srgb</item>
+		<item>rec709</item>
 	</string-array>
 	<string-array name="preference_antibanding_entries">
 		<item>@string/auto</item>
@@ -1136,38 +1148,6 @@
 		<item>low</item>
 		<item>normal</item>
 		<item>high</item>
-	</string-array>
-	<string-array name="preference_min_focus_distance_entries">
-		<item>@string/default_str</item>
-		<item>2</item>
-		<item>3</item>
-		<item>4</item>
-		<item>5</item>
-		<item>6</item>
-		<item>7</item>
-		<item>8</item>
-		<item>9</item>
-		<item>10</item>
-		<item>12</item>
-		<item>15</item>
-		<item>18</item>
-		<item>20</item>
-	</string-array>
-	<string-array name="preference_min_focus_distance_values">
-		<item>default</item>
-		<item>2</item>
-		<item>3</item>
-		<item>4</item>
-		<item>5</item>
-		<item>6</item>
-		<item>7</item>
-		<item>8</item>
-		<item>9</item>
-		<item>10</item>
-		<item>12</item>
-		<item>15</item>
-		<item>18</item>
-		<item>20</item>
 	</string-array>
 	<string-array name="preference_focus_range_entries">
 		<item>@string/default_str</item>
@@ -1265,11 +1245,33 @@
 		<item>@string/none</item>
 		<item>@string/al_highlights</item>
 		<item>@string/al_highlights_and_shadows</item>
+		<item>@string/al_boost</item>
 	</string-array>
 	<string-array name="preference_adjust_levels_values">
 		<item>0</item>
 		<item>1</item>
 		<item>2</item>
+		<item>3</item>
+	</string-array>
+	<string-array name="preference_histogram_level_entries">
+		<item>@string/none</item>
+		<item>0.01%</item>
+		<item>0.033%</item>
+		<item>0.1%</item>
+		<item>0.33%</item>
+		<item>1%</item>
+		<item>3.3%</item>
+		<item>10%</item>
+	</string-array>
+	<string-array name="preference_histogram_level_values">
+		<item>0</item>
+		<item>0.010</item>
+		<item>0.033</item>
+		<item>0.1</item>
+		<item>0.33</item>
+		<item>1.0</item>
+		<item>3.3</item>
+		<item>10.0</item>
 	</string-array>
 	<string-array name="preference_yuv_conversion_entries">
 		<item>@string/default_str</item>
@@ -1289,5 +1291,16 @@
 	<string-array name="preference_system_ui_orientation_values">
 		<item>landscape</item>
 		<item>portrait</item>
+	</string-array>
+
+	<string-array name="preference_histogram_mode_entries">
+		<item>@string/ht_brightness</item>
+		<item>@string/ht_maximum</item>
+		<item>@string/ht_colors</item>
+	</string-array>
+	<string-array name="preference_histogram_mode_values">
+		<item>brightness</item>
+		<item>maximum</item>
+		<item>colors</item>
 	</string-array>
 </resources>

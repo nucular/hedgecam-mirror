@@ -5,6 +5,7 @@ import java.text.DecimalFormat;
 import java.util.Calendar;
 import java.util.Locale;
 
+import com.caddish_hedgehog.hedgecam2.ColorTemperature;
 import com.caddish_hedgehog.hedgecam2.GyroSensor;
 import com.caddish_hedgehog.hedgecam2.MainActivity;
 import com.caddish_hedgehog.hedgecam2.MyApplicationInterface;
@@ -15,6 +16,7 @@ import com.caddish_hedgehog.hedgecam2.CameraController.CameraController;
 import com.caddish_hedgehog.hedgecam2.Preview.Preview;
 import com.caddish_hedgehog.hedgecam2.Preview.VideoProfile;
 import com.caddish_hedgehog.hedgecam2.UI.IconView;
+
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -27,6 +29,7 @@ import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.PointF;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Typeface;
@@ -68,8 +71,14 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 	private boolean pref_time;
 	private boolean pref_free_memory;
 	private boolean pref_iso;
-	private boolean pref_white_balance;
 	private String pref_iso_value;
+	private boolean pref_iso_auto;
+	private boolean pref_iso_manual;
+	private boolean pref_white_balance;
+	private boolean pref_white_balance_xy;
+	private boolean pref_white_balance_auto;
+	private boolean pref_white_balance_manual;
+	private long white_balance_update_time;
 	private boolean pref_location;
 	private boolean pref_stamp;
 	private boolean pref_ctrl_panel_photo_mode;
@@ -81,6 +90,7 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 	private boolean pref_max_amp;
 	
 	private boolean update_prefs = true;
+	private boolean update_histogram_prefs = true;
 
 	// avoid doing things that allocate memory every frame!
 	private final Paint p = new Paint();
@@ -120,6 +130,8 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 	private final Matrix last_image_matrix = new Matrix();
 
 	private long ae_started_scanning_ms = -1; // time when ae started scanning
+	
+	private int white_balance_temperature = -1;
 
 	private boolean taking_picture; // true iff camera is in process of capturing a picture (including any necessary prior steps such as autofocus, flash/precapture)
 	private boolean capture_started; // true iff the camera is capturing
@@ -172,6 +184,17 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 	private float video_max_amp_peak;
 	private float video_max_amp_peak_abs;
 
+	private boolean pref_histogram;
+	private int histogram_width;
+	private int histogram_height;
+	private double histogram_probe_area;
+	private final int histogram_color;
+	private final int histogram_color_red;
+	private final int histogram_color_green;
+	private final int histogram_color_blue;
+	private final int histogram_color_background;
+	private final int histogram_color_border;
+	private final float histogram_border_width;
 
 	public DrawPreview(MainActivity main_activity, MyApplicationInterface applicationInterface) {
 		if( MyDebug.LOG )
@@ -201,17 +224,36 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 		progress_margin = resources.getDimensionPixelSize(R.dimen.ind_progress_margin);
 		progress_inner_width = progress_width-progress_margin*2;
 		progress_peak_width = resources.getDimension(R.dimen.ind_progress_peak_width)/2;
+		
+		histogram_color = resources.getColor(R.color.histogram);
+		histogram_color_red = resources.getColor(R.color.histogram_red);
+		histogram_color_green = resources.getColor(R.color.histogram_green);
+		histogram_color_blue = resources.getColor(R.color.histogram_blue);
+		histogram_color_background = resources.getColor(R.color.histogram_background);
+		histogram_color_border = resources.getColor(R.color.histogram_border);
+		histogram_border_width = resources.getDimension(R.dimen.histogram_border);
 
 		default_font = p.getTypeface();
 		icon_font = IconView.getTypeface(main_activity);
 		
-		system_ui_portrait = main_activity.getSharedPrefs().getString(Prefs.SYSTEM_UI_ORIENTATION, "landscape").equals("portrait");
-		main_activity.getSharedPrefs().registerOnSharedPreferenceChangeListener(this);
+		system_ui_portrait = Prefs.getString(Prefs.SYSTEM_UI_ORIENTATION, "landscape").equals("portrait");
+		Prefs.getSharedPreferences().registerOnSharedPreferenceChangeListener(this);
 	}
 
-	public void onSharedPreferenceChanged(SharedPreferences prefs,String key) {
+	public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
 		if( MyDebug.LOG ) Log.d(TAG, "onSharedPreferenceChanged");
 		update_prefs = true;
+		switch (key) {
+			case Prefs.SHOW_HISTOGRAM:
+			case Prefs.HISTOGRAM_MODE:
+			case Prefs.HISTOGRAM_SIZE:
+			case Prefs.HISTOGRAM_UPDATE:
+			case Prefs.HISTOGRAM_ACCURACY:
+			case Prefs.SHOW_COLOR_PROBE:
+			case Prefs.COLOR_PROBE_SIZE:
+				update_histogram_prefs = true;
+				break;
+		}
 	}
 
 	public void onPrefsChanged() {
@@ -230,8 +272,7 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 	
 	private void updatePrefs() {
 		if( MyDebug.LOG ) Log.d(TAG, "updatePrefs");
-		final SharedPreferences sharedPreferences = main_activity.getSharedPrefs();
-		switch( sharedPreferences.getString(Prefs.OSD_FONT_SIZE, "normal") ) {
+		switch( Prefs.getString(Prefs.OSD_FONT_SIZE, "normal") ) {
 			case "small":
 				text_size_default = resources.getDimension(R.dimen.ind_text_small_default);
 				text_size_video = resources.getDimension(R.dimen.ind_text_small_video);
@@ -258,12 +299,12 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 				break;
 		}
 
-		pref_grid = sharedPreferences.getString(Prefs.GRID, "preference_grid_none");
+		pref_grid = Prefs.getString(Prefs.GRID, "preference_grid_none");
 		if (pref_grid.equals("preference_grid_none")) {
 			pref_grid = null;
 		} else {
 			pref_grid_alpha = 255;
-			switch( sharedPreferences.getString(Prefs.GRID_ALPHA, "0") ) {
+			switch( Prefs.getString(Prefs.GRID_ALPHA, "0") ) {
 				case "1":
 					pref_grid_alpha = 191;
 					break;
@@ -276,29 +317,29 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 			}
 		}
 
-		pref_crop_guide = sharedPreferences.getString(Prefs.CROP_GUIDE, "crop_guide_none");
+		pref_crop_guide = Prefs.getString(Prefs.CROP_GUIDE, "crop_guide_none");
 		if (pref_crop_guide.equals("crop_guide_none")) pref_crop_guide = null;
 
 		pref_is_video = Prefs.isVideoPref();
 		pref_photo_mode = Prefs.getPhotoMode();
 		pref_auto_stabilise = Prefs.getAutoStabilisePref();
 
-		pref_take_photo_border = sharedPreferences.getBoolean(Prefs.TAKE_PHOTO_BORDER, true);
-		pref_thumbnail_animation = sharedPreferences.getBoolean(Prefs.THUMBNAIL_ANIMATION, true)
-			&& !sharedPreferences.getBoolean(Prefs.PAUSE_PREVIEW, false);
+		pref_take_photo_border = Prefs.getBoolean(Prefs.TAKE_PHOTO_BORDER, true);
+		pref_thumbnail_animation = Prefs.getBoolean(Prefs.THUMBNAIL_ANIMATION, true)
+			&& !Prefs.getBoolean(Prefs.PAUSE_PREVIEW, false);
 		if (pref_thumbnail_animation)
 			gallery_button_padding = resources.getDimension(main_activity.getMainUI().shutter_icon_material ? R.dimen.button_gallery_rounded_padding : R.dimen.button_gallery_padding);
 
-		pref_angle = sharedPreferences.getBoolean(Prefs.SHOW_ANGLE, true);
-		pref_angle_line = sharedPreferences.getBoolean(Prefs.SHOW_ANGLE_LINE, false);
-		pref_pitch_lines = sharedPreferences.getBoolean(Prefs.SHOW_PITCH_LINES, false);
-		pref_direction = sharedPreferences.getBoolean(Prefs.SHOW_GEO_DIRECTION, false);
-		pref_direction_lines = sharedPreferences.getBoolean(Prefs.SHOW_GEO_DIRECTION_LINES, false);
-		pref_zoom = sharedPreferences.getBoolean(Prefs.SHOW_ZOOM, true);
-		pref_alt_indication = sharedPreferences.getBoolean(Prefs.ALT_INDICATION, true);
+		pref_angle = Prefs.getBoolean(Prefs.SHOW_ANGLE, true);
+		pref_angle_line = Prefs.getBoolean(Prefs.SHOW_ANGLE_LINE, false);
+		pref_pitch_lines = Prefs.getBoolean(Prefs.SHOW_PITCH_LINES, false);
+		pref_direction = Prefs.getBoolean(Prefs.SHOW_GEO_DIRECTION, false);
+		pref_direction_lines = Prefs.getBoolean(Prefs.SHOW_GEO_DIRECTION_LINES, false);
+		pref_zoom = Prefs.getBoolean(Prefs.SHOW_ZOOM, true);
+		pref_alt_indication = Prefs.getBoolean(Prefs.ALT_INDICATION, true);
 
 		if (pref_angle || pref_angle_line) {
-			switch (sharedPreferences.getString(Prefs.ANGLE_HIGHLIGHT_COLOR, "green")) {
+			switch (Prefs.getString(Prefs.ANGLE_HIGHLIGHT_COLOR, "green")) {
 				case "red":
 					pref_color_angle = text_color_red;
 					break;
@@ -319,30 +360,38 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 		// exit, to ensure we don't display anything!
 		// though note we still should do the front screen flash (since the user can take photos via volume keys when
 		// in immersive_mode_everything mode)
-		pref_hide_indication = sharedPreferences.getString(Prefs.IMMERSIVE_MODE, "immersive_mode_off")
+		pref_hide_indication = Prefs.getString(Prefs.IMMERSIVE_MODE, "immersive_mode_off")
 			.equals("immersive_mode_everything");
 		
-		pref_battery = sharedPreferences.getBoolean(Prefs.SHOW_BATTERY, true);
-		pref_time = sharedPreferences.getBoolean(Prefs.SHOW_TIME, true);
-		pref_free_memory = sharedPreferences.getBoolean(Prefs.FREE_MEMORY, true);
-		pref_iso = sharedPreferences.getBoolean(Prefs.SHOW_ISO, true);
+		pref_battery = Prefs.getBoolean(Prefs.SHOW_BATTERY, true);
+		pref_time = Prefs.getBoolean(Prefs.SHOW_TIME, true);
+		pref_free_memory = Prefs.getBoolean(Prefs.FREE_MEMORY, true);
+		pref_iso = Prefs.getBoolean(Prefs.SHOW_ISO, true);
 		pref_iso_value = Prefs.getISOPref();
+		pref_iso_auto = pref_iso_value.equals("auto");
+		pref_iso_manual = pref_iso_value.equals("manual");
 
-//		pref_white_balance = sharedPreferences.getBoolean(Prefs.SHOW_WHITE_BALANCE, false);
+		pref_white_balance = Prefs.getBoolean(Prefs.SHOW_WHITE_BALANCE, false);
+		pref_white_balance_xy = Prefs.getBoolean(Prefs.SHOW_WHITE_BALANCE_XY, false);
+		String wb = Prefs.getString(Prefs.WHITE_BALANCE, "auto");
+		pref_white_balance_auto = wb.equals("auto");
+		pref_white_balance_manual = wb.equals("manual");
 	
-		pref_location = sharedPreferences.getBoolean(Prefs.LOCATION, false);
-		pref_stamp = sharedPreferences.getBoolean(Prefs.STAMP, false);
+		pref_location = Prefs.getBoolean(Prefs.LOCATION, false);
+		pref_stamp = Prefs.getBoolean(Prefs.STAMP, false);
 		
 		pref_ctrl_panel_photo_mode = main_activity.getMainUI().isVisible(R.id.photo_mode);
 		pref_ctrl_panel_flash = main_activity.getMainUI().isVisible(R.id.flash_mode);
 		
-		pref_mode_panel = sharedPreferences.getBoolean(Prefs.SHOW_MODE_PANEL, false);
+		pref_mode_panel = Prefs.getBoolean(Prefs.SHOW_MODE_PANEL, false);
 		
-		pref_face_detection = !main_activity.getMainUI().isVisible(R.id.face_detection) && Prefs.getFaceDetectionPref();
+		pref_face_detection = !main_activity.getMainUI().isVisible(R.id.face_detection) && Prefs.getBoolean(Prefs.FACE_DETECTION, false);
 		pref_raw = !pref_is_video && applicationInterface.isRawPref() && main_activity.getPreview().supportsRaw() &&
 				pref_photo_mode != Prefs.PhotoMode.HDR && pref_photo_mode != Prefs.PhotoMode.ExpoBracketing && pref_photo_mode != Prefs.PhotoMode.FastBurst;
 		pref_high_speed = applicationInterface.fpsIsHighSpeed();
-		pref_max_amp = sharedPreferences.getBoolean(Prefs.SHOW_VIDEO_MAX_AMP, true) && Prefs.getRecordAudioPref() && Prefs.getVideoCaptureRateFactor() == 1.0f;
+		pref_max_amp = Prefs.getBoolean(Prefs.SHOW_VIDEO_MAX_AMP, true)
+				&& Prefs.getBoolean(Prefs.RECORD_AUDIO, true)
+				&& Prefs.getVideoCaptureRateFactor() == 1.0f;
 	}
 	
 	private void updateGridPrefs(Canvas canvas) {
@@ -446,6 +495,81 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 					pref_crop_guide = null;
 				}
 			}
+		}
+	}
+
+	private void updateHistogramPrefs() {
+		if( MyDebug.LOG ) Log.d(TAG, "updateHistogramPrefs");
+		Preview preview  = main_activity.getPreview();
+		pref_histogram = Prefs.getBoolean(Prefs.SHOW_HISTOGRAM, false);
+		if (pref_histogram) {
+			int mode = Prefs.HISTOGRAM_MODE_BRIGHTNESS;
+			switch( Prefs.getString(Prefs.HISTOGRAM_MODE, "brightness") ) {
+				case "maximum":
+					mode = Prefs.HISTOGRAM_MODE_MAXIMUM;
+					break;
+				case "colors":
+					mode = Prefs.HISTOGRAM_MODE_COLORS;
+					break;
+			}
+
+			switch( Prefs.getString(Prefs.HISTOGRAM_SIZE, "normal") ) {
+				case "small":
+					histogram_width = resources.getDimensionPixelSize(R.dimen.histogram_width_small);
+					histogram_height = resources.getDimensionPixelSize(R.dimen.histogram_height_small);
+					break;
+				case "large":
+					histogram_width = resources.getDimensionPixelSize(R.dimen.histogram_width_large);
+					histogram_height = resources.getDimensionPixelSize(R.dimen.histogram_height_large);
+					break;
+				case "xlarge":
+					histogram_width = resources.getDimensionPixelSize(R.dimen.histogram_width_xlarge);
+					histogram_height = resources.getDimensionPixelSize(R.dimen.histogram_height_xlarge);
+					break;
+				default:
+					histogram_width = resources.getDimensionPixelSize(R.dimen.histogram_width_normal);
+					histogram_height = resources.getDimensionPixelSize(R.dimen.histogram_height_normal);
+					break;
+			}
+			int histogram_update = 200;
+			switch (Prefs.getString(Prefs.HISTOGRAM_UPDATE, "normal")) {
+				case "low":
+					histogram_update = 500;
+					break;
+				case "high":
+					histogram_update = 100;
+					break;
+			}
+
+			int divider = 2;
+			switch (Prefs.getString(Prefs.HISTOGRAM_ACCURACY, "normal")) {
+				case "low":
+					divider = 4;
+					break;
+				case "high":
+					divider = 1;
+					break;
+			}
+			histogram_probe_area = 0.0d;
+			if (Prefs.getBoolean(Prefs.SHOW_COLOR_PROBE, false)) {
+				switch( Prefs.getString(Prefs.COLOR_PROBE_SIZE, "normal") ) {
+					case "small":
+						histogram_probe_area = 0.001;
+						break;
+					case "large":
+						histogram_probe_area = 0.01;
+						break;
+					case "xlarge":
+						histogram_probe_area = 0.033;
+						break;
+					default:
+						histogram_probe_area = 0.0033;
+				}
+			}
+
+			preview.enableHistogram(mode, histogram_width, histogram_height, histogram_update, divider, histogram_probe_area);
+		} else {
+			preview.disableHistogram();
 		}
 	}
 
@@ -920,6 +1044,9 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 	}
 
 	public void onDrawPreview(Canvas canvas) {
+		if (main_activity.cameraInBackground())
+			return;
+
 		Preview preview = main_activity.getPreview();
 		int ui_rotation = main_activity.getMainUI().getUIRotation();
 		int ui_rotation_relative = main_activity.getMainUI().getUIRotationRelative();
@@ -969,6 +1096,11 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 			updatePrefs();
 			updateGridPrefs(canvas);
 			update_prefs = false;
+		}
+		
+		if (update_histogram_prefs) {
+			updateHistogramPrefs();
+			update_histogram_prefs = false;
 		}
 
 		CameraController camera_controller = preview.getCameraController();
@@ -1280,11 +1412,14 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 
 		int margin = resources.getDimensionPixelSize(R.dimen.ind_padding);
 		int [] ind_margins = main_activity.getMainUI().getIndicationMargins();
+		int margin_bottom = margin;
+		if (pref_histogram)
+			margin_bottom /= 2;
 
 		final int shift_direction_x = ui_rotation_relative == 180 ? -1 : 1;
 		final int shift_direction_y = ui_rotation_relative == 90 ? -1 : 1;
 
-		int bottom_y = (system_ui_portrait ? (canvas_height+canvas_width)/2 : canvas_height) - margin;
+		int bottom_y = (system_ui_portrait ? (canvas_height+canvas_width)/2 : canvas_height) - margin_bottom;
 		if(ui_rotation_relative == 0 || ui_rotation_relative == 180) {
 			bottom_y -= ind_margins[3]-(system_ui_portrait ? gui_location[0] : gui_location[1]);
 		} else if (ui_rotation_relative == 90 || ui_rotation_relative == 270) {
@@ -1292,7 +1427,7 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 			int min_x = system_ui_portrait ? 0 : (int)(max_x-canvas_width+text_size_default/(half_line_div/2));
 			int this_left = system_ui_portrait ? gui_location[1] : gui_location[0];
 			int this_right = main_activity.getMainUI().getRootWidth()-(system_ui_portrait ? canvas_height : canvas_width)-this_left;
-			bottom_y = ui_rotation_relative == 90 ? min_x+margin-this_right : max_x+this_right-margin;
+			bottom_y = ui_rotation_relative == 90 ? min_x+margin_bottom-this_right : max_x+this_right-margin_bottom;
 			if (ind_margins[2] > 0) {
 				bottom_y -= ind_margins[2]*shift_direction_y;
 			}
@@ -1527,7 +1662,7 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 				if( string.length() > 0 )
 					string += " ";
 				string += preview.getISOString(iso);
-			} else if (!pref_iso_value.equals("auto")) {
+			} else if (!pref_iso_auto) {
 				string += resources.getString(R.string.iso) + ": " + pref_iso_value.replaceAll("ISO", "");
 			}
 			exposure_time = camera_controller.getExposureTime();
@@ -1543,12 +1678,9 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 				string += preview.getFrameDurationString(frame_duration);
 			}*/
 			if( string.length() > 0 ) {
-				boolean is_scanning = false;
-				if( camera_controller.captureResultIsAEScanning() && pref_iso_value.equals("auto") ) {
-					// only show as scanning if in auto ISO mode (problem on Nexus 6 at least that if we're in manual ISO mode, after pausing and
-					// resuming, the camera driver continually reports CONTROL_AE_STATE_SEARCHING)
-					is_scanning = true;
-				}
+				// only show as scanning if in auto ISO mode (problem on Nexus 6 at least that if we're in manual ISO mode, after pausing and
+				// resuming, the camera driver continually reports CONTROL_AE_STATE_SEARCHING)
+				boolean is_scanning = camera_controller.captureResultIsAEScanning() && !pref_iso_manual;
 
 				int text_color = text_color_yellow;
 				if( is_scanning ) {
@@ -1563,7 +1695,7 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 				else {
 					ae_started_scanning_ms = -1;
 				}
-				if (exposure_time > 0 && !pref_iso_value.equals("auto") && camera_controller.isExposureOverRange())
+				if (exposure_time > 0 && !pref_iso_auto && camera_controller.isExposureOverRange())
 					text_color = text_color_red;
 
 				drawText(canvas, p, string, text_color, location_x, location_y, true);
@@ -1575,14 +1707,32 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 				if (line_count == 2 && pref_battery) location_x -= text_size_default*1.5f*shift_direction_x;
 			}
 		}
-/*
-		if( camera_controller != null && pref_white_balance && camera_controller.captureResultHasWhiteBalanceTemperature() ) {
-			drawText(canvas, p, "WB " + camera_controller.captureResultWhiteBalanceTemperature()+"K", text_color_yellow, location_x, location_y, true);
-			location_y += diff_y*shift_direction_y;
-			line_count++;
-			if (line_count == 2 && pref_battery) location_x -= text_size_default*1.5f*shift_direction_x;
+
+		if( camera_controller != null && pref_white_balance) {
+			if (pref_white_balance_manual || time_ms > white_balance_update_time) {
+				white_balance_update_time = time_ms + 250;
+				white_balance_temperature = camera_controller.getActualWhiteBalanceTemperature();
+			}
+			if (white_balance_temperature >= 0) {
+				boolean is_scanning = camera_controller.captureResultIsAEScanning() && pref_white_balance_auto && !pref_iso_manual;
+				drawText(canvas, p, white_balance_temperature + " K", is_scanning ? text_color_red : text_color_yellow, location_x, location_y, true);
+				location_y += diff_y*shift_direction_y;
+				line_count++;
+				if (line_count == 2 && pref_battery) location_x -= text_size_default*1.5f*shift_direction_x;
+				
+				if (pref_white_balance_xy) {
+					ColorTemperature.CIECoordinates xy = camera_controller.getActualWhiteBalanceXY();
+					if (xy != null) {
+						DecimalFormat df = new DecimalFormat("#0.000");
+						drawText(canvas, p, "x: " + df.format(xy.x) + " y: " + df.format(xy.y), text_color_yellow, location_x, location_y, true);
+						location_y += diff_y*shift_direction_y;
+						line_count++;
+						if (line_count == 2 && pref_battery) location_x -= text_size_default*1.5f*shift_direction_x;
+					}
+				}
+			}
 		}
-*/
+
 		if(icon_font != null) {
 			float icon_step = text_size_icon*1.2f;
 			location_y += (text_size_icon-text_size_default)*2*shift_direction_y;
@@ -1681,28 +1831,119 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 				float pos_y = canvas_height/2.0f;
 				float this_stroke_width = resources.getDimension(R.dimen.ind_multitouch_zoom_thickness);
 				float this_stroke_half_width = this_stroke_width/2;
+				int max_zoom = (int)preview.getMaxZoomRatio();
 				p.setColor(Color.WHITE);
 				p.setStyle(Paint.Style.STROKE);
 				p.setStrokeWidth(this_stroke_width);
 				p.setAlpha(127);
 				canvas.drawCircle(pos_x, pos_y, outer_radius-this_stroke_half_width, p);
-				canvas.drawCircle(pos_x, pos_y, outer_radius/preview.getMaxZoomRatio()-this_stroke_half_width, p);
+				canvas.drawCircle(pos_x, pos_y, outer_radius/max_zoom-this_stroke_half_width, p);
 				p.setAlpha(255);
-				canvas.drawCircle(pos_x, pos_y, outer_radius/(preview.getMaxZoomRatio()/preview.getZoomRatio())-this_stroke_half_width, p);
+				canvas.drawCircle(pos_x, pos_y, outer_radius/(max_zoom/preview.getZoomRatio())-this_stroke_half_width, p);
 				p.setStrokeWidth(stroke_width);
 				p.setStyle(Paint.Style.FILL); // reset
 
-				float size = text_size_video/(preview.getMaxZoomRatio() >= 3 ? 1.5f : 1);
+				float size = text_size_video/(max_zoom >= 3 ? 1.5f : 1);
 				p.setTextSize(size);
 				p.setTextAlign(Paint.Align.CENTER);
-				drawText(canvas, p, (float)(Math.round(preview.getZoomRatio()*10))/10 +"x", text_color_default, (int)pos_x, (int)(pos_y+size / half_line_div), false);
+				drawText(canvas, p, (float)(Math.round(preview.getZoomRatio()*10))/10 +(max_zoom >= 6 ? "" : "x"), text_color_default, (int)pos_x, (int)(pos_y+size / half_line_div), false);
 			}
 			if (!preview.isPreviewPaused()) {
+				if (!draw_multitouch_zoom && pref_histogram) {
+					Path [] histogram = preview.getHistogram();
+					if (histogram != null) {
+						Paint.Join join = p.getStrokeJoin();
+						p.setStrokeJoin(Paint.Join.ROUND);
+
+						if (histogram_probe_area > 0) {
+							int color = preview.getColorProbe();
+
+							float half_probe_size = (float)Math.sqrt(((double)(canvas_width*canvas_height))*histogram_probe_area)/2;
+							float center_x = (float)canvas_width / 2;
+							float center_y = (float)canvas_height / 2;
+							float line_height = text_size_default*1.1f;
+							int text_x = (int)(center_x);
+							int text_y = (int)(center_y - half_probe_size - text_size_default*1.2);
+							draw_rect.set(
+								center_x - line_height,
+								center_y - half_probe_size - text_size_default - line_height*3,
+								center_x + line_height,
+								center_y - half_probe_size - text_size_default
+							);
+							p.setStyle(Paint.Style.FILL);
+							p.setColor(color);
+							canvas.drawRect(draw_rect, p);
+
+							p.setStyle(Paint.Style.STROKE);
+							p.setStrokeWidth(histogram_border_width);
+							p.setColor(histogram_color_border);
+							canvas.drawRect(draw_rect, p);
+							
+							canvas.drawLine(center_x, center_y - half_probe_size, center_x, center_y - half_probe_size - text_size_default, p);
+
+							canvas.drawRect(
+								center_x - half_probe_size,
+								center_y - half_probe_size,
+								center_x + half_probe_size,
+								center_y + half_probe_size,
+								p
+							);
+
+							p.setStyle(Paint.Style.FILL); // reset
+							p.setTextSize(text_size_default);
+							p.setTextAlign(Paint.Align.CENTER);
+							drawText(canvas, p, Integer.toString(Color.red(color)), text_color_red, text_x, text_y - (int)(line_height*2), false);
+							drawText(canvas, p, Integer.toString(Color.green(color)), text_color_green, text_x, text_y - (int)line_height, false);
+							drawText(canvas, p, Integer.toString(Color.blue(color)), text_color_blue, text_x, text_y, false);
+						}
+
+						canvas.save();
+						canvas.translate(canvas_width / 2 - histogram_width/2, ui_rotation_relative == 90 ? bottom_y : bottom_y-histogram_height-histogram_border_width);
+
+						p.setStyle(Paint.Style.STROKE);
+						p.setStrokeWidth(histogram_border_width);
+						p.setColor(histogram_color_border);
+						float half_border = histogram_border_width/2;
+						canvas.drawRect(0.0f-half_border, 0.0f-half_border, histogram_width+half_border, histogram_height+half_border, p);
+
+						p.setStyle(Paint.Style.FILL);
+						p.setColor(histogram_color_background);
+						canvas.drawRect(0.0f, 0.0f, histogram_width, histogram_height, p);
+
+						if (histogram.length == 1) {
+							p.setColor(histogram_color);
+							canvas.drawPath(histogram[0], p);
+						} else {
+							p.setColor(histogram_color_blue);
+							canvas.drawPath(histogram[2], p);
+							p.setColor(histogram_color_red);
+							canvas.drawPath(histogram[0], p);
+							p.setColor(histogram_color_green);
+							canvas.drawPath(histogram[1], p);
+						}
+						canvas.restore();
+						
+						bottom_y -= (histogram_height+margin)*shift_direction_y;
+
+/*						if( MyDebug.LOG ) {
+							Bitmap b = preview.getHistogramBitmap();
+							if (b != null) {
+								canvas.drawBitmap(Bitmap.createBitmap(b), canvas_width/2-b.getWidth()/2, canvas_height/2-b.getHeight()/2, p);
+							}
+						}*/
+
+						p.setStrokeWidth(stroke_width);
+						p.setStrokeJoin(join); // restore
+						p.setAlpha(255);
+					}
+				}
+
 				boolean draw_angle = has_level_angle && pref_angle;
 				boolean draw_geo_direction = has_geo_direction && pref_direction;
 				int x = right_x;
 				int y;
 				int shift_y;
+
 				if (gui_classic) {
 					y = bottom_y;
 					shift_y = - (int)(text_size_default*line_height)*shift_direction_y;
@@ -1858,7 +2099,7 @@ public class DrawPreview implements SharedPreferences.OnSharedPreferenceChangeLi
 							last_video_max_amp_time = time_ms;
 						}
 						x = canvas_width / 2 - progress_width / 2;
-						y = bottom_y-pixels_offset_y+(ui_rotation_relative == 90 ? progress_height : (int)(-text_size_video*line_height-progress_height));
+						y = bottom_y-pixels_offset_y+(ui_rotation_relative == 90 ? progress_height : (int)(-text_size_video*(pref_histogram ? 1 : line_height)-progress_height));
 
 						drawProgress(canvas, p, video_max_amp, x, y, text_color_default);
 

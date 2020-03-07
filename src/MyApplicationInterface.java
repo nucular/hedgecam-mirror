@@ -23,7 +23,6 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
-import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -57,7 +56,6 @@ public class MyApplicationInterface implements ApplicationInterface {
 	private static final String TAG = "HedgeCam/MyApplicationInterface";
 
 	private final MainActivity main_activity;
-	private final SharedPreferences sharedPreferences;
 	private final LocationSupplier locationSupplier;
 	private final GyroSensor gyroSensor;
 	private final StorageUtils storageUtils;
@@ -104,7 +102,6 @@ public class MyApplicationInterface implements ApplicationInterface {
 			debug_time = System.currentTimeMillis();
 		}
 		this.main_activity = main_activity;
-		this.sharedPreferences = main_activity.getSharedPrefs();
 		this.locationSupplier = new LocationSupplier(main_activity);
 		if( MyDebug.LOG )
 			Log.d(TAG, "MyApplicationInterface: time after creating location supplier: " + (System.currentTimeMillis() - debug_time));
@@ -156,14 +153,9 @@ public class MyApplicationInterface implements ApplicationInterface {
 	@Override
 	public boolean useCamera2() {
 		if( main_activity.supportsCamera2() ) {
-			return sharedPreferences.getBoolean(Prefs.USE_CAMERA2, false);
+			return Prefs.getBoolean(Prefs.USE_CAMERA2, false);
 		}
 		return false;
-	}
-
-	@Override
-	public boolean useTextureView() {
-		return sharedPreferences.getString(Prefs.PREVIEW_SURFACE, "auto").equals("texture");
 	}
 
 	@Override
@@ -177,7 +169,7 @@ public class MyApplicationInterface implements ApplicationInterface {
 			Log.d(TAG, "getVideoMaxFileSizePref");
 		VideoMaxFileSize video_max_filesize = new VideoMaxFileSize();
 		video_max_filesize.max_filesize = Prefs.getVideoMaxFileSizeUserPref();
-		video_max_filesize.auto_restart = Prefs.getVideoRestartMaxFileSizeUserPref();
+		video_max_filesize.auto_restart = Prefs.getBoolean(Prefs.VIDEO_RESTART_MAX_FILESIZE, true);
 		
 		/* Also if using internal memory without storage access framework, try to set the max filesize so we don't run out of space.
 		   is the only way to avoid the problem where videos become corrupt when run out of space - MediaRecorder doesn't stop on
@@ -298,7 +290,7 @@ public class MyApplicationInterface implements ApplicationInterface {
 	public boolean isRawPref() {
 		if( isImageCaptureIntent() )
 			return false;
-		return sharedPreferences.getString(Prefs.IMAGE_FORMAT, "jpeg").equals("jpeg_raw");
+		return Prefs.getString(Prefs.IMAGE_FORMAT, "jpeg").equals("jpeg_raw");
 	}
 
 	@Override
@@ -381,7 +373,7 @@ public class MyApplicationInterface implements ApplicationInterface {
 	
 	@Override
 	public void startingVideo() {
-		if( sharedPreferences.getBoolean(Prefs.LOCK_VIDEO, false) ) {
+		if( Prefs.getBoolean(Prefs.LOCK_VIDEO, false) ) {
 			main_activity.lockScreen();
 		}
 		main_activity.stopAudioListeners(true); // important otherwise MediaRecorder will fail to start() if we have an audiolistener! Also don't want to have the speech recognizer going off
@@ -403,13 +395,15 @@ public class MyApplicationInterface implements ApplicationInterface {
 			main_activity.getMainUI().setPauseVideoContentDescription();
 		}
 		final int video_method = this.createOutputVideoMethod();
-		boolean dategeo_subtitles = sharedPreferences.getString(Prefs.VIDEO_SUBTITLE, "preference_video_subtitle_no").equals("preference_video_subtitle_yes");
+		boolean dategeo_subtitles = Prefs.getString(Prefs.VIDEO_SUBTITLE, "preference_video_subtitle_no").equals("preference_video_subtitle_yes");
 		if( dategeo_subtitles && video_method != ApplicationInterface.VIDEOMETHOD_URI ) {
-			final String preference_stamp_dateformat = sharedPreferences.getString(Prefs.STAMP_DATEFORMAT, "preference_stamp_dateformat_default");
-			final String preference_stamp_timeformat = sharedPreferences.getString(Prefs.STAMP_TIMEFORMAT, "preference_stamp_timeformat_default");
-			final String preference_stamp_gpsformat = sharedPreferences.getString(Prefs.STAMP_GPSFORMAT, "preference_stamp_gpsformat_default");
-			final boolean store_location = Prefs.getGeotaggingPref();
-			final boolean store_geo_direction = Prefs.getGeodirectionPref();
+			final String preference_stamp_dateformat = Prefs.getString(Prefs.STAMP_DATEFORMAT, "preference_stamp_dateformat_default");
+			final String preference_stamp_timeformat = Prefs.getString(Prefs.STAMP_TIMEFORMAT, "preference_stamp_timeformat_default");
+			final String preference_stamp_gpsformat = Prefs.getString(Prefs.STAMP_GPSFORMAT, "preference_stamp_gpsformat_default");
+			final boolean stamp_store_address = Prefs.getBoolean(Prefs.STAMP_STORE_ADDRESS, false);
+			final boolean stamp_store_altitude = Prefs.getBoolean(Prefs.STAMP_STORE_ALTITUDE, false);
+			final boolean store_location = Prefs.getBoolean(Prefs.LOCATION, false);
+			final boolean store_geo_direction = Prefs.getBoolean(Prefs.GPS_DIRECTION, false);
 			class SubtitleVideoTimerTask extends TimerTask {
 				OutputStreamWriter writer;
 				private int count = 1;
@@ -453,7 +447,7 @@ public class MyApplicationInterface implements ApplicationInterface {
 					String time_stamp = TextFormatter.getTimeString(preference_stamp_timeformat, current_date);
 					Location location = store_location ? getLocation() : null;
 					double geo_direction = store_geo_direction && main_activity.getPreview().hasGeoDirection() ? main_activity.getPreview().getGeoDirection() : 0.0;
-					String gps_stamp = main_activity.getTextFormatter().getGPSString(preference_stamp_gpsformat, store_location && location!=null, location, store_geo_direction && main_activity.getPreview().hasGeoDirection(), geo_direction);
+					String gps_stamp = main_activity.getTextFormatter().getGPSString(preference_stamp_gpsformat, store_location && location!=null, location, stamp_store_address, stamp_store_altitude, store_geo_direction && main_activity.getPreview().hasGeoDirection(), geo_direction);
 					if( MyDebug.LOG ) {
 						Log.d(TAG, "date_stamp: " + date_stamp);
 						Log.d(TAG, "time_stamp: " + time_stamp);
@@ -554,7 +548,7 @@ public class MyApplicationInterface implements ApplicationInterface {
 		main_activity.unlockScreen();
 		main_activity.getMainUI().resetTakePhotoIcon();
 
-		if( !sharedPreferences.getBoolean(Prefs.KEEP_DISPLAY_ON, false) )
+		if( !Prefs.getBoolean(Prefs.KEEP_DISPLAY_ON, false) )
 			main_activity.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 	}
 
@@ -723,15 +717,15 @@ public class MyApplicationInterface implements ApplicationInterface {
 		if (photo_mode == Prefs.PhotoMode.FocusBracketing) {
 			n_capture_images = 0;
 		} else {
-			if( sharedPreferences.getBoolean(Prefs.TIMER_START_SOUND, false) &&
-					!sharedPreferences.getBoolean(Prefs.TIMER_BEEP, true) )
+			if( Prefs.getBoolean(Prefs.TIMER_START_SOUND, false) &&
+					!Prefs.getBoolean(Prefs.TIMER_BEEP, true) )
 				Sound.playSound(R.raw.beep);
 
-			if( is_burst && sharedPreferences.getBoolean(Prefs.BURST_LOW_BRIGHTNESS, false) ) {
+			if( is_burst && Prefs.getBoolean(Prefs.BURST_LOW_BRIGHTNESS, false) ) {
 				main_activity.setMinBrightness();
 			}
 
-			if( sharedPreferences.getBoolean(Prefs.BURST_LOCK, false) )
+			if( Prefs.getBoolean(Prefs.BURST_LOCK, false) )
 				main_activity.lockScreen();
 
 		}
@@ -753,7 +747,7 @@ public class MyApplicationInterface implements ApplicationInterface {
 		if( MyDebug.LOG )
 			Log.d(TAG, "stoppingTimer()");
 
-		if( !sharedPreferences.getBoolean(Prefs.KEEP_DISPLAY_ON, false) )
+		if( !Prefs.getBoolean(Prefs.KEEP_DISPLAY_ON, false) )
 			main_activity.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
 		if (!intermediate && !main_activity.usingKitKatImmersiveMode()) {
@@ -761,15 +755,15 @@ public class MyApplicationInterface implements ApplicationInterface {
 		}
 
 		if (Prefs.getPhotoMode() != Prefs.PhotoMode.FocusBracketing) {
-			if( is_burst && sharedPreferences.getBoolean(Prefs.BURST_LOW_BRIGHTNESS, false) ) {
+			if( is_burst && Prefs.getBoolean(Prefs.BURST_LOW_BRIGHTNESS, false) ) {
 				main_activity.setBrightnessForCamera(false);
 			}
 
 			if( main_activity.isScreenLocked() )
 				main_activity.unlockScreen();
 
-			if( !intermediate && sharedPreferences.getBoolean(Prefs.TIMER_START_SOUND, false) &&
-					!sharedPreferences.getBoolean(Prefs.TIMER_BEEP, true) )
+			if( !intermediate && Prefs.getBoolean(Prefs.TIMER_START_SOUND, false) &&
+					!Prefs.getBoolean(Prefs.TIMER_BEEP, true) )
 				Sound.playSound(R.raw.beep_hi);
 		}
 
@@ -783,29 +777,26 @@ public class MyApplicationInterface implements ApplicationInterface {
 			if( MyDebug.LOG )
 				Log.d(TAG, "max filesize reached");
 			int message_id = R.string.video_max_filesize;
-			main_activity.getPreview().showToast(null, message_id);
+			Utils.showToast(null, message_id);
 			// in versions 1.24 and 1.24, there was a bug where we had "info_" for onVideoError and "error_" for onVideoInfo!
 			// fixed in 1.25; also was correct for 1.23 and earlier
-			String debug_value = "info_" + what + "_" + extra;
-				SharedPreferences.Editor editor = sharedPreferences.edit();
-			editor.putString("last_video_error", debug_value);
-			editor.apply();
+			Prefs.setString("last_video_error", "info_" + what + "_" + extra);
 		}
 	}
 
 	@Override
 	public void onFailedStartPreview() {
-		main_activity.getPreview().showToast(null, R.string.failed_to_start_camera_preview);
+		Utils.showToast(null, R.string.failed_to_start_camera_preview);
 	}
 
 	@Override
 	public void onCameraError() {
-		main_activity.getPreview().showToast(null, R.string.camera_error);
+		Utils.showToast(null, R.string.camera_error);
 	}
 
 	@Override
 	public void onPhotoError() {
-		main_activity.getPreview().showToast(null, R.string.failed_to_take_picture);
+		Utils.showToast(null, R.string.failed_to_take_picture);
 	}
 
 	@Override
@@ -819,13 +810,10 @@ public class MyApplicationInterface implements ApplicationInterface {
 				Log.d(TAG, "error: server died");
 			message_id = R.string.video_error_server_died;
 		}
-		main_activity.getPreview().showToast(null, message_id);
+		Utils.showToast(null, message_id);
 		// in versions 1.24 and 1.24, there was a bug where we had "info_" for onVideoError and "error_" for onVideoInfo!
 		// fixed in 1.25; also was correct for 1.23 and earlier
-		String debug_value = "error_" + what + "_" + extra;
-		SharedPreferences.Editor editor = sharedPreferences.edit();
-		editor.putString("last_video_error", debug_value);
-		editor.apply();
+		Prefs.setString("last_video_error", "error_" + what + "_" + extra);
 	}
 	
 	@Override
@@ -840,7 +828,7 @@ public class MyApplicationInterface implements ApplicationInterface {
 		else {
 			error_message = getContext().getResources().getString(R.string.failed_to_record_video);
 		}
-		main_activity.getPreview().showToast(null, error_message);
+		Utils.showToast(null, error_message);
 		main_activity.getMainUI().setTakePhotoIcon();
 	}
 
@@ -848,23 +836,23 @@ public class MyApplicationInterface implements ApplicationInterface {
 	public void onVideoRecordStopError(VideoProfile profile) {
 		if( MyDebug.LOG )
 			Log.d(TAG, "onVideoRecordStopError");
-		//main_activity.getPreview().showToast(null, R.string.failed_to_record_video);
+		//Utils.showToast(null, R.string.failed_to_record_video);
 		String features = main_activity.getPreview().getErrorFeatures(profile);
 		String error_message = getContext().getResources().getString(R.string.video_may_be_corrupted);
 		if( features.length() > 0 ) {
 			error_message += ", " + features + " " + getContext().getResources().getString(R.string.not_supported);
 		}
-		main_activity.getPreview().showToast(null, error_message);
+		Utils.showToast(null, error_message);
 	}
 	
 	@Override
 	public void onFailedReconnectError() {
-		main_activity.getPreview().showToast(null, R.string.failed_to_reconnect_camera);
+		Utils.showToast(null, R.string.failed_to_reconnect_camera);
 	}
 	
 	@Override
 	public void onFailedCreateVideoFileError() {
-		main_activity.getPreview().showToast(null, R.string.failed_to_save_video);
+		Utils.showToast(null, R.string.failed_to_save_video);
 		main_activity.getMainUI().setTakePhotoIcon();
 	}
 
@@ -1021,13 +1009,13 @@ public class MyApplicationInterface implements ApplicationInterface {
 
 	@Override
 	public void faceDetected(boolean detected) {
-		if (sharedPreferences.getBoolean(Prefs.FACE_DETECTION_SOUND, false))
+		if (Prefs.getBoolean(Prefs.FACE_DETECTION_SOUND, false))
 			Sound.playSound(detected ? R.raw.double_beep : R.raw.double_beep_hi);
 	}
 
 	public void drawTextOnPhoto(final Canvas canvas, final Paint paint, final String text, final int width, final int height, final int line_count) {
 		final int foreground;
-		String color = sharedPreferences.getString(Prefs.STAMP_FONT_COLOR, "white");
+		String color = Prefs.getString(Prefs.STAMP_FONT_COLOR, "white");
 		if (color.equals("red")) {
 			foreground = Color.rgb(239,83,80); //Red 400
 		} else if (color.equals("green")) {
@@ -1044,7 +1032,7 @@ public class MyApplicationInterface implements ApplicationInterface {
 		// instead we go by 1 pt == 1/72 inch height, and scale for an image height (or width if in portrait) of 4" (this means the font height is also independent of the photo resolution)
 		final float scale = ((float)Math.min(width, height)) / (72.0f*4.0f);
 		int font_size = 12;
-		String value = sharedPreferences.getString(Prefs.STAMP_FONTSIZE, "12");
+		String value = Prefs.getString(Prefs.STAMP_FONTSIZE, "12");
 		if( MyDebug.LOG )
 			Log.d(TAG, "saved font size: " + value);
 		try {
@@ -1066,7 +1054,7 @@ public class MyApplicationInterface implements ApplicationInterface {
 		int diff_y = (int)(font_size+(4 * scale + 0.5f)); // convert pt to pixels
 
 		int location_x;
-		switch (sharedPreferences.getString(Prefs.STAMP_LOCATION_X, "right")) {
+		switch (Prefs.getString(Prefs.STAMP_LOCATION_X, "right")) {
 			case "center":
 				location_x = width/2;
 				paint.setTextAlign(Paint.Align.CENTER);
@@ -1082,14 +1070,14 @@ public class MyApplicationInterface implements ApplicationInterface {
 		}
 
 		int location_y;
-		if (sharedPreferences.getString(Prefs.STAMP_LOCATION_Y, "bottom").equals("bottom")) {
+		if (Prefs.getString(Prefs.STAMP_LOCATION_Y, "bottom").equals("bottom")) {
 			location_y = height-margin-diff_y*line_count;
 		} else {
 			location_y = font_size+margin+diff_y*line_count;
 		}
 
 		paint.setTextSize(font_size);
-		if( sharedPreferences.getBoolean(Prefs.STAMP_BACKGROUND, false) ) {
+		if( Prefs.getBoolean(Prefs.STAMP_BACKGROUND, false) ) {
 			paint.getTextBounds(text, 0, text.length(), text_bounds);
 			final int padding = (int) (2 * scale + 0.5f); // convert dps to pixels
 			if( paint.getTextAlign() == Paint.Align.RIGHT || paint.getTextAlign() == Paint.Align.CENTER ) {
@@ -1121,7 +1109,7 @@ public class MyApplicationInterface implements ApplicationInterface {
 	
 	private boolean saveInBackground(boolean image_capture_intent) {
 		boolean do_in_background = true;
-		if( !sharedPreferences.getBoolean(Prefs.BACKGROUND_PHOTO_SAVING, true) )
+		if( !Prefs.getBoolean(Prefs.BACKGROUND_PHOTO_SAVING, true) )
 			do_in_background = false;
 		else if( image_capture_intent )
 			do_in_background = false;
@@ -1141,7 +1129,7 @@ public class MyApplicationInterface implements ApplicationInterface {
 		return image_capture_intent;
 	}
 	
-	private boolean saveImage(Prefs.PhotoMode photo_mode, boolean save_expo, List<CameraController.Photo> images, Date current_date) {
+	private boolean saveImage(Prefs.PhotoMode photo_mode, List<CameraController.Photo> images, Date current_date) {
 		if( MyDebug.LOG )
 			Log.d(TAG, "saveImage");
 
@@ -1161,7 +1149,7 @@ public class MyApplicationInterface implements ApplicationInterface {
 		}
 
 		boolean using_camera2 = main_activity.getPreview().usingCamera2API();
-		int image_quality = Prefs.getSaveImageQualityPref();
+		int image_quality = Prefs.getStringAsInt(Prefs.QUALITY, 90);
 		if( MyDebug.LOG )
 			Log.d(TAG, "image_quality: " + image_quality);
 		boolean do_auto_stabilise = photo_mode != Prefs.PhotoMode.FastBurst && Prefs.getAutoStabilisePref() && main_activity.getPreview().hasLevelAngle();
@@ -1172,11 +1160,11 @@ public class MyApplicationInterface implements ApplicationInterface {
 			level_angle = 45.0;
 		// I have received crashes where camera_controller was null - could perhaps happen if this thread was running just as the camera is closing?
 		boolean is_front_facing = main_activity.getPreview().getCameraController() != null && main_activity.getPreview().getCameraController().isFrontFacing();
-		boolean store_location = Prefs.getGeotaggingPref() && getLocation() != null;
+		boolean store_location = Prefs.getBoolean(Prefs.LOCATION, false) && getLocation() != null;
 		Location location = store_location ? getLocation() : null;
-		boolean store_geo_direction = main_activity.getPreview().hasGeoDirection() && Prefs.getGeodirectionPref();
+		boolean store_geo_direction = main_activity.getPreview().hasGeoDirection() && Prefs.getBoolean(Prefs.GPS_DIRECTION, false);
 		double geo_direction = store_geo_direction ? main_activity.getPreview().getGeoDirection() : 0.0;
-		boolean has_thumbnail_animation = Prefs.getThumbnailAnimationPref();
+		boolean has_thumbnail_animation = Prefs.getBoolean(Prefs.THUMBNAIL_ANIMATION, true);
 		
 		boolean do_in_background = saveInBackground(image_capture_intent);
 		
@@ -1194,12 +1182,16 @@ public class MyApplicationInterface implements ApplicationInterface {
 			Log.d(TAG, "sample_factor: " + sample_factor);
 		boolean success;
 
-		if ((photo_mode == Prefs.PhotoMode.FastBurst || photo_mode == Prefs.PhotoMode.NoiseReduction) && n_capture_images != Prefs.getBurstCount())
+		boolean allow_rotation = false;
+		if ((photo_mode == Prefs.PhotoMode.FastBurst || photo_mode == Prefs.PhotoMode.NoiseReduction) && n_capture_images != Prefs.getBurstCount()) {
 			sample_factor = 0;
+		} else {
+			allow_rotation = !Prefs.getBoolean(Prefs.DONT_ROTATE, false);
+		}
 
 		ImageSaver.ProcessingSettings settings = new ImageSaver.ProcessingSettings();
 
-		if (!main_activity.getPreview().isAutoAdjustmentLocked()) {
+		if (main_activity.supportsRenderScript() && !main_activity.getPreview().isAutoAdjustmentLocked()) {
 			String adjust_levels_key = null;
 			if (photo_mode == Prefs.PhotoMode.NoiseReduction && n_capture_images == Prefs.getBurstCount()) {
 				adjust_levels_key = Prefs.NR_ADJUST_LEVELS;
@@ -1212,65 +1204,87 @@ public class MyApplicationInterface implements ApplicationInterface {
 			}
 			if (adjust_levels_key != null) {
 				try {
-					settings.adjust_levels = Integer.parseInt(sharedPreferences.getString(adjust_levels_key, "0"));
+					settings.adjust_levels = Integer.parseInt(Prefs.getString(adjust_levels_key, "0"));
 				} catch(NumberFormatException e) {
 					settings.adjust_levels = 0;
+				}
+			}
+			if (settings.adjust_levels != 0) {
+				String histogram_level_key = Prefs.HISTOGRAM_LEVEL;
+				if (photo_mode == Prefs.PhotoMode.NoiseReduction) {
+					histogram_level_key = Prefs.NR_HISTOGRAM_LEVEL;
+				} else if (photo_mode == Prefs.PhotoMode.HDR) {
+					histogram_level_key = Prefs.HDR_HISTOGRAM_LEVEL;
+				} else if (photo_mode == Prefs.PhotoMode.DRO) {
+					histogram_level_key = Prefs.DRO_HISTOGRAM_LEVEL;
+				}
+				try {
+					settings.histogram_level = Double.parseDouble(Prefs.getString(histogram_level_key, "0"))/100;
+				} catch(NumberFormatException e) {
+					settings.histogram_level = 0;
 				}
 			}
 		}
 	
 		if (photo_mode == Prefs.PhotoMode.HDR) {
-			settings.save_base = save_expo ? ImageSaver.ProcessingSettings.SaveBase.ALL : ImageSaver.ProcessingSettings.SaveBase.NONE;
-			settings.hdr_tonemapping = sharedPreferences.getString(Prefs.HDR_TONEMAPPING, "reinhard");
-			settings.hdr_deghost = sharedPreferences.getBoolean(Prefs.HDR_DEGHOST, true);
-			settings.hdr_local_contrast = sharedPreferences.getString(Prefs.HDR_LOCAL_CONTRAST, "5");
-			settings.hdr_n_tiles = sharedPreferences.getString(Prefs.HDR_N_TILES, "4");
-			settings.hdr_unsharp_mask = sharedPreferences.getString(Prefs.HDR_UNSHARP_MASK, "1");
-			settings.hdr_unsharp_mask_radius = sharedPreferences.getString(Prefs.HDR_UNSHARP_MASK_RADIUS, "5");
-			settings.align = sharedPreferences.getString(Prefs.HDR_ALIGN, "align_crop");
+			settings.save_base = Prefs.getBoolean(Prefs.HDR_SAVE_EXPO, false);
+			settings.hdr_tonemapping = Prefs.getString(Prefs.HDR_TONEMAPPING, "reinhard");
+			settings.hdr_deghost = Prefs.getBoolean(Prefs.HDR_DEGHOST, true);
+			settings.hdr_local_contrast = Prefs.getString(Prefs.HDR_LOCAL_CONTRAST, "5");
+			settings.hdr_n_tiles = Prefs.getString(Prefs.HDR_N_TILES, "4");
+			settings.hdr_unsharp_mask = Prefs.getString(Prefs.HDR_UNSHARP_MASK, "1");
+			settings.hdr_unsharp_mask_radius = Prefs.getString(Prefs.HDR_UNSHARP_MASK_RADIUS, "5");
+			settings.align = Prefs.getString(Prefs.HDR_ALIGN, "align_crop");
 		} else if (photo_mode == Prefs.PhotoMode.DRO) {
-			settings.hdr_local_contrast = sharedPreferences.getString(Prefs.DRO_LOCAL_CONTRAST, "5");
-			settings.hdr_n_tiles = sharedPreferences.getString(Prefs.DRO_N_TILES, "4");
-			settings.hdr_unsharp_mask = sharedPreferences.getString(Prefs.DRO_UNSHARP_MASK, "1");
-			settings.hdr_unsharp_mask_radius = sharedPreferences.getString(Prefs.DRO_UNSHARP_MASK_RADIUS, "5");
+			settings.hdr_local_contrast = Prefs.getString(Prefs.DRO_LOCAL_CONTRAST, "5");
+			settings.hdr_n_tiles = Prefs.getString(Prefs.DRO_N_TILES, "4");
+			settings.hdr_unsharp_mask = Prefs.getString(Prefs.DRO_UNSHARP_MASK, "1");
+			settings.hdr_unsharp_mask_radius = Prefs.getString(Prefs.DRO_UNSHARP_MASK_RADIUS, "5");
+		}
+		
+		if (photo_mode == Prefs.PhotoMode.NoiseReduction && n_capture_images == 1) {
+			settings.align = Prefs.getString(Prefs.NR_ALIGN, "align");
+			settings.save_base = Prefs.getBoolean(Prefs.NR_SAVE_BASE, false);
 		}
 
 		settings.do_auto_stabilise = do_auto_stabilise;
 		settings.level_angle = level_angle;
-		settings.mirror = is_front_facing && sharedPreferences.getBoolean(Prefs.FLIP_FRONT_FACING, false);
-		settings.stamp = sharedPreferences.getBoolean(Prefs.STAMP, false);
-		settings.stamp_text = sharedPreferences.getString(Prefs.TEXTSTAMP, "");
-		settings.stamp_dateformat = sharedPreferences.getString(Prefs.STAMP_DATEFORMAT, "preference_stamp_dateformat_default");
-		settings.stamp_timeformat = sharedPreferences.getString(Prefs.STAMP_TIMEFORMAT, "preference_stamp_timeformat_default");
-		settings.stamp_gpsformat = sharedPreferences.getString(Prefs.STAMP_GPSFORMAT, "preference_stamp_gpsformat_default");
-		
+		settings.mirror = is_front_facing && Prefs.getBoolean(Prefs.FLIP_FRONT_FACING, false);
+		settings.stamp = Prefs.getBoolean(Prefs.STAMP, false);
+		settings.stamp_text = Prefs.getString(Prefs.TEXTSTAMP, "");
+		settings.stamp_dateformat = Prefs.getString(Prefs.STAMP_DATEFORMAT, "preference_stamp_dateformat_default");
+		settings.stamp_timeformat = Prefs.getString(Prefs.STAMP_TIMEFORMAT, "preference_stamp_timeformat_default");
+		settings.stamp_gpsformat = Prefs.getString(Prefs.STAMP_GPSFORMAT, "preference_stamp_gpsformat_default");
+		settings.stamp_store_address = Prefs.getBoolean(Prefs.STAMP_STORE_ADDRESS, false);
+		settings.stamp_store_altitude = Prefs.getBoolean(Prefs.STAMP_STORE_ALTITUDE, false);
+
 		String yuv_conversion = "";
 		if (images.get(0).y != null) {
-			yuv_conversion = sharedPreferences.getString(Prefs.YUV_CONVERSION, "default");
+			yuv_conversion = Prefs.getString(Prefs.YUV_CONVERSION, "default");
 		}
 		
 		ImageSaver.Metadata metadata = new ImageSaver.Metadata();
-		metadata.author = sharedPreferences.getString(Prefs.METADATA_AUTHOR, "");
-		metadata.comment = sharedPreferences.getString(Prefs.METADATA_COMMENT, "");
-		metadata.comment_as_file = sharedPreferences.getBoolean(Prefs.METADATA_COMMENT_AS_FILE, false);
+		metadata.author = Prefs.getString(Prefs.METADATA_AUTHOR, "");
+		metadata.comment = Prefs.getString(Prefs.METADATA_COMMENT, "");
+		metadata.comment_as_file = Prefs.getBoolean(Prefs.METADATA_COMMENT_AS_FILE, false);
 		
 		String info = "";
-		boolean position_info = sharedPreferences.getBoolean(Prefs.METADATA_POSITION_INFO, false);
-		boolean mode_info = sharedPreferences.getBoolean(Prefs.METADATA_MODE_INFO, false);
-		boolean sensor_info = sharedPreferences.getBoolean(Prefs.METADATA_MODE_INFO, false);
-		boolean processing_info = sharedPreferences.getBoolean(Prefs.METADATA_MODE_INFO, false);
+		boolean position_info = Prefs.getBoolean(Prefs.METADATA_POSITION_INFO, false);
+		boolean mode_info = Prefs.getBoolean(Prefs.METADATA_MODE_INFO, false);
+		boolean sensor_info = Prefs.getBoolean(Prefs.METADATA_MODE_INFO, false);
+		boolean processing_info = Prefs.getBoolean(Prefs.METADATA_MODE_INFO, false);
 		if (position_info || mode_info || sensor_info || processing_info) {
 			Resources resources = getContext().getResources();
 			Preview preview = main_activity.getPreview();
 			CameraController camera_controller = preview.getCameraController();
 			if (camera_controller != null) {
 				if (position_info) {
-					info += "\n" + resources.getString(R.string.rotation) + ": " + main_activity.getPreview().getImageVideoRotation() + (char)0x00B0 +
+					info += "\n" + resources.getString(R.string.rotation) + ": " + main_activity.getPreview().getImageVideoRotation(false) + (char)0x00B0 +
 						"\n" + resources.getString(R.string.angle) + ": " + DrawPreview.formatLevelAngle(main_activity.getPreview().getLevelAngle()) + (char)0x00B0;
 				}
 				if (mode_info) {
 					if( preview.supportsFocus() && preview.getSupportedFocusValues().size() > 1 ) {
-						String focus_entry = preview.findFocusEntryForValue(preview.getCurrentFocusValue());
+						String focus_entry = Utils.findEntryForValue(preview.getCurrentFocusValue(), R.array.focus_mode_entries, R.array.focus_mode_values);
 						if( focus_entry != null ) {
 							info += "\n" + resources.getString(R.string.focus_mode) + ": " + focus_entry;
 						}
@@ -1285,18 +1299,18 @@ public class MyApplicationInterface implements ApplicationInterface {
 					}
 					String scene_mode = camera_controller.getSceneMode();
 					if( scene_mode != null && !scene_mode.equals(camera_controller.getDefaultSceneMode()) ) {
-						info += "\n" + resources.getString(R.string.scene_mode) + ": " + main_activity.getStringResourceByName("sm_", scene_mode);
+						info += "\n" + resources.getString(R.string.scene_mode) + ": " + Utils.getStringResourceByName("sm_", scene_mode);
 					}
 					String white_balance = camera_controller.getWhiteBalance();
 					if( white_balance != null && !white_balance.equals(camera_controller.getDefaultWhiteBalance()) ) {
-						info += "\n" + resources.getString(R.string.white_balance) + ": " + main_activity.getStringResourceByName("wb_", white_balance);
+						info += "\n" + resources.getString(R.string.white_balance) + ": " + Utils.getStringResourceByName("wb_", white_balance);
 						if( white_balance.equals("manual") && preview.supportsWhiteBalanceTemperature() ) {
 							info += " " + camera_controller.getWhiteBalanceTemperature();
 						}
 					}
 					String color_effect = camera_controller.getColorEffect();
 					if( color_effect != null && !color_effect.equals(camera_controller.getDefaultColorEffect()) ) {
-						info += "\n" + resources.getString(R.string.color_effect) + ": " + main_activity.getStringResourceByName("ce_", color_effect);
+						info += "\n" + resources.getString(R.string.color_effect) + ": " + Utils.getStringResourceByName("ce_", color_effect);
 					}
 					if (photo_mode == Prefs.PhotoMode.HDR || photo_mode == Prefs.PhotoMode.ExpoBracketing) {
 						info += "\n" + resources.getString(R.string.preference_expo_bracketing_stops_up) + ": " + Prefs.getExpoBracketingStopsUpPref();
@@ -1306,7 +1320,7 @@ public class MyApplicationInterface implements ApplicationInterface {
 				if (sensor_info) {
 					String antibanding = camera_controller.getAntibanding();
 					if (antibanding != null) {
-						info += "\n" + resources.getString(R.string.preference_antibanding) + ": " + main_activity.getStringFromArrays(
+						info += "\n" + resources.getString(R.string.preference_antibanding) + ": " + Utils.findEntryForValue(
 							antibanding,
 							R.array.preference_antibanding_entries,
 							R.array.preference_antibanding_values
@@ -1316,7 +1330,7 @@ public class MyApplicationInterface implements ApplicationInterface {
 					String noise_reduction = camera_controller.getNoiseReductionMode();
 					if (noise_reduction != null) {
 						info += "\n" + resources.getString(R.string.preference_noise_reduction) + ": " + (camera_controller.isFilteringBlocked() ? resources.getString(R.string.off) :
-						main_activity.getStringFromArrays(
+						Utils.findEntryForValue(
 							noise_reduction,
 							R.array.preference_noise_reduction_entries,
 							R.array.preference_noise_reduction_values
@@ -1326,7 +1340,7 @@ public class MyApplicationInterface implements ApplicationInterface {
 					String edge = camera_controller.getEdgeMode();
 					if (edge != null) {
 						info += "\n" + resources.getString(R.string.preference_edge) + ": " + (camera_controller.isFilteringBlocked() ? resources.getString(R.string.off) :
-						main_activity.getStringFromArrays(
+						Utils.findEntryForValue(
 							edge,
 							R.array.preference_edge_entries,
 							R.array.preference_edge_values
@@ -1334,7 +1348,7 @@ public class MyApplicationInterface implements ApplicationInterface {
 					}
 				}
 				if ((mode_info || processing_info) && photo_mode != Prefs.PhotoMode.Standard) {
-					info += "\n" + resources.getString(R.string.photo_mode) + ": " + main_activity.getStringFromArrays(
+					info += "\n" + resources.getString(R.string.photo_mode) + ": " + Utils.findEntryForValue(
 						Prefs.getPhotoModeStringValue(photo_mode),
 						R.array.photo_mode_entries,
 						R.array.photo_mode_values
@@ -1342,7 +1356,7 @@ public class MyApplicationInterface implements ApplicationInterface {
 				}
 				if (processing_info) {
 					if (photo_mode == Prefs.PhotoMode.HDR) {
-						info += "\n" + resources.getString(R.string.preference_hdr_tonemapping) + ": " + main_activity.getStringFromArrays(
+						info += "\n" + resources.getString(R.string.preference_hdr_tonemapping) + ": " + Utils.findEntryForValue(
 							settings.hdr_tonemapping,
 							R.array.preference_hdr_tonemapping_entries,
 							R.array.preference_hdr_tonemapping_values
@@ -1350,7 +1364,7 @@ public class MyApplicationInterface implements ApplicationInterface {
 					}
 					if (photo_mode == Prefs.PhotoMode.HDR || photo_mode == Prefs.PhotoMode.DRO) {
 						if (!settings.hdr_unsharp_mask.equals("0")) {
-							info += "\n" + resources.getString(R.string.preference_hdr_unsharp_mask) + ": " + main_activity.getStringFromArrays(
+							info += "\n" + resources.getString(R.string.preference_hdr_unsharp_mask) + ": " + Utils.findEntryForValue(
 								settings.hdr_unsharp_mask,
 								R.array.preference_hdr_local_contrast_entries,
 								R.array.preference_hdr_local_contrast_values
@@ -1358,7 +1372,7 @@ public class MyApplicationInterface implements ApplicationInterface {
 							info += "\n" + resources.getString(R.string.preference_hdr_unsharp_mask_radius) + ": " + settings.hdr_unsharp_mask_radius;
 						}
 						if (!settings.hdr_local_contrast.equals("0")) {
-							info += "\n" + resources.getString(R.string.preference_hdr_local_contrast) + ": " + main_activity.getStringFromArrays(
+							info += "\n" + resources.getString(R.string.preference_hdr_local_contrast) + ": " + Utils.findEntryForValue(
 								settings.hdr_local_contrast,
 								R.array.preference_hdr_local_contrast_entries,
 								R.array.preference_hdr_local_contrast_values
@@ -1384,15 +1398,16 @@ public class MyApplicationInterface implements ApplicationInterface {
 			}
 		}
 
-		String prefix = sharedPreferences.getString(Prefs.SAVE_PHOTO_PREFIX, "IMG_");
+		String prefix = Prefs.getString(Prefs.SAVE_PHOTO_PREFIX, "IMG_");
 
 		success = imageSaver.saveImageJpeg(do_in_background, 
-				sharedPreferences.getString(Prefs.IMAGE_FORMAT, "jpeg").equals("png"),
+				Prefs.getString(Prefs.IMAGE_FORMAT, "jpeg").equals("png"),
 				photo_mode,
 				images,
 				yuv_conversion,
 				image_capture_intent, image_capture_intent_uri,
 				using_camera2, image_quality,
+				allow_rotation,
 				settings,
 				metadata,
 				is_front_facing,
@@ -1427,7 +1442,7 @@ public class MyApplicationInterface implements ApplicationInterface {
 			// must be in photo snapshot while recording video mode, only support standard photo mode
 			photo_mode = Prefs.PhotoMode.Standard;
 		}
-		boolean success = saveImage(photo_mode, false, images, current_date);
+		boolean success = saveImage(photo_mode, images, current_date);
 		
 		if( MyDebug.LOG )
 			Log.d(TAG, "onPictureTaken complete, success: " + success);
@@ -1451,11 +1466,8 @@ public class MyApplicationInterface implements ApplicationInterface {
 		if( photo_mode == Prefs.PhotoMode.HDR ) {
 			if( MyDebug.LOG )
 				Log.d(TAG, "HDR mode");
-				boolean save_expo =  sharedPreferences.getBoolean(Prefs.HDR_SAVE_EXPO, false);
-			if( MyDebug.LOG )
-				Log.d(TAG, "save_expo: " + save_expo);
 
-			success = saveImage(Prefs.PhotoMode.HDR, save_expo, images, current_date);
+			success = saveImage(Prefs.PhotoMode.HDR, images, current_date);
 		}
 		else {
 			if( MyDebug.LOG ) {
@@ -1464,7 +1476,7 @@ public class MyApplicationInterface implements ApplicationInterface {
 					Log.e(TAG, "onBurstPictureTaken called with unexpected photo mode?!: " + photo_mode);
 			}
 			
-			success = saveImage(photo_mode, true, images, current_date);
+			success = saveImage(photo_mode, images, current_date);
 		}
 		return success;
 	}
@@ -1484,7 +1496,7 @@ public class MyApplicationInterface implements ApplicationInterface {
 			photo_mode = Prefs.PhotoMode.Standard;
 		}
 
-		String prefix = sharedPreferences.getString(Prefs.SAVE_PHOTO_PREFIX, "IMG_");
+		String prefix = Prefs.getString(Prefs.SAVE_PHOTO_PREFIX, "IMG_");
 		boolean success = imageSaver.saveImageRaw(do_in_background, photo_mode, dngCreator, image, prefix, current_date, n_capture_images);
 		
 		if( MyDebug.LOG )
@@ -1550,7 +1562,6 @@ public class MyApplicationInterface implements ApplicationInterface {
 	private void trashImage(boolean image_saf, Uri image_uri, String image_name) {
 		if( MyDebug.LOG )
 			Log.d(TAG, "trashImage");
-		Preview preview  = main_activity.getPreview();
 		if( image_saf && image_uri != null ) {
 			if( MyDebug.LOG )
 				Log.d(TAG, "Delete: " + image_uri);
@@ -1563,7 +1574,7 @@ public class MyApplicationInterface implements ApplicationInterface {
 				else {
 					if( MyDebug.LOG )
 						Log.d(TAG, "successfully deleted " + image_uri);
-					preview.showToast(null, R.string.photo_deleted);
+					Utils.showToast(null, R.string.photo_deleted);
 					if( file != null ) {
 						// SAF doesn't broadcast when deleting them
 						storageUtils.broadcastFile(file, false, false, true);
@@ -1589,7 +1600,7 @@ public class MyApplicationInterface implements ApplicationInterface {
 			else {
 				if( MyDebug.LOG )
 					Log.d(TAG, "successfully deleted " + image_name);
-				preview.showToast(null, R.string.photo_deleted);
+				Utils.showToast(null, R.string.photo_deleted);
 				storageUtils.broadcastFile(file, false, false, true);
 			}
 		}

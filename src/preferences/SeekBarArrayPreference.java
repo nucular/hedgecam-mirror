@@ -1,4 +1,4 @@
-package com.caddish_hedgehog.hedgecam2.UI;
+package com.caddish_hedgehog.hedgecam2.preferences;
 
 import com.caddish_hedgehog.hedgecam2.R;
 
@@ -102,14 +102,14 @@ public class SeekBarArrayPreference extends DialogPreference implements SeekBar.
 		valueText = new TextView(context);
 		valueText.setGravity(Gravity.CENTER_HORIZONTAL);
 		
-		params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.FILL_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+		params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
 		layout.addView(valueText, params);
 
 		seekbar = new SeekBar(context);
 		seekbar.setOnSeekBarChangeListener(this);
 		padding = resources.getDimensionPixelSize(R.dimen.seekbar_padding_large);
 		seekbar.setPadding(seekbar.getPaddingLeft(), padding, seekbar.getPaddingRight(), padding);
-		layout.addView(seekbar, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.FILL_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+		layout.addView(seekbar, params);
 
 		if (shouldPersist()) {
 			value = getPersistedString(defValue);
@@ -179,11 +179,11 @@ public class SeekBarArrayPreference extends DialogPreference implements SeekBar.
 	@Override
 	protected void onSetInitialValue(boolean restore, Object defaultValue) {
 		super.onSetInitialValue(restore, defaultValue);
-		if (restore) 
+		if (restore) {
 			if (shouldPersist()) {
 				value = getPersistedString(defValue);
 			}
-		else 
+		} else 
 			value = defValue;
 	}
 	

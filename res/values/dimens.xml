@@ -136,4 +136,18 @@
 	<dimen name="pref_seekbar_text_large"	>32dp</dimen>
 
 	<dimen name="file_list_icon"			>28dp</dimen>
+	
+	<dimen name="queue_count"				>32dp</dimen>
+	<dimen name="queue_count_padding_bottom">4dp</dimen>
+	
+	<dimen name="histogram_width_small"		>100dp</dimen>
+	<dimen name="histogram_height_small"	>33dp</dimen>
+	<dimen name="histogram_width_normal"	>120dp</dimen>
+	<dimen name="histogram_height_normal"	>40dp</dimen>
+	<dimen name="histogram_width_large"		>150dp</dimen>
+	<dimen name="histogram_height_large"	>50dp</dimen>
+	<dimen name="histogram_width_xlarge"	>200dp</dimen>
+	<dimen name="histogram_height_xlarge"	>70dp</dimen>
+	<dimen name="histogram_border"			>1dp</dimen>
+
 </resources>

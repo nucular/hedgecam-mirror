@@ -27,6 +27,13 @@
 	<color name="toast_color"		>#323232</color>
 	
 	<color name="folder"			>#fff280</color>
+	
+	<color name="histogram"			>#afffffff</color>
+	<color name="histogram_red"		>#a5ff7f7f</color>
+	<color name="histogram_green"	>#997fff7f</color>
+	<color name="histogram_blue"	>#d87f7fff</color>
+	<color name="histogram_background">#7f000000</color>
+	<color name="histogram_border"	>#afffffff</color>
 
 	<!-- Drawing on photo -->
 	<color name="photo_red"			>#ef5350</color>

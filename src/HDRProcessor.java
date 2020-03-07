@@ -1,10 +1,10 @@
 package com.caddish_hedgehog.hedgecam2;
 
 import java.io.File;
-//import java.io.FileOutputStream;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-//import java.io.OutputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -13,7 +13,7 @@ import java.util.List;
 import android.content.Context;
 import android.graphics.Rect;
 import android.graphics.Bitmap;
-//import android.graphics.Color;
+import android.graphics.Color;
 import android.media.MediaScannerConnection;
 import android.os.Build;
 import android.os.Environment;
@@ -767,15 +767,20 @@ public class HDRProcessor {
 				}
 			}
 		}
+/*		if( adjust_histogram != 0.0f ) {
+			adjustHistogram(output_allocation, output_allocation, width, height, 0.5f, time_s);
+			if( MyDebug.LOG )
+				Log.d(TAG, "### time after adjustHistogram: " + (System.currentTimeMillis() - time_s));
+		}*/
 		if( unsharp_mask != 0.0f ) {
 			unsharpMask(output_allocation, width, height, unsharp_mask, unsharp_mask_radius, time_s);
 			if( MyDebug.LOG )
 				Log.d(TAG, "### time after unsharpMask: " + (System.currentTimeMillis() - time_s));
 		}
 		if( hdr_alpha != 0.0f ) {
-			adjustHistogram(output_allocation, output_allocation, width, height, hdr_alpha, n_tiles, time_s);
+			adjustHistogramLocal(output_allocation, output_allocation, width, height, hdr_alpha, n_tiles, time_s);
 			if( MyDebug.LOG )
-				Log.d(TAG, "### time after adjustHistogram: " + (System.currentTimeMillis() - time_s));
+				Log.d(TAG, "### time after adjustHistogramLocal: " + (System.currentTimeMillis() - time_s));
 		}
 
 		if( MyDebug.LOG )
@@ -838,6 +843,11 @@ public class HDRProcessor {
 					Log.d(TAG, "### time after avg_brighten: " + (System.currentTimeMillis() - time_s));
 			}
 		}*/
+/*		if( adjust_histogram != 0.0f ) {
+			adjustHistogram(output_allocation, output_allocation, width, height, -1.0f, time_s);
+			if( MyDebug.LOG )
+				Log.d(TAG, "### time after adjustHistogram: " + (System.currentTimeMillis() - time_s));
+		}*/
 
 		if( unsharp_mask != 0.0f ) {
 			unsharpMask(allocation, width, height, unsharp_mask, unsharp_mask_radius, time_s);
@@ -845,7 +855,7 @@ public class HDRProcessor {
 				Log.d(TAG, "### time after unsharpMask: " + (System.currentTimeMillis() - time_s));
 		}
 		if( hdr_alpha != 0.0f ) {
-			adjustHistogram(allocation, output_allocation, width, height, hdr_alpha, n_tiles, time_s);
+			adjustHistogramLocal(allocation, output_allocation, width, height, hdr_alpha, n_tiles, time_s);
 			if( MyDebug.LOG )
 				Log.d(TAG, "### time after adjustHistogram: " + (System.currentTimeMillis() - time_s));
 		}
@@ -1190,7 +1200,7 @@ public class HDRProcessor {
 		return new BrightnessDetails(median_brightness);
 	}
 
-	private static class LuminanceInfo {
+	public static class LuminanceInfo {
 		final int median_value;
 		final boolean noisy;
 
@@ -1200,7 +1210,7 @@ public class HDRProcessor {
 		}
 	}
 
-	private LuminanceInfo computeMedianLuminance(Bitmap bitmap, int mtb_x, int mtb_y, int mtb_width, int mtb_height) {
+	public static LuminanceInfo computeMedianLuminance(Bitmap bitmap, int mtb_x, int mtb_y, int mtb_width, int mtb_height) {
 		if( MyDebug.LOG )
 			Log.d(TAG, "computeMedianLuminance");
 		final int n_samples_c = 100;
@@ -1276,226 +1286,223 @@ public class HDRProcessor {
 	}
 
 	@RequiresApi(api = Build.VERSION_CODES.KITKAT)
-	private void adjustHistogram(Allocation allocation_in, Allocation allocation_out, int width, int height, float hdr_alpha, int n_tiles, long time_s) {
+	private void adjustHistogram(Allocation allocation_in, Allocation allocation_out, int width, int height, float hdr_alpha, long time_s) {
 		if( MyDebug.LOG )
 			Log.d(TAG, "adjustHistogram");
-		final boolean adjust_histogram = false;
-		//final boolean adjust_histogram = true;
 
-		if( adjust_histogram ) {
-			// create histogram
-			int [] histogram = new int[256];
-			if( MyDebug.LOG )
-				Log.d(TAG, "time before creating histogram: " + (System.currentTimeMillis() - time_s));
-			Allocation histogramAllocation = computeHistogramAllocation(allocation_in, false, false, time_s);
-			if( MyDebug.LOG )
-				Log.d(TAG, "time after creating histogram: " + (System.currentTimeMillis() - time_s));
-			histogramAllocation.copyTo(histogram);
+		// create histogram
+		int [] histogram = new int[256];
+		if( MyDebug.LOG )
+			Log.d(TAG, "time before creating histogram: " + (System.currentTimeMillis() - time_s));
+		Allocation histogramAllocation = computeHistogramAllocation(allocation_in, false, false, time_s);
+		if( MyDebug.LOG )
+			Log.d(TAG, "time after creating histogram: " + (System.currentTimeMillis() - time_s));
+		histogramAllocation.copyTo(histogram);
 
-				/*if( MyDebug.LOG ) {
-					// compare/adjust
-					allocations[0].copyTo(bm);
-					int [] debug_histogram = new int[256];
-					for(int i=0;i<256;i++) {
-						debug_histogram[i] = 0;
-					}
-					int [] debug_buffer = new int[width];
-					for(int y=0;y<height;y++) {
-						bm.getPixels(debug_buffer, 0, width, 0, y, width, 1);
-						for(int x=0;x<width;x++) {
-							int color = debug_buffer[x];
-							float r = (float)((color & 0xFF0000) >> 16);
-							float g = (float)((color & 0xFF00) >> 8);
-							float b = (float)(color & 0xFF);
-							//float value = 0.299f*r + 0.587f*g + 0.114f*b; // matches ScriptIntrinsicHistogram default behaviour
-							float value = Math.max(r, g);
-							value = Math.max(value, b);
-							int i_value = (int)value;
-							i_value = Math.min(255, i_value); // just in case
-							debug_histogram[i_value]++;
-						}
-					}
-					for(int x=0;x<256;x++) {
-						Log.d(TAG, "histogram[" + x + "] = " + histogram[x] + " debug_histogram: " + debug_histogram[x]);
-						//histogram[x] = debug_histogram[x];
-					}
-				}*/
-
-			int [] c_histogram = new int[256];
-			c_histogram[0] = histogram[0];
-			for(int x=1;x<256;x++) {
-				c_histogram[x] = c_histogram[x-1] + histogram[x];
-			}
-				/*if( MyDebug.LOG ) {
-					for(int x=0;x<256;x++) {
-						Log.d(TAG, "histogram[" + x + "] = " + histogram[x] + " cumulative: " + c_histogram[x]);
-					}
-				}*/
-			histogramAllocation.copyFrom(c_histogram);
-
-			ScriptC_histogram_adjust histogramAdjustScript = new ScriptC_histogram_adjust(rs);
-			histogramAdjustScript.set_c_histogram(histogramAllocation);
-			histogramAdjustScript.set_hdr_alpha(hdr_alpha);
-
-			if( MyDebug.LOG )
-				Log.d(TAG, "call histogramAdjustScript");
-			histogramAdjustScript.forEach_histogram_adjust(allocation_in, allocation_out);
-			if( MyDebug.LOG )
-				Log.d(TAG, "time after histogramAdjustScript: " + (System.currentTimeMillis() - time_s));
-		}
-
-		//final boolean adjust_histogram_local = false;
-		final boolean adjust_histogram_local = true;
-
-		if( adjust_histogram_local ) {
-			// Contrast Limited Adaptive Histogram Equalisation
-			// Note we don't fully equalise the histogram, rather the resultant image is the mid-point of the non-equalised and fully-equalised images
-			// See https://en.wikipedia.org/wiki/Adaptive_histogram_equalization#Contrast_Limited_AHE
-			// Also see "Adaptive Histogram Equalization and its Variations" ( http://www.cs.unc.edu/Research/MIDAG/pubs/papers/Adaptive%20Histogram%20Equalization%20and%20Its%20Variations.pdf ),
-			// Pizer, Amburn, Austin, Cromartie, Geselowitz, Greer, ter Haar Romeny, Zimmerman, Zuiderveld (1987).
-
-			// create histograms
-			Allocation histogramAllocation = Allocation.createSized(rs, Element.I32(rs), 256);
-			if( MyDebug.LOG )
-				Log.d(TAG, "create histogramScript");
-			ScriptC_histogram_compute histogramScript = new ScriptC_histogram_compute(rs);
-			if( MyDebug.LOG )
-				Log.d(TAG, "bind histogram allocation");
-			histogramScript.bind_histogram(histogramAllocation);
-
-			//final int n_tiles_c = 8;
-			//final int n_tiles_c = 4;
-			//final int n_tiles_c = 1;
-			int [] c_histogram = new int[n_tiles*n_tiles*256];
-			for(int i=0;i<n_tiles;i++) {
-				double a0 = ((double)i)/(double)n_tiles;
-				double a1 = ((double)i+1.0)/(double)n_tiles;
-				int start_x = (int)(a0 * width);
-				int stop_x = (int)(a1 * width);
-				if( stop_x == start_x )
-					continue;
-				for(int j=0;j<n_tiles;j++) {
-					double b0 = ((double)j)/(double)n_tiles;
-					double b1 = ((double)j+1.0)/(double)n_tiles;
-					int start_y = (int)(b0 * height);
-					int stop_y = (int)(b1 * height);
-					if( stop_y == start_y )
-						continue;
-						/*if( MyDebug.LOG )
-							Log.d(TAG, i + " , " + j + " : " + start_x + " , " + start_y + " to " + stop_x + " , " + stop_y);*/
-					Script.LaunchOptions launch_options = new Script.LaunchOptions();
-					launch_options.setX(start_x, stop_x);
-					launch_options.setY(start_y, stop_y);
-
-						/*if( MyDebug.LOG )
-							Log.d(TAG, "call histogramScript");*/
-					histogramScript.invoke_init_histogram();
-					histogramScript.forEach_histogram_compute(allocation_in, launch_options);
-
-					int [] histogram = new int[256];
-					histogramAllocation.copyTo(histogram);
-
-						/*if( MyDebug.LOG ) {
-							// compare/adjust
-							allocations[0].copyTo(bm);
-							int [] debug_histogram = new int[256];
-							for(int k=0;k<256;k++) {
-								debug_histogram[k] = 0;
-							}
-							int [] debug_buffer = new int[width];
-							for(int y=start_y;y<stop_y;y++) {
-								bm.getPixels(debug_buffer, 0, width, 0, y, width, 1);
-								for(int x=start_x;x<stop_x;x++) {
-									int color = debug_buffer[x];
-									float r = (float)((color & 0xFF0000) >> 16);
-									float g = (float)((color & 0xFF00) >> 8);
-									float b = (float)(color & 0xFF);
-									//float value = 0.299f*r + 0.587f*g + 0.114f*b; // matches ScriptIntrinsicHistogram default behaviour
-									float value = Math.max(r, g);
-									value = Math.max(value, b);
-									int i_value = (int)value;
-									i_value = Math.min(255, i_value); // just in case
-									debug_histogram[i_value]++;
-								}
-							}
-							for(int x=0;x<256;x++) {
-								Log.d(TAG, "histogram[" + x + "] = " + histogram[x] + " debug_histogram: " + debug_histogram[x]);
-								//histogram[x] = debug_histogram[x];
-							}
-						}*/
-
-					// clip histogram, for Contrast Limited AHE algorithm
-					int n_pixels = (stop_x - start_x) * (stop_y - start_y);
-					int clip_limit = (5 * n_pixels) / 256;
-						/*if( MyDebug.LOG )
-							Log.d(TAG, "clip_limit: " + clip_limit);*/
-					{
-						// find real clip limit
-						int bottom = 0, top = clip_limit;
-						while( top - bottom > 1 ) {
-							int middle = (top + bottom)/2;
-							int sum = 0;
-							for(int x=0;x<256;x++) {
-								if( histogram[x] > middle ) {
-									sum += (histogram[x] - clip_limit);
-								}
-							}
-							if( sum > (clip_limit - middle) * 256 )
-								top = middle;
-							else
-								bottom = middle;
-						}
-						clip_limit = (top + bottom)/2;
-							/*if( MyDebug.LOG )
-								Log.d(TAG, "updated clip_limit: " + clip_limit);*/
-					}
-					int n_clipped = 0;
-					for(int x=0;x<256;x++) {
-						if( histogram[x] > clip_limit ) {
-							n_clipped += (histogram[x] - clip_limit);
-							histogram[x] = clip_limit;
-						}
-					}
-					int n_clipped_per_bucket = n_clipped / 256;
-						/*if( MyDebug.LOG ) {
-							Log.d(TAG, "n_clipped: " + n_clipped);
-							Log.d(TAG, "n_clipped_per_bucket: " + n_clipped_per_bucket);
-						}*/
-					for(int x=0;x<256;x++) {
-						histogram[x] += n_clipped_per_bucket;
-					}
-
-					int histogram_offset = 256*(i*n_tiles+j);
-					c_histogram[histogram_offset] = histogram[0];
-					for(int x=1;x<256;x++) {
-						c_histogram[histogram_offset+x] = c_histogram[histogram_offset+x-1] + histogram[x];
-					}
-						/*if( MyDebug.LOG ) {
-							for(int x=0;x<256;x++) {
-								Log.d(TAG, "histogram[" + x + "] = " + histogram[x] + " cumulative: " + c_histogram[histogram_offset+x]);
-							}
-						}*/
+			/*if( MyDebug.LOG ) {
+				// compare/adjust
+				allocations[0].copyTo(bm);
+				int [] debug_histogram = new int[256];
+				for(int i=0;i<256;i++) {
+					debug_histogram[i] = 0;
 				}
-			}
+				int [] debug_buffer = new int[width];
+				for(int y=0;y<height;y++) {
+					bm.getPixels(debug_buffer, 0, width, 0, y, width, 1);
+					for(int x=0;x<width;x++) {
+						int color = debug_buffer[x];
+						float r = (float)((color & 0xFF0000) >> 16);
+						float g = (float)((color & 0xFF00) >> 8);
+						float b = (float)(color & 0xFF);
+						//float value = 0.299f*r + 0.587f*g + 0.114f*b; // matches ScriptIntrinsicHistogram default behaviour
+						float value = Math.max(r, g);
+						value = Math.max(value, b);
+						int i_value = (int)value;
+						i_value = Math.min(255, i_value); // just in case
+						debug_histogram[i_value]++;
+					}
+				}
+				for(int x=0;x<256;x++) {
+					Log.d(TAG, "histogram[" + x + "] = " + histogram[x] + " debug_histogram: " + debug_histogram[x]);
+					//histogram[x] = debug_histogram[x];
+				}
+			}*/
 
-			if( MyDebug.LOG )
-				Log.d(TAG, "time after creating histograms: " + (System.currentTimeMillis() - time_s));
-
-			Allocation c_histogramAllocation = Allocation.createSized(rs, Element.I32(rs), n_tiles*n_tiles*256);
-			c_histogramAllocation.copyFrom(c_histogram);
-			ScriptC_histogram_adjust histogramAdjustScript = new ScriptC_histogram_adjust(rs);
-			histogramAdjustScript.set_c_histogram(c_histogramAllocation);
-			histogramAdjustScript.set_hdr_alpha(hdr_alpha);
-			histogramAdjustScript.set_n_tiles(n_tiles);
-			histogramAdjustScript.set_width(width);
-			histogramAdjustScript.set_height(height);
-
-			if( MyDebug.LOG )
-				Log.d(TAG, "call histogramAdjustScript");
-			histogramAdjustScript.forEach_histogram_adjust(allocation_in, allocation_out);
-			if( MyDebug.LOG )
-				Log.d(TAG, "time after histogramAdjustScript: " + (System.currentTimeMillis() - time_s));
+		int [] c_histogram = new int[256];
+		c_histogram[0] = histogram[0];
+		for(int x=1;x<256;x++) {
+			c_histogram[x] = c_histogram[x-1] + histogram[x];
 		}
+			/*if( MyDebug.LOG ) {
+				for(int x=0;x<256;x++) {
+					Log.d(TAG, "histogram[" + x + "] = " + histogram[x] + " cumulative: " + c_histogram[x]);
+				}
+			}*/
+		histogramAllocation.copyFrom(c_histogram);
+
+		ScriptC_histogram histogramAdjustScript = new ScriptC_histogram(rs);
+		histogramAdjustScript.set_c_histogram(histogramAllocation);
+		histogramAdjustScript.set_hdr_alpha(hdr_alpha);
+
+		if( MyDebug.LOG )
+			Log.d(TAG, "call histogramAdjustScript");
+		histogramAdjustScript.forEach_histogram_adjust(allocation_in, allocation_out);
+		if( MyDebug.LOG )
+			Log.d(TAG, "time after histogramAdjustScript: " + (System.currentTimeMillis() - time_s));
+	}
+
+	@RequiresApi(api = Build.VERSION_CODES.KITKAT)
+	private void adjustHistogramLocal(Allocation allocation_in, Allocation allocation_out, int width, int height, float hdr_alpha, int n_tiles, long time_s) {
+		if( MyDebug.LOG )
+			Log.d(TAG, "adjustHistogramLocal");
+
+		// Contrast Limited Adaptive Histogram Equalisation
+		// Note we don't fully equalise the histogram, rather the resultant image is the mid-point of the non-equalised and fully-equalised images
+		// See https://en.wikipedia.org/wiki/Adaptive_histogram_equalization#Contrast_Limited_AHE
+		// Also see "Adaptive Histogram Equalization and its Variations" ( http://www.cs.unc.edu/Research/MIDAG/pubs/papers/Adaptive%20Histogram%20Equalization%20and%20Its%20Variations.pdf ),
+		// Pizer, Amburn, Austin, Cromartie, Geselowitz, Greer, ter Haar Romeny, Zimmerman, Zuiderveld (1987).
+
+		// create histograms
+		Allocation histogramAllocation = Allocation.createSized(rs, Element.I32(rs), 256);
+		if( MyDebug.LOG )
+			Log.d(TAG, "create histogramScript");
+		ScriptC_histogram_compute histogramScript = new ScriptC_histogram_compute(rs);
+		if( MyDebug.LOG )
+			Log.d(TAG, "bind histogram allocation");
+		histogramScript.bind_histogram(histogramAllocation);
+
+		//final int n_tiles_c = 8;
+		//final int n_tiles_c = 4;
+		//final int n_tiles_c = 1;
+		int [] c_histogram = new int[n_tiles*n_tiles*256];
+		for(int i=0;i<n_tiles;i++) {
+			double a0 = ((double)i)/(double)n_tiles;
+			double a1 = ((double)i+1.0)/(double)n_tiles;
+			int start_x = (int)(a0 * width);
+			int stop_x = (int)(a1 * width);
+			if( stop_x == start_x )
+				continue;
+			for(int j=0;j<n_tiles;j++) {
+				double b0 = ((double)j)/(double)n_tiles;
+				double b1 = ((double)j+1.0)/(double)n_tiles;
+				int start_y = (int)(b0 * height);
+				int stop_y = (int)(b1 * height);
+				if( stop_y == start_y )
+					continue;
+					/*if( MyDebug.LOG )
+						Log.d(TAG, i + " , " + j + " : " + start_x + " , " + start_y + " to " + stop_x + " , " + stop_y);*/
+				Script.LaunchOptions launch_options = new Script.LaunchOptions();
+				launch_options.setX(start_x, stop_x);
+				launch_options.setY(start_y, stop_y);
+
+					/*if( MyDebug.LOG )
+						Log.d(TAG, "call histogramScript");*/
+				histogramScript.invoke_init_histogram();
+				histogramScript.forEach_histogram_compute(allocation_in, launch_options);
+
+				int [] histogram = new int[256];
+				histogramAllocation.copyTo(histogram);
+
+					/*if( MyDebug.LOG ) {
+						// compare/adjust
+						allocations[0].copyTo(bm);
+						int [] debug_histogram = new int[256];
+						for(int k=0;k<256;k++) {
+							debug_histogram[k] = 0;
+						}
+						int [] debug_buffer = new int[width];
+						for(int y=start_y;y<stop_y;y++) {
+							bm.getPixels(debug_buffer, 0, width, 0, y, width, 1);
+							for(int x=start_x;x<stop_x;x++) {
+								int color = debug_buffer[x];
+								float r = (float)((color & 0xFF0000) >> 16);
+								float g = (float)((color & 0xFF00) >> 8);
+								float b = (float)(color & 0xFF);
+								//float value = 0.299f*r + 0.587f*g + 0.114f*b; // matches ScriptIntrinsicHistogram default behaviour
+								float value = Math.max(r, g);
+								value = Math.max(value, b);
+								int i_value = (int)value;
+								i_value = Math.min(255, i_value); // just in case
+								debug_histogram[i_value]++;
+							}
+						}
+						for(int x=0;x<256;x++) {
+							Log.d(TAG, "histogram[" + x + "] = " + histogram[x] + " debug_histogram: " + debug_histogram[x]);
+							//histogram[x] = debug_histogram[x];
+						}
+					}*/
+
+				// clip histogram, for Contrast Limited AHE algorithm
+				int n_pixels = (stop_x - start_x) * (stop_y - start_y);
+				int clip_limit = (5 * n_pixels) / 256;
+					/*if( MyDebug.LOG )
+						Log.d(TAG, "clip_limit: " + clip_limit);*/
+				{
+					// find real clip limit
+					int bottom = 0, top = clip_limit;
+					while( top - bottom > 1 ) {
+						int middle = (top + bottom)/2;
+						int sum = 0;
+						for(int x=0;x<256;x++) {
+							if( histogram[x] > middle ) {
+								sum += (histogram[x] - clip_limit);
+							}
+						}
+						if( sum > (clip_limit - middle) * 256 )
+							top = middle;
+						else
+							bottom = middle;
+					}
+					clip_limit = (top + bottom)/2;
+						/*if( MyDebug.LOG )
+							Log.d(TAG, "updated clip_limit: " + clip_limit);*/
+				}
+				int n_clipped = 0;
+				for(int x=0;x<256;x++) {
+					if( histogram[x] > clip_limit ) {
+						n_clipped += (histogram[x] - clip_limit);
+						histogram[x] = clip_limit;
+					}
+				}
+				int n_clipped_per_bucket = n_clipped / 256;
+					/*if( MyDebug.LOG ) {
+						Log.d(TAG, "n_clipped: " + n_clipped);
+						Log.d(TAG, "n_clipped_per_bucket: " + n_clipped_per_bucket);
+					}*/
+				for(int x=0;x<256;x++) {
+					histogram[x] += n_clipped_per_bucket;
+				}
+
+				int histogram_offset = 256*(i*n_tiles+j);
+				c_histogram[histogram_offset] = histogram[0];
+				for(int x=1;x<256;x++) {
+					c_histogram[histogram_offset+x] = c_histogram[histogram_offset+x-1] + histogram[x];
+				}
+					/*if( MyDebug.LOG ) {
+						for(int x=0;x<256;x++) {
+							Log.d(TAG, "histogram[" + x + "] = " + histogram[x] + " cumulative: " + c_histogram[histogram_offset+x]);
+						}
+					}*/
+			}
+		}
+
+		if( MyDebug.LOG )
+			Log.d(TAG, "time after creating histograms: " + (System.currentTimeMillis() - time_s));
+
+		Allocation c_histogramAllocation = Allocation.createSized(rs, Element.I32(rs), n_tiles*n_tiles*256);
+		c_histogramAllocation.copyFrom(c_histogram);
+		ScriptC_histogram_adjust histogramAdjustScript = new ScriptC_histogram_adjust(rs);
+		histogramAdjustScript.set_c_histogram(c_histogramAllocation);
+		histogramAdjustScript.set_hdr_alpha(hdr_alpha);
+		histogramAdjustScript.set_n_tiles(n_tiles);
+		histogramAdjustScript.set_width(width);
+		histogramAdjustScript.set_height(height);
+
+		if( MyDebug.LOG )
+			Log.d(TAG, "call histogramAdjustScript");
+		histogramAdjustScript.forEach_histogram_adjust(allocation_in, allocation_out);
+		if( MyDebug.LOG )
+			Log.d(TAG, "time after histogramAdjustScript: " + (System.currentTimeMillis() - time_s));
 	}
 
 	/**

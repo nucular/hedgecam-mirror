@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
 	package="com.caddish_hedgehog.hedgecam2"
-	android:versionCode="12"
-	android:versionName="2.08"
+	android:versionCode="15"
+	android:versionName="2.09a"
 	android:installLocation="auto"
 	>
 
@@ -29,7 +29,6 @@
 		<activity
 			android:name="com.caddish_hedgehog.hedgecam2.MainActivity"
 			android:label="@string/app_name"
-			android:screenOrientation="landscape"
 			android:configChanges="orientation|screenSize|keyboardHidden"
 			android:clearTaskOnLaunch="true"
 			>
@@ -69,7 +68,6 @@
 			android:name="TakePhoto"
 			android:label="@string/take_photo"
 			android:icon="@mipmap/ic_launcher_take_photo"
-			android:screenOrientation="landscape"
 			android:configChanges="orientation|screenSize|keyboardHidden"
 			android:taskAffinity=""
 			android:excludeFromRecents="true"
@@ -79,7 +77,6 @@
 			android:name="TakeVideo"
 			android:label="@string/take_video"
 			android:icon="@mipmap/ic_launcher_take_video"
-			android:screenOrientation="landscape"
 			android:configChanges="orientation|screenSize|keyboardHidden"
 			android:taskAffinity=""
 			android:excludeFromRecents="true"
